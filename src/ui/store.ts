@@ -19,6 +19,9 @@ export type TipoProblema = '1d' | 'armadura' | 'resortes';
 
 export interface AppState {
   tema: Tema;
+  /** Modo presentación (no se guarda). */
+  presentacion: boolean;
+  setPresentacion: (v: boolean) => void;
   tipo: TipoProblema;
   e1d: Estado1D;
   armadura: EstadoArmadura;
@@ -40,6 +43,8 @@ export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       tema: 'sistema',
+      presentacion: false,
+      setPresentacion: (presentacion) => set({ presentacion }),
       tipo: '1d',
       e1d: estadoPorDefecto(general),
       armadura: estadoArmaduraPorDefecto(),

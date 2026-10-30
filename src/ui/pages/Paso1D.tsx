@@ -6,6 +6,7 @@ import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum, texVector } from '../components/Tex';
 import { fmtNum, sub } from '../format';
+import { useAvanzar } from '../presentacion';
 import { useResultado1D } from '../resultado';
 import { SinResultado } from './Resultados';
 
@@ -71,6 +72,12 @@ export function Paso1D() {
   const r = useResultado1D();
   const [paso, setPaso] = useState<PasoId>('problema');
   const [elem, setElem] = useState(0);
+  useAvanzar((d) =>
+    setPaso((p) => {
+      const i = PASOS.findIndex((x) => x.id === p);
+      return PASOS[Math.min(PASOS.length - 1, Math.max(0, i + d))].id;
+    }),
+  );
   if (!r.ok) return <SinResultado error={r.error} />;
   const res = r.res;
   const ne = res.sol.elements.length;

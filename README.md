@@ -13,7 +13,7 @@ Materia *Diseño por Elementos Finitos* — Universidad Distrital, 2026-1.
 | 2 | Plantillas de ingeniería (barra, calor, aleta, cable, Darcy, tubería, electrostática, armadura, resortes, EDO general) | ✅ |
 | 3 | Interfaz móvil (Inicio, Configuración, Resultados, Paso a paso, Armadura 2D), tema oscuro y claro | ✅ |
 | 4 | Resultados avanzados: matrices K, F y Ke, estructura tipo spy, error nodal y estudio de convergencia log-log | ✅ |
-| 5 | Exportación (CSV, PDF, MATLAB) y modo presentación | ⏳ |
+| 5 | Exportación (CSV, reporte PDF, MATLAB .m y Python .py verificados en Octave y NumPy) y modo presentación | ✅ |
 | 6 | Versión de escritorio, README y GitHub Pages | ⏳ |
 
 ## Abrir la app

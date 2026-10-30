@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Encabezado, NavInferior } from './ui/components/Shell';
 import { useTema } from './ui/components/Grafica';
 import { Armadura } from './ui/pages/Armadura';
@@ -6,7 +6,9 @@ import { Config } from './ui/pages/Config';
 import { Inicio } from './ui/pages/Inicio';
 import { Paso1D } from './ui/pages/Paso1D';
 import { PasoArmadura, PasoResortes } from './ui/pages/PasoDirecto';
+import { Reporte } from './ui/pages/Reporte';
 import { Resultados } from './ui/pages/Resultados';
+import { usePresentacion } from './ui/presentacion';
 import { useRuta } from './ui/router';
 import { useApp } from './ui/store';
 
@@ -23,11 +25,24 @@ const TITULOS = {
   resultados: 'Resultados',
   paso: 'Paso a paso',
   armadura: 'Armadura 2D',
+  reporte: 'Reporte',
 } as const;
 
 export default function App() {
   const ruta = useRuta();
   const tema = useTema();
+  const presentacion = usePresentacion();
+  const [ayuda, setAyuda] = useState(false);
+  const [prevPres, setPrevPres] = useState(presentacion);
+  if (prevPres !== presentacion) {
+    setPrevPres(presentacion);
+    setAyuda(presentacion);
+  }
+  useEffect(() => {
+    if (!ayuda) return;
+    const id = setTimeout(() => setAyuda(false), 5000);
+    return () => clearTimeout(id);
+  }, [ayuda]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = tema;
@@ -54,8 +69,14 @@ export default function App() {
         {ruta === 'resultados' && <Resultados />}
         {ruta === 'paso' && <Paso />}
         {ruta === 'armadura' && <Armadura />}
+        {ruta === 'reporte' && <Reporte />}
       </div>
       <NavInferior ruta={ruta} />
+      {ayuda && (
+        <div role="status" className="no-print fixed inset-x-0 bottom-20 z-[65] mx-auto w-fit max-w-[92vw] rounded-xl border border-accent/50 bg-s3 px-4 py-2.5 text-center font-mono text-xs text-ink shadow-card">
+          Modo presentación · ← → avanzan en el paso a paso y en las pestañas · 1–5 cambian de sección · Esc para salir
+        </div>
+      )}
     </>
   );
 }

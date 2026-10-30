@@ -50,7 +50,8 @@
 }
 
 /* ── Sahara Warm Minimalism (claro) ───────────────────────── */
-:root[data-theme='light'] {
+:root[data-theme='light'],
+[data-theme='light'] {
   color-scheme: light;
   --bg: #faf5ee;
   --s1: #f4ede4;
@@ -193,9 +194,44 @@
   }
 }
 
+/* Modo presentación: todo más grande (Tailwind usa rem) */
+:root[data-presentacion='1'] {
+  font-size: 20px;
+}
+
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+
 @media print {
   .no-print {
     display: none !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+    font-size: 11px;
+  }
+  .reporte {
+    padding: 0 !important;
+    max-width: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .reporte section,
+  .reporte figure,
+  .reporte table {
+    break-inside: avoid;
+  }
+  .reporte h2 {
+    break-after: avoid;
+  }
+  .reporte .salto {
+    break-before: page;
+  }
+  .reporte .scroll-x {
+    overflow: visible !important;
   }
 }
 

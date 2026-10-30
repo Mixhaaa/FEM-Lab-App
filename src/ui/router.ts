@@ -1,8 +1,8 @@
 /** Enrutamiento mínimo por hash (funciona en GitHub Pages sin configuración). */
 import { useSyncExternalStore } from 'react';
 
-export type Ruta = 'inicio' | 'config' | 'resultados' | 'paso' | 'armadura';
-export const RUTAS: Ruta[] = ['inicio', 'config', 'resultados', 'paso', 'armadura'];
+export type Ruta = 'inicio' | 'config' | 'resultados' | 'paso' | 'armadura' | 'reporte';
+export const RUTAS: Ruta[] = ['inicio', 'config', 'resultados', 'paso', 'armadura', 'reporte'];
 
 function leer(): Ruta {
   const h = window.location.hash.replace(/^#\/?/, '').split('?')[0] as Ruta;

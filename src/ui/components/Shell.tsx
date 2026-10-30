@@ -14,9 +14,11 @@ const NAV: { ruta: Ruta; texto: string; icon: string }[] = [
 
 export function Encabezado() {
   const setTema = useApp((s) => s.setTema);
+  const presentacion = useApp((s) => s.presentacion);
+  const setPresentacion = useApp((s) => s.setPresentacion);
   const efectivo = useTema();
   return (
-    <header className="pt-safe fixed top-0 z-50 w-full border-b border-line bg-bg/90 shadow-[0_4px_20px_rgb(0_0_0/0.25)] backdrop-blur-xl">
+    <header className="no-print pt-safe fixed top-0 z-50 w-full border-b border-line bg-bg/90 shadow-[0_4px_20px_rgb(0_0_0/0.25)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
         <button type="button" onClick={() => ir('inicio')} className="flex min-w-0 items-center gap-2.5 text-left" aria-label="FEM Lab, ir al inicio">
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-9 w-9 shrink-0 drop-shadow-[0_2px_4px_rgb(224_109_50/0.3)]" />
@@ -34,6 +36,12 @@ export function Encabezado() {
             <span className="font-mono text-[11px] font-bold tracking-tight text-accent-soft">K·u=F</span>
           </div>
           <IconBoton
+            icon={presentacion ? 'close_fullscreen' : 'slideshow'}
+            label={presentacion ? 'Salir del modo presentación' : 'Modo presentación'}
+            activo={presentacion}
+            onClick={() => setPresentacion(!presentacion)}
+          />
+          <IconBoton
             icon={efectivo === 'dark' ? 'light_mode' : 'dark_mode'}
             label={efectivo === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
             onClick={() => setTema(efectivo === 'dark' ? 'claro' : 'oscuro')}
@@ -46,7 +54,7 @@ export function Encabezado() {
 
 export function NavInferior({ ruta }: { ruta: Ruta }) {
   return (
-    <nav aria-label="Secciones" className="pb-safe fixed bottom-0 z-50 w-full border-t border-line bg-bg/95 shadow-[0_-4px_20px_rgb(0_0_0/0.3)] backdrop-blur-xl">
+    <nav aria-label="Secciones" className="no-print pb-safe fixed bottom-0 z-50 w-full border-t border-line bg-bg/95 shadow-[0_-4px_20px_rgb(0_0_0/0.3)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-3xl items-center justify-around px-1">
         {NAV.map((n) => {
           const act = n.ruta === ruta;

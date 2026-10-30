@@ -5,6 +5,7 @@ import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum } from '../components/Tex';
 import { fmtNum, sub } from '../format';
+import { useAvanzar } from '../presentacion';
 import { useResultadoArmadura, useResultadoResortes } from '../resultado';
 import { SinResultado } from './Resultados';
 
@@ -59,6 +60,12 @@ export function PasoArmadura() {
   const r = useResultadoArmadura();
   const [paso, setPaso] = useState<PasoId>('geometria');
   const [barra, setBarra] = useState(0);
+  useAvanzar((d) =>
+    setPaso((p) => {
+      const i = PASOS.findIndex((x) => x.id === p);
+      return PASOS[Math.min(PASOS.length - 1, Math.max(0, i + d))].id;
+    }),
+  );
   if (!r.ok) return <SinResultado error={r.error} />;
   const { sol, estado: e, unidades: un } = r.res;
   const b = sol.bars[Math.min(barra, sol.bars.length - 1)];
@@ -153,6 +160,12 @@ export function PasoResortes() {
   const r = useResultadoResortes();
   const [paso, setPaso] = useState<PasoId>('geometria');
   const [res, setRes] = useState(0);
+  useAvanzar((d) =>
+    setPaso((p) => {
+      const i = PASOS.findIndex((x) => x.id === p);
+      return PASOS[Math.min(PASOS.length - 1, Math.max(0, i + d))].id;
+    }),
+  );
   if (!r.ok) return <SinResultado error={r.error} />;
   const { sol, estado: e, unidades: un } = r.res;
   const sp = sol.springs[Math.min(res, sol.springs.length - 1)];

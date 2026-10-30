@@ -11,6 +11,9 @@ import { useApp } from '../store';
 import { ResultadosResortes } from './ResultadosResortes';
 import { PestanaConvergencia } from './Convergencia';
 import { PanelMatrices } from '../components/PanelMatrices';
+import { PanelExportar } from '../components/PanelExportar';
+import { archivos1D } from '../exportables';
+import { useAvanzar } from '../presentacion';
 
 export function Resultados() {
   const tipo = useApp((s) => s.tipo);
@@ -45,9 +48,13 @@ export function SinResultado({ error }: { error: Error }) {
 
 type Pestana = 'solucion' | 'matrices' | 'derivadas' | 'convergencia';
 
+const PESTANAS: Pestana[] = ['solucion', 'matrices', 'derivadas', 'convergencia'];
+
 function Resultados1D() {
   const r = useResultado1D();
+  const ejemplo = useApp((s) => s.ejemplo['1d']);
   const [tab, setTab] = useState<Pestana>('solucion');
+  useAvanzar((d) => setTab((t) => PESTANAS[Math.min(PESTANAS.length - 1, Math.max(0, PESTANAS.indexOf(t) + d))]));
   if (!r.ok) return <SinResultado error={r.error} />;
   const res = r.res;
   return (
@@ -78,6 +85,7 @@ function Resultados1D() {
       {tab === 'matrices' && <PestanaMatrices res={res} />}
       {tab === 'derivadas' && <PestanaDerivadas res={res} />}
       {tab === 'convergencia' && <PestanaConvergencia res={res} />}
+      <PanelExportar archivos={archivos1D(res, ejemplo)} />
     </Pagina>
   );
 }

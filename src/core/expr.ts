@@ -28,6 +28,11 @@ function normalize(src: string): string {
   return s;
 }
 
+/** Árbol de una expresión sin validar sus símbolos (lo usa la exportación de código). */
+export function parseExpr(src: string): MathNode {
+  return math.parse(normalize(String(src)));
+}
+
 /**
  * Compila una expresión en x. Lanza FemError con un mensaje claro si no es válida.
  * @param nombre nombre del campo para el mensaje (ej. "k(x)").

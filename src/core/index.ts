@@ -1,7 +1,7 @@
 /** Núcleo de cálculo de FEM Lab (TypeScript puro, sin dependencias de la interfaz). */
 export * from './types';
 export { FemError } from './errors';
-export { compileExpr, evalChecked, parseNumber, fmt, derivativeExpr } from './expr';
+export { compileExpr, evalChecked, parseNumber, fmt, derivativeExpr, parseExpr } from './expr';
 export type { CompiledExpr } from './expr';
 export { gaussRule, integrate } from './quadrature';
 export { buildMesh, uniformNodes, geometricNodes, MAX_ELEMENTOS } from './mesh';

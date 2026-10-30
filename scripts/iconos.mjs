@@ -6,7 +6,8 @@
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const EXTRA = ['light_mode', 'dark_mode', 'grid_4x4', 'functions', 'assignment_turned_in', 'warning', 'info', 'check_circle', 'error', 'expand_more'];
+// Íconos que se eligen con una condición (icon={a ? 'x' : 'y'}) y el regex no detecta
+const EXTRA = ['slideshow', 'close_fullscreen', 'light_mode', 'dark_mode', 'grid_4x4', 'functions', 'assignment_turned_in', 'warning', 'info', 'check_circle', 'error', 'expand_more'];
 const nombres = new Set(EXTRA);
 const re = /(?:\bname|\bicono?|\bi)\s*[=:]\s*\{?\s*['"]([a-z][a-z0-9_]*)['"]/g;
 function recorrer(dir) {

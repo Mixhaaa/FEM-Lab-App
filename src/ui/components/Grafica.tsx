@@ -10,8 +10,8 @@ export function cargarPlotly(): Promise<Plotly> {
   return cargando;
 }
 
-export function colores() {
-  const cs = getComputedStyle(document.documentElement);
+export function colores(el?: Element | null) {
+  const cs = getComputedStyle(el ?? document.documentElement);
   const v = (n: string) => cs.getPropertyValue(n).trim();
   return {
     ink: v('--ink'),
@@ -48,20 +48,21 @@ export function useTema(): 'dark' | 'light' {
 }
 
 export function layoutBase(c: Colores, extra: Record<string, unknown> = {}) {
+  const grande = document.documentElement.dataset.presentacion === '1';
+  const fs = grande ? 15 : 11;
   const eje = {
     gridcolor: c.grid,
     zerolinecolor: c.line,
     linecolor: c.line,
-    tickfont: { color: c.ink2, size: 11 },
-    titlefont: { color: c.ink2, size: 12 },
-    title: { font: { color: c.ink2, size: 12 } },
+    tickfont: { color: c.ink2, size: fs },
+    title: { font: { color: c.ink2, size: fs + 1 } },
     automargin: true,
     exponentformat: 'power',
   };
   return {
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
-    font: { family: 'JetBrains Mono Variable, JetBrains Mono, monospace', color: c.ink2, size: 11 },
+    font: { family: 'JetBrains Mono Variable, JetBrains Mono, monospace', color: c.ink2, size: fs },
     margin: { l: 52, r: 14, t: 10, b: 44 },
     showlegend: false,
     hovermode: 'closest',
@@ -77,6 +78,7 @@ export function Grafica({
   data,
   layout,
   alto = 260,
+  ancho,
   onPunto,
   etiqueta,
 }: {
@@ -84,11 +86,14 @@ export function Grafica({
   data: (c: Colores) => unknown[];
   layout?: (c: Colores) => Record<string, unknown>;
   alto?: number;
+  /** Ancho fijo en px (por defecto ocupa el ancho del contenedor). */
+  ancho?: number;
   onPunto?: (p: { curva: number; indice: number; x: number; y: number }) => void;
   etiqueta: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const tema = useTema();
+  const presentacion = useApp((s) => s.presentacion);
   const [estado, setEstado] = useState<'cargando' | 'ok' | 'error'>('cargando');
   const onPuntoRef = useRef(onPunto);
   useEffect(() => {
@@ -100,7 +105,7 @@ export function Grafica({
     cargarPlotly()
       .then(async (Plotly) => {
         if (!vivo || !ref.current) return;
-        const c = colores();
+        const c = colores(ref.current);
         const el = (await Plotly.react(ref.current, data(c), layoutBase(c, layout?.(c) ?? {}), {
           displaylogo: false,
           responsive: true,
@@ -118,7 +123,7 @@ export function Grafica({
     return () => {
       vivo = false;
     };
-  }, [data, layout, tema]);
+  }, [data, layout, tema, presentacion]);
 
   useEffect(() => {
     const el = ref.current;
@@ -128,7 +133,7 @@ export function Grafica({
   }, []);
 
   return (
-    <div className="relative w-full" style={{ height: alto }} role="img" aria-label={etiqueta}>
+    <div className="relative w-full" style={{ height: alto, ...(ancho ? { width: ancho, minWidth: ancho } : {}) }} role="img" aria-label={etiqueta}>
       <div ref={ref} className="h-full w-full" />
       {estado !== 'ok' && (
         <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-ink-3">

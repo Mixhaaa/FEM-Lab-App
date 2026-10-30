@@ -1,6 +1,9 @@
 import { Badge, Card, CardHeader, Icon, Kpi, Tabla } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { PanelMatrices } from '../components/PanelMatrices';
+import { PanelExportar } from '../components/PanelExportar';
+import { archivosResortes } from '../exportables';
+import { useApp } from '../store';
 import { Pagina } from '../components/Shell';
 import { fmtNum, snap, sub } from '../format';
 import { useResultadoResortes } from '../resultado';
@@ -8,6 +11,7 @@ import { SinResultado } from './Resultados';
 
 export function ResultadosResortes() {
   const r = useResultadoResortes();
+  const ejemplo = useApp((s) => s.ejemplo.resortes);
   if (!r.ok) return <SinResultado error={r.error} />;
   const { sol, unidades: un, estado: e } = r.res;
   const escalaF = Math.max(...sol.springs.map((s) => Math.abs(s.force)), 1e-300);
@@ -98,6 +102,7 @@ export function ResultadosResortes() {
           right={<Badge tono={Math.abs(sol.equilibrium) <= 1e-8 * escalaF ? 'ok' : 'danger'}>{fmtNum(snap(sol.equilibrium, escalaF), 3)}</Badge>}
         />
       </Card>
+      <PanelExportar archivos={archivosResortes(r.res, ejemplo)} />
     </Pagina>
   );
 }

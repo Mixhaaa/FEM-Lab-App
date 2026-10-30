@@ -4,6 +4,8 @@ import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, type EstadoArmadura, type TipoApoy
 import { Aviso, Badge, Boton, Campo, Card, CardHeader, cx, Icon, Kpi, Segmentos, Seccion, Selector, Tabla } from '../components/base';
 import { PlanoArmadura, type Seleccion } from '../components/PlanoArmadura';
 import { PanelMatrices } from '../components/PanelMatrices';
+import { PanelExportar } from '../components/PanelExportar';
+import { archivosArmadura } from '../exportables';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { conPrefijo, fmtNum, snap, sub } from '../format';
 import { useResultadoArmadura } from '../resultado';
@@ -379,6 +381,8 @@ export function Armadura() {
           />
         </Seccion>
       )}
+
+      {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
 
       <div className="flex flex-col gap-2.5">
         <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
