@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FEM Lab">
+  <title>FEM Lab</title>
+  <defs>
+    <linearGradient id="fl-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B231F"/>
+      <stop offset="1" stop-color="#181412"/>
+    </linearGradient>
+    <linearGradient id="fl-hat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F08244" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#E06D32" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="url(#fl-bg)" stroke="#E06D32" stroke-opacity="0.45" stroke-width="1.5"/>
+  <!-- Aproximación lineal por tramos de una curva -->
+  <polyline points="9,40 20,31 31,27 42,30 55,22" fill="none" stroke="#B8A89A" stroke-opacity="0.55" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="2.5 2.5"/>
+  <!-- Función de forma "sombrero" N_i -->
+  <path d="M20 47 L31 14 L42 47 Z" fill="url(#fl-hat)"/>
+  <polyline points="20,47 31,14 42,47" fill="none" stroke="#E06D32" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Malla 1D: elementos y nodos -->
+  <line x1="9" y1="47" x2="55" y2="47" stroke="#FAF4EC" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
+  <g fill="#181412" stroke="#F08244" stroke-width="1.8">
+    <circle cx="9" cy="47" r="3"/>
+    <circle cx="20" cy="47" r="3"/>
+    <circle cx="42" cy="47" r="3"/>
+    <circle cx="55" cy="47" r="3"/>
+  </g>
+  <circle cx="31" cy="47" r="3.6" fill="#F59E0B" stroke="#FFF4E0" stroke-width="1.4"/>
+  <circle cx="31" cy="14" r="3.2" fill="#F59E0B" stroke="#FFF4E0" stroke-width="1.2"/>
+</svg>
