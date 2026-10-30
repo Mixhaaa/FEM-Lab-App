@@ -18,7 +18,7 @@ Materia *Diseño por Elementos Finitos* — Universidad Distrital, 2026-1.
 
 ## Abrir la app
 
-En línea: **https://mixhaaa.github.io/fem-lab-app/** (se publica sola con cada cambio en `main`).
+En línea: **https://mixhaaa.github.io/FEM-Lab-App/** (se publica sola con cada cambio en `main`).
 
 En tu computador (requiere Node.js 20 o superior):
 
