@@ -1,111 +1,209 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import 'tailwindcss';
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+@import 'katex/dist/katex.min.css';
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/material-symbols.woff2') format('woff2');
+}
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* El tema se elige con data-theme en <html>; por defecto, oscuro (Sahara Nocturne). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+/* ── Sahara Nocturne (oscuro) ─────────────────────────────── */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #161311;
+  --s1: #1f1a17;
+  --s2: #231e1a;
+  --s3: #2e2724;
+  --s4: #3a312c;
+  --inset: #1a1613;
+  --line: #382f29;
+  --line-strong: #574239;
+  --ink: #faf4ec;
+  --ink-2: #c9b8aa;
+  --ink-3: #8e7f72;
+  --accent: #e06d32;
+  --accent-hover: #f08244;
+  --accent-soft: #ffb695;
+  --accent-bg: rgb(224 109 50 / 0.16);
+  --on-accent: #1a0e07;
+  --amber: #f59e0b;
+  --amber-soft: #ffb95f;
+  --bronze: #d98845;
+  --rose: #e8a0a0;
+  --compress: #8fb3d9;
+  --ok: #9ccc8a;
+  --danger: #ffb4ab;
+  --danger-bg: rgb(147 0 10 / 0.35);
+  --plot-grid: #2f2723;
+  --plot-exact: #fff4ec;
+  --shadow: 0 4px 20px -2px rgb(10 8 7 / 0.65);
+  --glow: 0 0 12px rgb(224 109 50 / 0.35);
+}
+
+/* ── Sahara Warm Minimalism (claro) ───────────────────────── */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #faf5ee;
+  --s1: #f4ede4;
+  --s2: #fffcf8;
+  --s3: #f0e7dc;
+  --s4: #e6dacb;
+  --inset: #fffaf4;
+  --line: #e4d9cd;
+  --line-strong: #d1c3b4;
+  --ink: #2b211c;
+  --ink-2: #64544a;
+  --ink-3: #8d7c70;
+  --accent: #c2652a;
+  --accent-hover: #a9531d;
+  --accent-soft: #9a4a17;
+  --accent-bg: rgb(194 101 42 / 0.12);
+  --on-accent: #ffffff;
+  --amber: #b7791f;
+  --amber-soft: #9a6412;
+  --bronze: #a8692f;
+  --rose: #8c3c3c;
+  --compress: #3f6c99;
+  --ok: #3f7a31;
+  --danger: #a1231b;
+  --danger-bg: rgb(161 35 27 / 0.1);
+  --plot-grid: #ece2d6;
+  --plot-exact: #2b211c;
+  --shadow: 0 2px 16px rgb(58 48 42 / 0.06);
+  --glow: 0 0 10px rgb(194 101 42 / 0.25);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-s1: var(--s1);
+  --color-s2: var(--s2);
+  --color-s3: var(--s3);
+  --color-s4: var(--s4);
+  --color-inset: var(--inset);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-bg: var(--accent-bg);
+  --color-on-accent: var(--on-accent);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-bronze: var(--bronze);
+  --color-rose: var(--rose);
+  --color-compress: var(--compress);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --font-heading: 'Space Grotesk Variable', 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  --shadow-card: var(--shadow);
+  --shadow-glow: var(--glow);
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .font-mono,
+  code,
+  kbd,
+  pre,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 2px;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    user-select: none;
   }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  /* Barras de desplazamiento finas y visibles (las tablas de matrices las necesitan) */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .katex {
+    font-size: 1.05em;
+  }
+  .katex-display {
+    margin: 0.4em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.2em 0;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+@media print {
+  .no-print {
+    display: none !important;
   }
 }
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

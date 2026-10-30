@@ -202,8 +202,22 @@ export function resolverArmadura(e: EstadoArmadura): ResultadoArmadura {
       unidad: un.long,
       detalle: `en el nodo ${kU + 1}`,
     },
-    { id: 'Nt', nombre: 'Máxima tracción', simbolo: 'N_t', valor: Math.max(tr.N, 0), unidad: un.fuerza, detalle: `barra ${tr.id}` },
-    { id: 'Nc', nombre: 'Máxima compresión', simbolo: 'N_c', valor: Math.min(co.N, 0), unidad: un.fuerza, detalle: `barra ${co.id}` },
+    {
+      id: 'Nt',
+      nombre: 'Máxima tracción',
+      simbolo: 'N_t',
+      valor: Math.max(tr.N, 0),
+      unidad: un.fuerza,
+      detalle: tr.estado === 'tracción' ? `barra ${tr.id}` : 'ninguna barra en tracción',
+    },
+    {
+      id: 'Nc',
+      nombre: 'Máxima compresión',
+      simbolo: 'N_c',
+      valor: Math.min(co.N, 0),
+      unidad: un.fuerza,
+      detalle: co.estado === 'compresión' ? `barra ${co.id}` : 'ninguna barra en compresión',
+    },
     { id: 'smax', nombre: 'Esfuerzo máximo', simbolo: 'σ_max', valor: sg.sigma, unidad: un.esfuerzo, detalle: `barra ${sg.id}` },
   ];
   return { estado: e, sol, unidades: un, kpis };
