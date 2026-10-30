@@ -9,6 +9,8 @@ import { useResultado1D } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
 import { ResultadosResortes } from './ResultadosResortes';
+import { PestanaConvergencia } from './Convergencia';
+import { PanelMatrices } from '../components/PanelMatrices';
 
 export function Resultados() {
   const tipo = useApp((s) => s.tipo);
@@ -41,7 +43,7 @@ export function SinResultado({ error }: { error: Error }) {
   );
 }
 
-type Pestana = 'solucion' | 'derivadas';
+type Pestana = 'solucion' | 'matrices' | 'derivadas' | 'convergencia';
 
 function Resultados1D() {
   const r = useResultado1D();
@@ -57,7 +59,9 @@ function Resultados1D() {
           onChange={setTab}
           opciones={[
             { valor: 'solucion', texto: `Solución ${res.plantilla.incognita.simbolo}(x)`, icon: 'insights' },
+            { valor: 'matrices', texto: 'Matrices [K] y {F}', icon: 'grid_4x4' },
             { valor: 'derivadas', texto: 'Derivadas y reacciones', icon: 'compare_arrows' },
+            { valor: 'convergencia', texto: 'Error y convergencia', icon: 'query_stats' },
           ]}
         />
       </div>
@@ -70,7 +74,10 @@ function Resultados1D() {
           </ul>
         </Aviso>
       )}
-      {tab === 'solucion' ? <PestanaSolucion res={res} /> : <PestanaDerivadas res={res} />}
+      {tab === 'solucion' && <PestanaSolucion res={res} />}
+      {tab === 'matrices' && <PestanaMatrices res={res} />}
+      {tab === 'derivadas' && <PestanaDerivadas res={res} />}
+      {tab === 'convergencia' && <PestanaConvergencia res={res} />}
     </Pagina>
   );
 }
@@ -445,5 +452,32 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
         </div>
       </Card>
     </>
+  );
+}
+
+function PestanaMatrices({ res }: { res: Resultado1D }) {
+  const sol = res.sol;
+  const n = sol.mesh.nodes.length;
+  const todos = Array.from({ length: n }, (_, i) => i + 1);
+  const resuelto =
+    sol.bcMethod === 'eliminacion'
+      ? `Sistema reducido por eliminación: se quitaron las filas y columnas de los nodos con Dirichlet (${sol.system.K.length}×${sol.system.K.length}).`
+      : `Sistema penalizado: β = ${fmtNum(sol.beta ?? 0, 3)} sumado en la diagonal de los nodos con Dirichlet.`;
+  return (
+    <PanelMatrices
+      sistemas={[
+        { id: 'ensamblada', nombre: 'Ensamblada', descripcion: 'Suma de las matrices elementales, antes de cargas puntuales y fronteras.', K: sol.Kassembled, F: sol.Fassembled, etiquetas: todos },
+        { id: 'naturales', nombre: 'Con fronteras naturales', descripcion: 'Con cargas puntuales y condiciones Neumann y Robin (antes de imponer Dirichlet).', K: sol.K, F: sol.F, etiquetas: todos },
+        { id: 'resuelto', nombre: 'Sistema resuelto', descripcion: resuelto, K: sol.system.K, F: sol.system.F, etiquetas: sol.system.free.map((i) => i + 1) },
+      ]}
+      u={sol.u}
+      etiquetasU={todos}
+      elementos={sol.elements.map((el) => ({
+        nombre: `e${sub(el.id)}: nodos ${el.nodes[0] + 1}–${el.nodes[1] + 1}, h = ${fmtNum(el.h)}`,
+        Ke: el.Ke,
+        Fe: el.Fe,
+        gdl: [el.nodes[0] + 1, el.nodes[1] + 1],
+      }))}
+    />
   );
 }

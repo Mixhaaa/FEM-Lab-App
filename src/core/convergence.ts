@@ -47,6 +47,15 @@ export function fitSlope(h: number[], e: number[]): number {
   return den === 0 ? NaN : num / den;
 }
 
+/** Orden local entre mallas consecutivas: log(e_{i−1}/e_i) / log(h_{i−1}/h_i). */
+export function ordenesLocales(h: number[], e: number[]): number[] {
+  return h.map((hi, i) => {
+    if (i === 0) return NaN;
+    const r = Math.log(e[i - 1] / e[i]) / Math.log(h[i - 1] / hi);
+    return Number.isFinite(r) ? r : NaN;
+  });
+}
+
 function meshFor(spec: MeshSpec, ne: number): MeshSpec {
   if (spec.type === 'geometrica') return { ...spec, ne };
   return { type: 'uniforme', ne };

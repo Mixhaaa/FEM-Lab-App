@@ -12,7 +12,7 @@ Materia *Diseño por Elementos Finitos* — Universidad Distrital, 2026-1.
 | 1 | Núcleo de cálculo 1D, armadura 2D, resortes y pruebas | ✅ |
 | 2 | Plantillas de ingeniería (barra, calor, aleta, cable, Darcy, tubería, electrostática, armadura, resortes, EDO general) | ✅ |
 | 3 | Interfaz móvil (Inicio, Configuración, Resultados, Paso a paso, Armadura 2D), tema oscuro y claro | ✅ |
-| 4 | Resultados avanzados: matrices, spy, convergencia | ⏳ |
+| 4 | Resultados avanzados: matrices K, F y Ke, estructura tipo spy, error nodal y estudio de convergencia log-log | ✅ |
 | 5 | Exportación (CSV, PDF, MATLAB) y modo presentación | ⏳ |
 | 6 | Versión de escritorio, README y GitHub Pages | ⏳ |
 

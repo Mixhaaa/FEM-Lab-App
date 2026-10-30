@@ -3,6 +3,7 @@ import { compileExpr } from '../../core';
 import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, type EstadoArmadura, type TipoApoyo } from '../../templates';
 import { Aviso, Badge, Boton, Campo, Card, CardHeader, cx, Icon, Kpi, Segmentos, Seccion, Selector, Tabla } from '../components/base';
 import { PlanoArmadura, type Seleccion } from '../components/PlanoArmadura';
+import { PanelMatrices } from '../components/PanelMatrices';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { conPrefijo, fmtNum, snap, sub } from '../format';
 import { useResultadoArmadura } from '../resultado';
@@ -60,6 +61,7 @@ export function Armadura() {
   const escalaF = sol ? Math.max(...sol.bars.map((b) => Math.abs(b.N)), ...sol.F.map(Math.abs), 1e-300) : 1;
   const escalaU = sol ? Math.max(...sol.u.map(Math.abs), 1e-300) : 1;
   const escalaS = sol ? Math.max(...sol.bars.map((b) => Math.abs(b.sigma)), 1e-300) : 1;
+  const etiquetasGdl = e.nodos.flatMap((_, i) => [`${i + 1}x`, `${i + 1}y`]);
 
   const quitarNodo = (i: number) =>
     upd((c) => {
@@ -355,6 +357,27 @@ export function Armadura() {
             </div>
           </Card>
         </>
+      )}
+
+      {sol && (
+        <Seccion icon="grid_4x4" titulo="Matrices [K] y {F}" subtitulo="Estructura tipo spy, matriz global y matrices de cada barra" abierta={false} resumen={`${sol.K.length}×${sol.K.length}`}>
+          <PanelMatrices
+            sistemas={[
+              { id: 'global', nombre: 'K global', descripcion: `${sol.K.length} grados de libertad (2 por nodo), antes de imponer los apoyos.`, K: sol.K, F: sol.F, etiquetas: etiquetasGdl },
+              {
+                id: 'resuelto',
+                nombre: 'Sistema resuelto',
+                descripcion: e.metodo === 'eliminacion' ? 'Sin las filas y columnas de los grados de libertad restringidos.' : 'Con la penalización β en la diagonal de los apoyos.',
+                K: sol.system.K,
+                F: sol.system.F,
+                etiquetas: sol.system.free.map((d) => etiquetasGdl[d]),
+              },
+            ]}
+            u={sol.u}
+            etiquetasU={etiquetasGdl}
+            elementos={sol.bars.map((b) => ({ nombre: `Barra ${b.id}: nodos ${b.i + 1}–${b.j + 1}`, Ke: b.ke, gdl: b.dofs.map((d) => etiquetasGdl[d]) }))}
+          />
+        </Seccion>
       )}
 
       <div className="flex flex-col gap-2.5">

@@ -1,5 +1,6 @@
 import { Badge, Card, CardHeader, Icon, Kpi, Tabla } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
+import { PanelMatrices } from '../components/PanelMatrices';
 import { Pagina } from '../components/Shell';
 import { fmtNum, snap, sub } from '../format';
 import { useResultadoResortes } from '../resultado';
@@ -79,6 +80,15 @@ export function ResultadosResortes() {
           ])}
         />
       </Card>
+
+      <PanelMatrices
+        sistemas={[
+          { id: 'global', nombre: 'K global', descripcion: 'Antes de imponer los apoyos.', K: sol.K, F: sol.F },
+          { id: 'resuelto', nombre: 'Sistema resuelto', descripcion: 'Después de imponer los apoyos.', K: sol.system.K, F: sol.system.F, etiquetas: sol.system.free.map((i) => i + 1) },
+        ]}
+        u={sol.u}
+        elementos={sol.springs.map((sp) => ({ nombre: `Resorte ${sp.id}: nodos ${sp.i + 1}–${sp.j + 1}`, Ke: sp.ke, gdl: [sp.i + 1, sp.j + 1] }))}
+      />
 
       <Card className="flex flex-col gap-2 p-4">
         <CardHeader
