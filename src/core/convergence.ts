@@ -22,6 +22,11 @@ export interface ConvergenceResult {
   orden: { nodal: number; L2: number; H1: number };
   /** True si el error nodal es del orden del redondeo (nodos exactos). */
   superconvergenciaNodal: boolean;
+  /**
+   * True si el MEF reproduce la solución exacta en toda la malla (por ejemplo, solución lineal por tramos):
+   * los errores son de redondeo y no tiene sentido hablar de orden.
+   */
+  solucionExacta: boolean;
   referencia: 'analitica' | 'malla-fina';
   refNe?: number;
 }
@@ -82,6 +87,8 @@ export function convergenceStudy(problem: Problem1D, neList: number[] = [2, 4, 8
 
   const exactCE = hasExact ? compileExpr(problem.exact!, 'La solución analítica u(x)') : undefined;
   const rows: ConvergenceRow[] = [];
+  let uScale = 0;
+  let L = 0;
   for (const ne of neList) {
     const sol = solve1D({ ...problem, exact: undefined, mesh: meshFor(problem.mesh, ne) });
     const nodes = sol.mesh.nodes;
@@ -91,20 +98,26 @@ export function convergenceStudy(problem: Problem1D, neList: number[] = [2, 4, 8
       ? computeError(problem.exact!, (x) => evalChecked(exactCE, x, 'u(x)'), nodes, sol.u)
       : computeErrorFns(refFn!, refD!, nodes, sol.u);
     rows.push({ ne, h: hmax, maxNodal: err.maxNodal, L2: err.L2, H1semi: err.H1semi });
+    uScale = Math.max(uScale, ...sol.u.map(Math.abs));
+    L = nodes[nodes.length - 1] - nodes[0];
   }
 
+  const solucionExacta = rows.every((r) => r.L2 <= 1e-10 * Math.max(uScale, 1e-300) * Math.sqrt(L));
+
   // Nodos exactos: el error nodal es del orden del redondeo frente al error L²
-  const superconvergenciaNodal = rows.every((r) => r.maxNodal < 1e-6 * r.L2 || r.maxNodal < 1e-14);
+  const superconvergenciaNodal = !solucionExacta && rows.every((r) => r.maxNodal < 1e-6 * r.L2 || r.maxNodal < 1e-14);
 
   // Ajustar con los puntos de la zona asintótica (mitad más fina, mínimo 3)
   const k = Math.max(3, Math.ceil(rows.length / 2));
   const tail = rows.slice(-k);
   const h = tail.map((r) => r.h);
-  const orden = {
-    nodal: superconvergenciaNodal ? NaN : fitSlope(h, tail.map((r) => r.maxNodal)),
-    L2: fitSlope(h, tail.map((r) => r.L2)),
-    H1: fitSlope(h, tail.map((r) => r.H1semi)),
-  };
-  return { rows, orden, superconvergenciaNodal, referencia: hasExact ? 'analitica' : 'malla-fina', refNe };
+  const orden = solucionExacta
+    ? { nodal: NaN, L2: NaN, H1: NaN }
+    : {
+        nodal: superconvergenciaNodal ? NaN : fitSlope(h, tail.map((r) => r.maxNodal)),
+        L2: fitSlope(h, tail.map((r) => r.L2)),
+        H1: fitSlope(h, tail.map((r) => r.H1semi)),
+      };
+  return { rows, orden, superconvergenciaNodal, solucionExacta, referencia: hasExact ? 'analitica' : 'malla-fina', refNe };
 }
 

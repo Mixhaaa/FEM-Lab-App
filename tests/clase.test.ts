@@ -78,6 +78,12 @@ describe('Convergencia del ejemplo de clase', () => {
     expect(conv.orden.H1).toBeLessThan(1.05);
   });
 
+  it('detecta cuando el MEF es exacto en toda la malla (solución lineal por tramos)', () => {
+    const c = convergenceStudy({ ...ejemploClase(4), regions: [{ x0: 0, x1: 1, k: '2', b: '0', c: '0', f: '0' }], exact: '3*x', bcRight: { type: 'dirichlet', value: 3 } }, [2, 4, 8]);
+    expect(c.solucionExacta).toBe(true);
+    expect(c.orden.L2).toBeNaN();
+  });
+
   it('sin solución analítica usa una malla fina de referencia y obtiene el mismo orden', () => {
     const c2 = convergenceStudy(ejemploClase(4, { exact: undefined }), [4, 8, 16, 32, 64]);
     expect(c2.referencia).toBe('malla-fina');

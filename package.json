@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "demo:clase": "tsx scripts/demo-clase.ts"
+    "demo:clase": "tsx scripts/demo-clase.ts",
+    "demo:plantillas": "tsx scripts/demo-plantillas.ts"
   },
   "dependencies": {
     "mathjs": "^15.2.0",

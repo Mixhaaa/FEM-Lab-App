@@ -2,11 +2,13 @@
 export * from './types';
 export { FemError } from './errors';
 export { compileExpr, evalChecked, parseNumber, fmt, derivativeExpr } from './expr';
+export type { CompiledExpr } from './expr';
 export { gaussRule, integrate } from './quadrature';
 export { buildMesh, uniformNodes, geometricNodes, MAX_ELEMENTOS } from './mesh';
 export { computeElement } from './element1d';
 export { thomas, thomasMatrix, gaussSolve } from './solvers';
 export { solve1D, computeError } from './fem1d';
+export { analyticConstant } from './analytic';
 export { convergenceStudy, fitSlope } from './convergence';
 export type { ConvergenceResult, ConvergenceRow } from './convergence';
 export { solveTruss, trussBarStiffness } from './truss2d';

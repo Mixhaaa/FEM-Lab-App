@@ -1,32 +1,50 @@
-# React + TypeScript + Vite
+# FEM Lab
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación web para resolver problemas de ingeniería lineales con el **Método de Elementos Finitos** usando **elementos lineales**.
+Materia *Diseño por Elementos Finitos* — Universidad Distrital, 2026-1.
 
-Currently, two official plugins are available:
+> 🚧 En construcción. El README completo (explicación del método, capturas e instrucciones) llega al final del proyecto.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Estado
 
-## React Compiler
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Núcleo de cálculo 1D, armadura 2D, resortes y pruebas | ✅ |
+| 2 | Plantillas de ingeniería (barra, calor, aleta, cable, Darcy, tubería, electrostática, armadura, resortes, EDO general) | ✅ |
+| 3 | Interfaz móvil (Inicio, Configuración, Resultados, Paso a paso, Armadura 2D) | ⏳ |
+| 4 | Resultados avanzados: matrices, spy, convergencia | ⏳ |
+| 5 | Exportación (CSV, PDF, MATLAB) y modo presentación | ⏳ |
+| 6 | Versión de escritorio, README y GitHub Pages | ⏳ |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Verificar
 
-## Expanding the Oxlint configuration
+Requiere Node.js 20 o superior.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm test                       # pruebas del núcleo y de las plantillas
+npm run demo:clase             # ejemplo de clase con Ne = 3 (Mnod, Melem, Ke, Kglob, Vglob, u)
+npm run demo:clase -- 6        # el mismo ejemplo con otro número de elementos
+npm run demo:plantillas        # todos los ejemplos de las plantillas con sus resultados
+npm run demo:plantillas -- aleta
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Estructura
+
+```
+src/core/        Núcleo de cálculo (TypeScript puro, sin interfaz)
+src/templates/   Plantillas: variables físicas → k, b, c, f y resultados con unidades
+tests/           Pruebas con Vitest contra soluciones analíticas
+scripts/         Demostraciones en la terminal
+```
+
+## Convención de signos
+
+Problema modelo en [x0, xL]:  −(k u′)′ + b u′ + c u = f.
+Las fronteras usan la **normal exterior** n (n = −1 en x0, n = +1 en xL):
+
+- Dirichlet: u = ū
+- Neumann: k ∂u/∂n = q (q > 0 significa que *entra* al dominio: fuerza hacia +x, calor que entra, ...)
+- Robin: k ∂u/∂n + h u = g
+
+Las reacciones se reportan con la misma convención: R = k ∂u/∂n en el apoyo.

@@ -72,7 +72,7 @@ export function solve1D(problem: Problem1D): Solution1D {
     }
   }
   if (negC) warnings.push('c(x) es negativa en parte del dominio: el problema podría no tener solución única (posible resonancia).');
-  if (maxPe > 1) {
+  if (maxPe > 1 + 1e-9) {
     warnings.push(
       `El número de Péclet de malla |b|h/(2k) llega a ${fmt(maxPe, 3)} (> 1): la solución puede oscilar. Refina la malla.`,
     );
