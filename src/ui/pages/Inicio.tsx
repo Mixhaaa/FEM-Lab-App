@@ -62,7 +62,9 @@ export function Inicio() {
   const visibles = PLANTILLAS.filter((p) => filtro === 'todos' || p.categoria === filtro);
 
   return (
-    <Pagina>
+    <Pagina amplia>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-6">
+      <div className="flex flex-col gap-4">
       {/* Estado del banco de trabajo */}
       <div className="relative overflow-hidden rounded-xl border border-line bg-s2 p-4 shadow-card">
         <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-accent/10 blur-2xl" />
@@ -104,8 +106,9 @@ export function Inicio() {
         </p>
       </div>
 
+      </div>
       {/* Ejemplo de clase recomendado */}
-      <div className="relative overflow-hidden rounded-xl border border-accent/40 bg-gradient-to-br from-accent-bg via-s2 to-s1 p-4 shadow-card">
+      <div className="relative flex flex-col justify-center overflow-hidden rounded-xl border border-accent/40 bg-gradient-to-br from-accent-bg via-s2 to-s1 p-4 shadow-card lg:p-6">
         <div className="pointer-events-none absolute -bottom-6 -right-6 h-36 w-36 rounded-full bg-accent/20 blur-2xl" />
         <div className="relative mb-1 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
@@ -139,6 +142,8 @@ export function Inicio() {
         </div>
       </div>
 
+      </div>
+
       {/* Filtro de plantillas */}
       <div className="pt-1">
         <div className="mb-2 flex items-center justify-between">
@@ -164,7 +169,7 @@ export function Inicio() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {visibles.map((p) => (
           <article key={p.id} className="flex flex-col gap-2.5 rounded-xl border border-line bg-s2 p-4 shadow-card transition-colors hover:border-accent/60">
             <div className="flex items-start justify-between gap-2">
@@ -205,7 +210,7 @@ export function Inicio() {
           <Icon name="menu_book" className="text-[22px] text-accent-soft" />
           <h2 className="font-heading text-lg font-bold text-ink">Recursos didácticos</h2>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 lg:grid lg:grid-cols-3 lg:gap-3">
           {(
             [
               ['formulario', 'grid_4x4', 'Formulario de matrices elementales', 'Barra, elemento general, armadura, resortes y puntos de Gauss'],

@@ -68,10 +68,11 @@ export function PanelMatrices({
 
   return (
     <>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="grid_4x4" title="Matriz global" subtitle={s.descripcion} />
         {sistemas.length > 1 && <Selector value={s.id} onChange={setId} opciones={sistemas.map((x) => ({ valor: x.id, texto: x.nombre }))} />}
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-center">
           <div className="w-full max-w-[340px] rounded-xl border border-line bg-inset p-2">
             <Spy info={info} M={s.K} titulo={s.nombre} />
           </div>
@@ -101,6 +102,9 @@ export function PanelMatrices({
         <CardHeader icon="table_chart" title={`K (${s.nombre.toLowerCase()})`} subtitle={grande ? 'Se muestran las primeras 40 filas y columnas; la copia incluye la matriz completa.' : 'Valores con 5 cifras significativas.'} right={<BotonCopiar texto={matrizMatlab('Kglob', s.K)} etiqueta="MATLAB" />} />
         <MatrizTabla M={s.K} filas={s.etiquetas} columnas={s.etiquetas} max={40} />
       </Card>
+      </div>
+
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
 
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="view_column" title="Vectores F y u" subtitle="Lado derecho del sistema y solución nodal" />
@@ -132,6 +136,7 @@ export function PanelMatrices({
           </div>
         </Card>
       )}
+      </div>
     </>
   );
 }

@@ -1,12 +1,12 @@
 /** Gráfica con Plotly (cargado bajo demanda) adaptada al tema. */
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import type { PlotlyHTMLElement } from 'plotly.js-dist-min';
+import type { PlotlyHTMLElement } from 'plotly.js-basic-dist-min';
 import { useApp } from '../store';
 
-type Plotly = (typeof import('plotly.js-dist-min'))['default'];
+type Plotly = (typeof import('plotly.js-basic-dist-min'))['default'];
 let cargando: Promise<Plotly> | null = null;
 export function cargarPlotly(): Promise<Plotly> {
-  cargando ??= import('plotly.js-dist-min').then((m) => m.default);
+  cargando ??= import('plotly.js-basic-dist-min').then((m) => m.default);
   return cargando;
 }
 

@@ -58,9 +58,9 @@ function Resultados1D() {
   if (!r.ok) return <SinResultado error={r.error} />;
   const res = r.res;
   return (
-    <Pagina>
+    <Pagina amplia>
       <Banner res={res} />
-      <div className="sticky top-16 z-40 -mx-4 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
+      <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <Pildoras
           value={tab}
           onChange={setTab}
@@ -207,6 +207,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
 
   return (
     <>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div>
@@ -262,7 +263,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:content-start">
         {res.kpis.map((k, i) => {
           const p = conPrefijo(k.valor.valor, k.unidad);
           return (
@@ -290,6 +291,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
         )}
       </div>
 
+      </div>
       <Card className="flex flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
@@ -368,6 +370,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
 
   return (
     <>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle="Constante en cada elemento (derivada de una función lineal)" />
         <Selector value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
@@ -377,6 +380,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
       </Card>
 
       {res.reacciones.length > 0 && (
+        <div className="flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-3">
           {res.reacciones.map((rc) => {
             const p = conPrefijo(rc.valor, rc.unidad);
@@ -393,10 +397,12 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
               />
             );
           })}
+          </div>
+          <p className="text-[11px] text-ink-3">{t.reaccion.nombre}. Convención: R = k·∂u/∂n con la normal exterior.</p>
         </div>
       )}
-      {res.reacciones.length > 0 && <p className="-mt-2 text-[11px] text-ink-3">{t.reaccion.nombre}. Convención: R = k·∂u/∂n con la normal exterior.</p>}
 
+      </div>
       <Card className="flex flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
@@ -418,6 +424,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
         />
       </Card>
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader
           icon="balance"
@@ -459,6 +466,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
           <span className="text-right text-ink">{res.problem.gaussPoints}</span>
         </div>
       </Card>
+      </div>
     </>
   );
 }

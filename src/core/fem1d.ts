@@ -3,7 +3,7 @@
  * con elementos lineales, ensamblaje global, fronteras y posproceso.
  */
 import { computeElement } from './element1d';
-import { derivativeExpr, evalChecked, fmt } from './expr';
+import { evalChecked, fmt } from './expr';
 import { FemError } from './errors';
 import { buildMesh } from './mesh';
 import { integrate } from './quadrature';
@@ -286,20 +286,24 @@ function computeEnergy(
   return { aplica: true, U, W };
 }
 
-export function computeError(exactSrc: string, exact: (x: number) => number, nodes: number[], u: number[]): ErrorInfo {
-  let d = derivativeExpr(exactSrc);
-  if (!d) {
-    const L = nodes[nodes.length - 1] - nodes[0];
-    const eps = 1e-6 * L;
-    d = (x: number) => (exact(x + eps) - exact(x - eps)) / (2 * eps);
-  }
-  return computeErrorFns(exact, d, nodes, u);
+/**
+ * Errores frente a una solución exacta. u′ exacta se obtiene con diferencias centradas
+ * de 4.º orden con un paso proporcional a cada elemento, para no cruzar los quiebres
+ * de soluciones definidas por tramos.
+ */
+export function computeError(_exactSrc: string, exact: (x: number) => number, nodes: number[], u: number[]): ErrorInfo {
+  const dEx = (x: number, h: number) => {
+    const d = 1e-3 * h;
+    return (8 * (exact(x + d) - exact(x - d)) - (exact(x + 2 * d) - exact(x - 2 * d))) / (12 * d);
+  };
+  return computeErrorFns(exact, dEx, nodes, u);
 }
 
 /** Errores nodal, L² y seminorma H¹ dados u exacta y su derivada. */
 export function computeErrorFns(
   exact: (x: number) => number,
-  dEx: (x: number) => number,
+  /** Derivada exacta en x (h = tamaño del elemento, por si se deriva numéricamente). */
+  dEx: (x: number, h: number) => number,
   nodes: number[],
   u: number[],
 ): ErrorInfo {
@@ -317,7 +321,7 @@ export function computeErrorFns(
       const uh = u[e] + (du * (x - a));
       return (uh - exact(x)) ** 2;
     }, a, b, 5);
-    H1 += integrate((x) => (du - dEx(x)) ** 2, a, b, 5);
+    H1 += integrate((x) => (du - dEx(x, h)) ** 2, a, b, 5);
   }
   return { nodal, maxNodal, L2: Math.sqrt(L2), H1semi: Math.sqrt(H1), exactAtNodes };
 }

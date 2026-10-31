@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { APOYOS } from '../../templates';
 import { Badge, Boton, Card, Icon, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
+import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum } from '../components/Tex';
 import { fmtNum, sub } from '../format';
@@ -75,15 +76,20 @@ export function PasoArmadura() {
   const res = new Set(b.dofs.flatMap((I) => b.dofs.map((J) => `${I},${J}`)));
 
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina etiquetas={<Badge>Rigidez directa</Badge>} titulo="Armadura 2D paso a paso" subtitulo="Matriz de cada barra en coordenadas globales, ensamblaje, apoyos y fuerzas axiales." />
-      <div className="sticky top-16 z-40 -mx-4 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
-        <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+      <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
+        <div className="lg:hidden">
+          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+        </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
           <Selector value={Math.min(barra, sol.bars.length - 1)} onChange={setBarra} opciones={sol.bars.map((x, i) => ({ valor: i, texto: `Barra ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
+        <div className="flex min-w-0 flex-col gap-4">
       {paso === 'geometria' && (
         <Paso n={1} titulo="Geometría y cosenos directores">
           <P>Para cada barra entre los nodos i y j se calculan la longitud y los cosenos directores:</P>
@@ -152,6 +158,8 @@ export function PasoArmadura() {
         </Paso>
       )}
       <Navegacion paso={paso} setPaso={setPaso} />
+        </div>
+      </div>
     </Pagina>
   );
 }
@@ -172,14 +180,19 @@ export function PasoResortes() {
   const etq = Array.from({ length: e.nNodos }, (_, i) => `u${sub(i + 1)}`);
   const hl = new Set([`${sp.i},${sp.i}`, `${sp.i},${sp.j}`, `${sp.j},${sp.i}`, `${sp.j},${sp.j}`]);
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina etiquetas={<Badge>Rigidez directa</Badge>} titulo="Resortes paso a paso" subtitulo="Matriz de cada resorte, ensamblaje, apoyos y fuerzas." />
-      <div className="sticky top-16 z-40 -mx-4 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
-        <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+      <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
+        <div className="lg:hidden">
+          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+        </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
           <Selector value={Math.min(res, sol.springs.length - 1)} onChange={setRes} opciones={sol.springs.map((x, i) => ({ valor: i, texto: `Resorte ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
+        <div className="flex min-w-0 flex-col gap-4">
       {paso === 'geometria' && (
         <Paso n={1} titulo="Conectividad">
           <P>Cada resorte une dos nodos y cada nodo tiene un grado de libertad (desplazamiento en x).</P>
@@ -221,6 +234,8 @@ export function PasoResortes() {
         </Paso>
       )}
       <Navegacion paso={paso} setPaso={setPaso} />
+        </div>
+      </div>
     </Pagina>
   );
 }

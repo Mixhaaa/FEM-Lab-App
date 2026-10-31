@@ -3,6 +3,7 @@ import { compileExpr, type BoundaryCondition } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Boton, Card, cx, Icon, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
+import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum, texVector } from '../components/Tex';
 import { fmtNum, sub } from '../format';
@@ -86,7 +87,7 @@ export function Paso1D() {
   const usaElemento = ['forma', 'elemental', 'ensamblaje', 'posproceso'].includes(paso);
 
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina
         etiquetas={
           <>
@@ -97,8 +98,10 @@ export function Paso1D() {
         titulo="Solución paso a paso"
         subtitulo="Cada paso usa los números de tu problema. Cambia los datos en Configuración y todo se recalcula."
       />
-      <div className="sticky top-16 z-40 -mx-4 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
-        <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+      <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
+        <div className="lg:hidden">
+          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+        </div>
         {usaElemento && (
           <Selector
             value={e}
@@ -108,6 +111,9 @@ export function Paso1D() {
         )}
       </div>
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
+        <div className="flex min-w-0 flex-col gap-4">
       {paso === 'problema' && <PasoProblema res={res} />}
       {paso === 'debil' && <PasoDebil res={res} />}
       {paso === 'malla' && <PasoMalla res={res} />}
@@ -128,6 +134,8 @@ export function Paso1D() {
         <Boton variante="primario" disabled={idx === PASOS.length - 1} onClick={() => setPaso(PASOS[idx + 1].id)}>
           Siguiente <Icon name="chevron_right" className="text-[18px]" />
         </Boton>
+      </div>
+        </div>
       </div>
     </Pagina>
   );

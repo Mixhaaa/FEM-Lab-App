@@ -54,6 +54,7 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
 
   return (
     <>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <ErrorNodalActual res={res} />
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="query_stats" title="Estudio de convergencia" subtitle="Se resuelve con Ne = 2, 4, 8, … y se mide el error en cada malla." />
@@ -66,6 +67,7 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
         {res.estado.malla.tipo === 'manual' && <p className="text-[11px] text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
         {res.estado.malla.tipo === 'geometrica' && <p className="text-[11px] text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
       </Card>
+      </div>
       {estado.tipo === 'calculando' && (
         <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-xs text-ink-2">
           <Icon name="query_stats" className="animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
@@ -155,6 +157,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         </Aviso>
       )}
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       {!conv.solucionExacta && (
         <Card className="flex flex-col gap-3 p-4">
           <CardHeader icon="show_chart" title="Error contra h (escala log-log)" subtitle="La pendiente de cada recta es el orden de convergencia p: error ≈ C·hᵖ." />
@@ -193,6 +196,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
             : `Referencia: sin solución analítica, se compara con una malla fina de ${conv.refNe} elementos.`}
         </div>
       </Card>
+      </div>
     </>
   );
 }

@@ -17,7 +17,7 @@ export function ResultadosResortes() {
   const escalaF = Math.max(...sol.springs.map((s) => Math.abs(s.force)), 1e-300);
   const escalaU = Math.max(...sol.u.map(Math.abs), 1e-300);
   return (
-    <Pagina>
+    <Pagina amplia>
       <div className="flex items-center gap-3 rounded-2xl border border-line bg-s2 px-4 py-3 shadow-card">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent-bg text-accent-soft">
           <Icon name="linear_scale" className="text-[20px]" />
@@ -30,6 +30,7 @@ export function ResultadosResortes() {
         </div>
       </div>
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="insights" title="Configuración deformada" subtitle="Los círculos punteados marcan la posición desplazada (escala exagerada)." />
         <div className="scroll-x rounded-xl border border-line bg-inset p-2">
@@ -43,6 +44,9 @@ export function ResultadosResortes() {
         ))}
       </div>
 
+      </div>
+
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
@@ -84,6 +88,8 @@ export function ResultadosResortes() {
           ])}
         />
       </Card>
+
+      </div>
 
       <PanelMatrices
         sistemas={[

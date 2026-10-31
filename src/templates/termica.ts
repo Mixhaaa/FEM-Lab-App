@@ -156,7 +156,7 @@ export const aleta: Plantilla1D = {
   reaccion: { id: 'R', simbolo: 'Q_b', nombre: 'Calor que entra por el extremo', unidad: 'W' },
   cargaPuntual: null,
   kpis: [
-    kpiEntrante('izquierda', 'Qb', 'Q_aleta', 'Calor disipado por la aleta (entra por la base)', 'W'),
+    kpiEntrante('izquierda', 'Qb', 'Q_aleta', 'Calor disipado por la aleta', 'W'),
     {
       id: 'Qconv',
       simbolo: 'Q_conv',

@@ -1,4 +1,4 @@
-declare module 'plotly.js-dist-min' {
+declare module 'plotly.js-basic-dist-min' {
   // Tipos mínimos que usa FEM Lab
   export interface PlotlyHTMLElement extends HTMLDivElement {
     on(event: 'plotly_click', cb: (e: { points: { pointIndex: number; curveNumber: number; x: number; y: number }[] }) => void): void;

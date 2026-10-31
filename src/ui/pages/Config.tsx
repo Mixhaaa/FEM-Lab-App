@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { compileExpr, MAX_ELEMENTOS } from '../../core';
 import {
   CATEGORIAS,
@@ -15,9 +15,10 @@ import {
 } from '../../templates';
 import { Aviso, Badge, Boton, Campo, cx, Icon, Segmentos, Seccion, Selector } from '../components/base';
 import { DiagramaMalla } from '../components/DiagramaMalla';
-import { Pagina, TituloPagina } from '../components/Shell';
+import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
-import { fmtNum } from '../format';
+import { conPrefijo, fmtNum } from '../format';
+import { Grafica, type Colores } from '../components/Grafica';
 import { useResultado1D } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
@@ -94,7 +95,7 @@ function Config1D() {
     });
 
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina
         etiquetas={
           <>
@@ -108,6 +109,11 @@ function Config1D() {
         subtitulo={<span className="font-mono text-xs">{t.nombre} · elementos lineales de Lagrange</span>}
       />
 
+      <Columnas
+        fija="principal"
+        anchoLateral="lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+        principal={
+          <>
       {/* Esquema + formulación */}
       <div className="flex flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card">
         <div className="flex items-center justify-between">
@@ -169,6 +175,11 @@ function Config1D() {
         </Aviso>
       )}
 
+            {r.ok && <VistaPrevia res={r.res} />}
+          </>
+        }
+        lateral={
+          <>
       <div className="flex flex-col gap-2.5">
         {/* 1. Plantilla */}
         <Seccion icon="functions" titulo="1. Plantilla y ecuación" subtitulo="Modelo físico, ejemplo y unidades" resumen={t.nombre}>
@@ -396,6 +407,9 @@ function Config1D() {
           Restablecer el ejemplo
         </Boton>
       </div>
+          </>
+        }
+      />
     </Pagina>
   );
 }
@@ -575,3 +589,66 @@ function tipoBC(aBC: Plantilla1D['fronteras'][number]['aBC']): string {
   }
 }
 
+
+/** Vista previa de la solución mientras se editan los datos (solo en pantallas grandes). */
+function VistaPrevia({ res }: { res: Resultado1D }) {
+  const t = res.plantilla;
+  const nodos = res.sol.mesh.nodes;
+  const u = res.sol.u;
+  const exacta = useMemo(() => {
+    if (!res.exacta) return null;
+    try {
+      return compileExpr(res.exacta.expr).fn;
+    } catch {
+      return null;
+    }
+  }, [res.exacta]);
+  const data = useCallback(
+    (c: Colores) => {
+      const tr: unknown[] = [];
+      if (exacta) {
+        const xs = Array.from({ length: 201 }, (_, i) => nodos[0] + ((nodos[nodos.length - 1] - nodos[0]) * i) / 200);
+        tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', line: { color: c.exact, width: 2 }, hoverinfo: 'skip' });
+      }
+      tr.push({
+        x: nodos,
+        y: u,
+        type: 'scatter',
+        mode: nodos.length <= 60 ? 'lines+markers' : 'lines',
+        line: { color: c.accentHover, width: 2, dash: exacta ? 'dash' : 'solid' },
+        marker: { color: c.bg, size: 7, line: { color: c.accentHover, width: 2 } },
+        hovertemplate: `x = %{x:.4g}<br>${t.incognita.simbolo} = %{y:.5g}<extra></extra>`,
+      });
+      return tr;
+    },
+    [nodos, u, exacta, t.incognita.simbolo],
+  );
+  const layout = useCallback(() => ({ margin: { l: 52, r: 10, t: 6, b: 36 } }), []);
+  return (
+    <div className="hidden flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card lg:flex">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Icon name="insights" className="text-[18px] text-accent-soft" />
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink">Vista previa en vivo</span>
+        </div>
+        <Badge tono="neutral">{t.incognita.nombre}</Badge>
+      </div>
+      <div className="rounded-lg border border-line bg-inset p-1">
+        <Grafica data={data} layout={layout} alto={200} etiqueta={`Vista previa de ${t.incognita.nombre}`} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {res.kpis.slice(0, 4).map((k) => {
+          const p = conPrefijo(k.valor.valor, k.unidad);
+          return (
+            <div key={k.def.id} className="rounded-lg border border-line bg-inset px-3 py-2">
+              <p className="truncate font-mono text-[10px] uppercase text-ink-2">{k.def.nombre}</p>
+              <p className="font-heading text-lg font-bold text-accent-hover">
+                {fmtNum(p.valor, 4)} <span className="font-mono text-xs font-normal text-ink-2">{p.unidad !== '—' ? p.unidad : ''}</span>
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

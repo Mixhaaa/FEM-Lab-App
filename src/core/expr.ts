@@ -2,10 +2,127 @@
  * Lectura de expresiones escritas por el usuario con math.js.
  * Solo se permite la variable x y las constantes pi y e.
  */
-import { create, all, type MathNode, type EvalFunction } from 'mathjs';
+import {
+  create,
+  // Lectura y compilación de expresiones
+  parseDependencies,
+  compileDependencies,
+  evaluateDependencies,
+  // Constantes
+  piDependencies,
+  eDependencies,
+  // Operadores
+  addDependencies,
+  subtractDependencies,
+  multiplyDependencies,
+  divideDependencies,
+  powDependencies,
+  unaryMinusDependencies,
+  unaryPlusDependencies,
+  modDependencies,
+  largerDependencies,
+  smallerDependencies,
+  largerEqDependencies,
+  smallerEqDependencies,
+  equalDependencies,
+  unequalDependencies,
+  andDependencies,
+  orDependencies,
+  notDependencies,
+  // Funciones que se pueden escribir en las expresiones
+  sinDependencies,
+  cosDependencies,
+  tanDependencies,
+  secDependencies,
+  cscDependencies,
+  cotDependencies,
+  asinDependencies,
+  acosDependencies,
+  atanDependencies,
+  atan2Dependencies,
+  sinhDependencies,
+  coshDependencies,
+  tanhDependencies,
+  asinhDependencies,
+  acoshDependencies,
+  atanhDependencies,
+  expDependencies,
+  logDependencies,
+  log10Dependencies,
+  log2Dependencies,
+  sqrtDependencies,
+  cbrtDependencies,
+  nthRootDependencies,
+  absDependencies,
+  signDependencies,
+  floorDependencies,
+  ceilDependencies,
+  roundDependencies,
+  maxDependencies,
+  minDependencies,
+  type MathNode,
+  type EvalFunction,
+} from 'mathjs';
 import { FemError } from './errors';
 
-const math = create(all, {});
+// Solo las partes de math.js que usa la app (la versión completa pesa mucho más)
+const math = create(
+  {
+    parseDependencies,
+    compileDependencies,
+    evaluateDependencies,
+      piDependencies,
+    eDependencies,
+    addDependencies,
+    subtractDependencies,
+    multiplyDependencies,
+    divideDependencies,
+    powDependencies,
+    unaryMinusDependencies,
+    unaryPlusDependencies,
+    modDependencies,
+    largerDependencies,
+    smallerDependencies,
+    largerEqDependencies,
+    smallerEqDependencies,
+    equalDependencies,
+    unequalDependencies,
+    andDependencies,
+    orDependencies,
+    notDependencies,
+    sinDependencies,
+    cosDependencies,
+    tanDependencies,
+    secDependencies,
+    cscDependencies,
+    cotDependencies,
+    asinDependencies,
+    acosDependencies,
+    atanDependencies,
+    atan2Dependencies,
+    sinhDependencies,
+    coshDependencies,
+    tanhDependencies,
+    asinhDependencies,
+    acoshDependencies,
+    atanhDependencies,
+    expDependencies,
+    logDependencies,
+    log10Dependencies,
+    log2Dependencies,
+    sqrtDependencies,
+    cbrtDependencies,
+    nthRootDependencies,
+    absDependencies,
+    signDependencies,
+    floorDependencies,
+    ceilDependencies,
+    roundDependencies,
+    maxDependencies,
+    minDependencies,
+  },
+  {},
+);
 
 export type Fn = (x: number) => number;
 
@@ -111,22 +228,6 @@ export function evalChecked(ce: CompiledExpr, x: number, nombre: string): number
   return v;
 }
 
-/** Derivada simbólica (para la seminorma H¹); devuelve null si math.js no puede derivar. */
-export function derivativeExpr(src: string): Fn | null {
-  try {
-    const d = math.derivative(normalize(src), 'x');
-    const code = d.compile();
-    const fn = (x: number) => {
-      const v = code.evaluate({ x });
-      return typeof v === 'number' ? v : Number(v);
-    };
-    // Probar una evaluación
-    fn(0.123456);
-    return fn;
-  } catch {
-    return null;
-  }
-}
 
 /** Convierte un texto a número aceptando expresiones constantes ("2*pi", "1e-3"). */
 export function parseNumber(src: string | number, nombre: string): number {

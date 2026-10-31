@@ -76,7 +76,7 @@ export function Armadura() {
     });
 
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina
         etiquetas={
           <>
@@ -88,6 +88,8 @@ export function Armadura() {
         subtitulo="Toca un nodo o una barra para ver sus datos. Las barras se colorean según su fuerza axial."
       />
 
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] lg:items-start lg:gap-x-6 lg:gap-y-4">
+      <div className="flex min-w-0 flex-col gap-4 lg:col-start-1">
       <Card className="flex flex-col gap-3 p-3">
         <div className="overflow-hidden rounded-xl border border-line bg-inset">
           {coordsOk ? (
@@ -167,7 +169,9 @@ export function Armadura() {
           })}
         </div>
       )}
+      </div>
 
+      <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
       <div className="flex flex-col gap-2.5">
         <Seccion icon="functions" titulo="1. Ejemplo, unidades y método" subtitulo="Casos precargados">
           <Selector
@@ -284,7 +288,19 @@ export function Armadura() {
           </Boton>
         </Seccion>
       </div>
+      {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
 
+      <div className="flex flex-col gap-2.5">
+        <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
+          Ver la solución paso a paso
+        </Boton>
+        <Boton variante="fantasma" icon="restart_alt" onClick={restablecer}>
+          Restablecer el ejemplo
+        </Boton>
+      </div>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-4 lg:col-start-1">
       {sol && (
         <>
           <Card className="overflow-hidden">
@@ -381,17 +397,9 @@ export function Armadura() {
           />
         </Seccion>
       )}
-
-      {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
-
-      <div className="flex flex-col gap-2.5">
-        <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
-          Ver la solución paso a paso
-        </Boton>
-        <Boton variante="fantasma" icon="restart_alt" onClick={restablecer}>
-          Restablecer el ejemplo
-        </Boton>
       </div>
+      </div>
+
     </Pagina>
   );
 }

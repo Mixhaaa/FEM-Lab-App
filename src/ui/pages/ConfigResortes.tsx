@@ -2,7 +2,7 @@ import { compileExpr } from '../../core';
 import { EJEMPLOS_RESORTES, SISTEMAS, UNIDADES_RESORTES, type EstadoResortes } from '../../templates';
 import { Aviso, Badge, Boton, Campo, Icon, Segmentos, Seccion, Selector } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
-import { Pagina, TituloPagina } from '../components/Shell';
+import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { useResultadoResortes } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
@@ -46,7 +46,7 @@ export function ConfigResortes() {
   const nodos = Array.from({ length: e.nNodos }, (_, i) => ({ valor: i, texto: String(i + 1) }));
 
   return (
-    <Pagina>
+    <Pagina amplia>
       <TituloPagina
         etiquetas={
           <>
@@ -57,6 +57,11 @@ export function ConfigResortes() {
         titulo="Sistema de resortes"
         subtitulo="Resortes lineales: cada uno aporta k[1 −1; −1 1] a la matriz global."
       />
+      <Columnas
+        fija="principal"
+        anchoLateral="lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+        principal={
+          <>
       <div className="scroll-x rounded-xl border border-line bg-s2 p-3 shadow-card">
         <div className="rounded-lg border border-line bg-inset p-2">
           <DiagramaResortes e={e} />
@@ -67,6 +72,10 @@ export function ConfigResortes() {
           {r.error.message}
         </Aviso>
       )}
+          </>
+        }
+        lateral={
+          <>
       <div className="flex flex-col gap-2.5">
         <Seccion icon="functions" titulo="1. Ejemplo y unidades" subtitulo="Casos precargados">
           <Selector
@@ -150,6 +159,9 @@ export function ConfigResortes() {
           Restablecer el ejemplo
         </Boton>
       </div>
+          </>
+        }
+      />
     </Pagina>
   );
 }

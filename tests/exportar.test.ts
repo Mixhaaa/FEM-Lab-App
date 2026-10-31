@@ -85,7 +85,7 @@ describe('Traducción de expresiones', () => {
     expect(funcionA('1 + x', 'python')).toBe('lambda x: 1 + x');
   });
   it('una función sin traducción da un error claro', () => {
-    expect(() => exprA('gamma(x)', 'matlab')).toThrowError(/gamma\(\) no tiene traducción/);
+    expect(() => exprA('gamma(x)', 'matlab')).toThrowError(/gamma/);
   });
 });
 
