@@ -89,7 +89,7 @@ export function ConfigResortes() {
 
         <Seccion icon="linear_scale" titulo="2. Nodos y resortes" subtitulo={`${e.nNodos} nodos · ${e.resortes.length} resortes`}>
           <div className="flex items-center justify-between rounded-lg border border-line bg-inset p-3">
-            <span className="text-sm font-bold text-ink">Número de nodos</span>
+            <span className="text-cuerpo font-bold text-ink">Número de nodos</span>
             <div className="flex items-center gap-2">
               <Boton variante="secundario" icon="remove" className="h-9 min-h-0 w-9 px-0" title="Quitar nodo" disabled={e.nNodos <= 2} onClick={() => upd((c) => {
                 c.nNodos--;
@@ -97,7 +97,7 @@ export function ConfigResortes() {
                 c.apoyos = c.apoyos.filter((a) => a.nodo < c.nNodos);
                 c.cargas = c.cargas.filter((a) => a.nodo < c.nNodos);
               })} />
-              <span className="w-8 text-center font-mono text-lg font-bold text-accent-soft">{e.nNodos}</span>
+              <span className="w-8 text-center font-mono text-seccion font-bold text-accent-soft">{e.nNodos}</span>
               <Boton variante="secundario" icon="add" className="h-9 min-h-0 w-9 px-0" title="Agregar nodo" disabled={e.nNodos >= 30} onClick={() => upd((c) => void c.nNodos++)} />
             </div>
           </div>

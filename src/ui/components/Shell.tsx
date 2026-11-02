@@ -25,10 +25,10 @@ export function Encabezado() {
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-9 w-9 shrink-0 drop-shadow-[0_2px_4px_rgb(224_109_50/0.3)]" />
           <div className="flex min-w-0 flex-col leading-tight">
             <div className="flex items-center gap-1.5">
-              <span className="truncate font-heading text-[17px] font-bold tracking-tight text-ink">FEM Lab</span>
-              <span className="rounded border border-accent/30 bg-s3 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-accent-soft">1D/2D</span>
+              <span className="truncate font-heading text-seccion font-bold tracking-tight text-ink">FEM Lab</span>
+              <span className="rounded border border-accent/30 bg-s3 px-1.5 py-0.5 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">1D/2D</span>
             </div>
-            <span className="truncate text-xs text-ink-2">
+            <span className="truncate text-mini text-ink-2">
               Elementos finitos lineales<span className="hidden lg:inline"> · Diseño por Elementos Finitos · Universidad Distrital 2026-1</span>
             </span>
           </div>
@@ -36,7 +36,7 @@ export function Encabezado() {
         <div className="flex shrink-0 items-center gap-2">
           <div className="hidden items-center gap-1.5 rounded-full border border-accent/40 bg-s2 px-2.5 py-1 min-[380px]:flex" aria-hidden="true">
             <span className="h-2 w-2 animate-pulse rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-            <span className="font-mono text-[11px] font-bold tracking-tight text-accent-soft">K·u=F</span>
+            <span className="font-mono text-mini font-bold tracking-tight text-accent-soft">K·u=F</span>
           </div>
           <IconBoton
             icon={presentacion ? 'close_fullscreen' : 'slideshow'}
@@ -76,7 +76,7 @@ export function NavInferior({ ruta }: { ruta: Ruta }) {
               )}
             >
               <Icon name={n.icon} className="text-[21px]" fill={act} />
-              <span className="mt-0.5 whitespace-nowrap font-mono text-[10px] tracking-tight">{n.texto}</span>
+              <span className="mt-0.5 whitespace-nowrap font-mono text-mini tracking-tight">{n.texto}</span>
             </a>
           );
         })}
@@ -93,7 +93,7 @@ export function NavLateral({ ruta }: { ruta: Ruta }) {
   const modelo = tipo === 'armadura' ? 'Armadura plana 2D' : tipo === 'resortes' ? 'Sistema de resortes' : (plantilla1D(e1d.plantilla)?.nombre ?? '');
   return (
     <nav aria-label="Secciones" className="no-print fixed bottom-0 left-0 top-16 z-40 hidden w-60 flex-col gap-1 border-r border-line bg-s1 p-3 lg:flex">
-      <p className="px-3 pb-1 pt-2 font-mono text-[10px] font-bold uppercase tracking-wider text-ink-3">Secciones</p>
+      <p className="px-3 pb-1 pt-2 font-mono text-mini font-bold uppercase tracking-wider text-ink-3">Secciones</p>
       {NAV.map((n, i) => {
         const act = n.ruta === ruta;
         return (
@@ -106,21 +106,21 @@ export function NavLateral({ ruta }: { ruta: Ruta }) {
               ir(n.ruta);
             }}
             className={cx(
-              'flex items-center gap-3 rounded-xl border-l-2 px-3 py-2.5 text-sm transition-colors',
+              'flex items-center gap-3 rounded-xl border-l-2 px-3 py-2.5 text-cuerpo transition-colors',
               act ? 'border-accent bg-accent-bg font-bold text-ink' : 'border-transparent text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >
             <Icon name={n.icon} className={cx('text-[20px]', act && 'text-accent-hover')} fill={act} />
             <span className="flex-1">{n.texto === 'Config' ? 'Configuración' : n.texto}</span>
-            {presentacion && <kbd className="rounded border border-line px-1.5 font-mono text-[10px] text-ink-3">{i + 1}</kbd>}
+            {presentacion && <kbd className="rounded border border-line px-1.5 font-mono text-mini text-ink-3">{i + 1}</kbd>}
           </a>
         );
       })}
       <div className="mt-4 rounded-xl border border-line bg-s2 p-3">
-        <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-soft">Modelo activo</p>
-        <p className="mt-1 text-sm font-semibold leading-snug text-ink">{modelo}</p>
+        <p className="font-mono text-mini font-bold uppercase tracking-wider text-amber-soft">Modelo activo</p>
+        <p className="mt-1 text-cuerpo font-semibold leading-snug text-ink">{modelo}</p>
       </div>
-      <div className="mt-auto flex flex-col gap-1 px-3 pb-1 font-mono text-[10px] leading-relaxed text-ink-3">
+      <div className="mt-auto flex flex-col gap-1 px-3 pb-1 font-mono text-mini leading-relaxed text-ink-3">
         <span>Modo presentación: ▶ arriba a la derecha.</span>
         <span>← → avanzan · 1–5 secciones · Esc sale.</span>
       </div>
@@ -163,8 +163,8 @@ export function TituloPagina({ etiquetas, titulo, subtitulo }: { etiquetas?: Rea
   return (
     <div className="flex flex-col gap-1.5 pt-1">
       {etiquetas && <div className="flex flex-wrap items-center gap-1.5">{etiquetas}</div>}
-      <h1 className="font-heading text-2xl font-bold tracking-tight text-ink lg:text-3xl">{titulo}</h1>
-      {subtitulo && <div className="text-sm text-ink-2">{subtitulo}</div>}
+      <h1 className="font-heading text-titulo font-bold tracking-tight text-ink ">{titulo}</h1>
+      {subtitulo && <div className="text-cuerpo text-ink-2">{subtitulo}</div>}
     </div>
   );
 }

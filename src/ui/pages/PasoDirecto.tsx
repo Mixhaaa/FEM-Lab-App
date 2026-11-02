@@ -24,21 +24,21 @@ function Paso({ n, titulo, children }: { n: number; titulo: string; children: Re
   return (
     <Card className="flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-sm font-bold text-on-accent">{n}</span>
-        <h2 className="font-heading text-lg font-bold text-ink">{titulo}</h2>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-cuerpo font-bold text-on-accent">{n}</span>
+        <h2 className="font-heading text-seccion font-bold text-ink">{titulo}</h2>
       </div>
-      <div className="flex flex-col gap-3 text-sm leading-relaxed text-ink">{children}</div>
+      <div className="flex flex-col gap-3 text-cuerpo leading-relaxed text-ink">{children}</div>
     </Card>
   );
 }
 function F({ children }: { children: string }) {
   return (
-    <div className="scroll-x rounded-xl border border-line bg-inset px-3 py-2 text-[12.5px] sm:text-[15px]">
+    <div className="scroll-x rounded-xl border border-line bg-inset px-3 py-2 text-detalle sm:text-[15px]">
       <Tex display>{children}</Tex>
     </div>
   );
 }
-const P = ({ children }: { children: ReactNode }) => <p className="text-[13.5px] leading-relaxed text-ink-2">{children}</p>;
+const P = ({ children }: { children: ReactNode }) => <p className="text-detalle leading-relaxed text-ink-2">{children}</p>;
 
 function Navegacion({ paso, setPaso }: { paso: PasoId; setPaso: (p: PasoId) => void }) {
   const idx = PASOS.findIndex((p) => p.id === paso);
@@ -47,7 +47,7 @@ function Navegacion({ paso, setPaso }: { paso: PasoId; setPaso: (p: PasoId) => v
       <Boton variante="secundario" icon="chevron_left" disabled={idx === 0} onClick={() => setPaso(PASOS[idx - 1].id)}>
         Anterior
       </Boton>
-      <span className="font-mono text-xs text-ink-2">
+      <span className="font-mono text-mini text-ink-2">
         {idx + 1} / {PASOS.length}
       </span>
       <Boton variante="primario" disabled={idx === PASOS.length - 1} onClick={() => setPaso(PASOS[idx + 1].id)}>

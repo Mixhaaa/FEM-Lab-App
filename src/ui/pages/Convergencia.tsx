@@ -64,12 +64,12 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
           onChange={setNeMax}
           opciones={(['64', '128', '256', '512'] as const).map((v) => ({ valor: v, texto: v }))}
         />
-        {res.estado.malla.tipo === 'manual' && <p className="text-[11px] text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
-        {res.estado.malla.tipo === 'geometrica' && <p className="text-[11px] text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
+        {res.estado.malla.tipo === 'manual' && <p className="text-mini text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
+        {res.estado.malla.tipo === 'geometrica' && <p className="text-mini text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
       </Card>
       </div>
       {estado.tipo === 'calculando' && (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-xs text-ink-2">
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-mini text-ink-2">
           <Icon name="query_stats" className="animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
         </div>
       )}
@@ -171,7 +171,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
             <Icon name="table_chart" className="text-[22px] text-accent-hover" />
-            <h3 className="font-heading text-base font-bold text-ink">Errores por malla</h3>
+            <h3 className="font-heading text-seccion font-bold text-ink">Errores por malla</h3>
           </div>
           <Badge>{fmtNum(ms, 2)} ms</Badge>
         </div>
@@ -189,7 +189,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
             Number.isFinite(oH[i]) && !conv.solucionExacta ? oH[i].toFixed(2) : '—',
           ])}
         />
-        <div className="border-t border-line bg-s1 px-4 py-2.5 text-[11px] leading-snug text-ink-2">
+        <div className="border-t border-line bg-s1 px-4 py-2.5 text-mini leading-snug text-ink-2">
           p = orden local entre mallas consecutivas: log(eᵢ₋₁/eᵢ) / log(hᵢ₋₁/hᵢ). El orden de arriba se ajusta por mínimos cuadrados con las mallas más finas.{' '}
           {conv.referencia === 'analitica'
             ? `Referencia: solución analítica ${res.exacta?.origen === 'automatica' ? 'calculada automáticamente' : 'escrita por ti'}.`
@@ -249,7 +249,7 @@ function ErrorNodalActual({ res }: { res: Resultado1D }) {
       <div className="rounded-xl border border-line bg-inset p-1">
         <Grafica data={data} layout={layout} alto={220} etiqueta="Gráfica del error nodal contra x" />
       </div>
-      <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+      <div className="grid grid-cols-3 gap-2 font-mono text-mini">
         {(
           [
             ['máx |eᵢ|', err.maxNodal],

@@ -19,7 +19,7 @@ export function Icon({ name, className, fill }: { name: string; className?: stri
 }
 
 export function Card({ children, className, as: As = 'section' }: { children: ReactNode; className?: string; as?: 'section' | 'div' }) {
-  return <As className={cx('rounded-2xl border border-line bg-s2 shadow-card', className)}>{children}</As>;
+  return <As className={cx('rounded-xl border border-line bg-s2 shadow-card', className)}>{children}</As>;
 }
 
 export function CardHeader({
@@ -40,8 +40,8 @@ export function CardHeader({
       <div className="flex min-w-0 items-center gap-2.5">
         {icon && <Icon name={icon} className="text-[22px] text-accent-hover" />}
         <div className="min-w-0">
-          <h2 className="font-heading text-base font-bold leading-tight text-ink">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-2">{subtitle}</p>}
+          <h2 className="font-heading text-seccion font-bold leading-tight text-ink">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-mini text-ink-2">{subtitle}</p>}
         </div>
       </div>
       {right}
@@ -61,7 +61,7 @@ const TONOS: Record<Tono, string> = {
 
 export function Badge({ children, tono = 'accent', className }: { children: ReactNode; tono?: Tono; className?: string }) {
   return (
-    <span className={cx('inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold', TONOS[tono], className)}>
+    <span className={cx('inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-mini font-semibold', TONOS[tono], className)}>
       {children}
     </span>
   );
@@ -104,7 +104,7 @@ export function Boton({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-cuerpo transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
         v[variante],
         className,
       )}
@@ -160,7 +160,7 @@ export function Campo({
   const id = useId();
   return (
     <div className={cx('flex min-w-0 flex-col gap-1', className)}>
-      <label htmlFor={id} className="font-mono text-[11px] font-medium text-ink-2">
+      <label htmlFor={id} className="font-mono text-mini font-medium text-ink-2">
         {label}
       </label>
       <div
@@ -179,17 +179,17 @@ export function Campo({
           spellCheck={false}
           aria-invalid={!!error}
           onChange={(e) => onChange(e.target.value)}
-          className={cx('w-full min-w-0 bg-transparent text-sm text-ink placeholder:text-ink-3 focus:outline-none', mono && 'font-mono')}
+          className={cx('w-full min-w-0 bg-transparent text-cuerpo text-ink placeholder:text-ink-3 focus:outline-none', mono && 'font-mono')}
         />
-        {unidad && unidad !== '—' && <span className="shrink-0 pl-2 font-mono text-xs text-ink-2">{unidad}</span>}
+        {unidad && unidad !== '—' && <span className="shrink-0 pl-2 font-mono text-mini text-ink-2">{unidad}</span>}
       </div>
       {error ? (
-        <span className="flex items-start gap-1 text-[11px] leading-snug text-danger">
+        <span className="flex items-start gap-1 text-mini leading-snug text-danger">
           <Icon name="error" className="text-[14px]" />
           {error}
         </span>
       ) : (
-        ayuda && <span className="text-[11px] leading-snug text-ink-3">{ayuda}</span>
+        ayuda && <span className="text-mini leading-snug text-ink-3">{ayuda}</span>
       )}
     </div>
   );
@@ -212,7 +212,7 @@ export function Selector<T extends string | number>({
   return (
     <div className={cx('flex min-w-0 flex-col gap-1', className)}>
       {label && (
-        <label htmlFor={id} className="font-mono text-[11px] font-medium text-ink-2">
+        <label htmlFor={id} className="font-mono text-mini font-medium text-ink-2">
           {label}
         </label>
       )}
@@ -224,7 +224,7 @@ export function Selector<T extends string | number>({
             const o = opciones.find((op) => String(op.valor) === e.target.value);
             if (o) onChange(o.valor);
           }}
-          className="w-full appearance-none rounded-lg border border-line bg-inset py-2 pl-3 pr-8 font-mono text-sm text-ink focus:border-accent-hover focus:outline-none"
+          className="w-full appearance-none rounded-lg border border-line bg-inset py-2 pl-3 pr-8 font-mono text-cuerpo text-ink focus:border-accent-hover focus:outline-none"
         >
           {opciones.map((o) => (
             <option key={String(o.valor)} value={String(o.valor)}>
@@ -254,7 +254,7 @@ export function Segmentos<T extends string>({
 }) {
   return (
     <div className={cx('flex flex-col gap-1', className)}>
-      {label && <span className="font-mono text-[11px] font-medium text-ink-2">{label}</span>}
+      {label && <span className="font-mono text-mini font-medium text-ink-2">{label}</span>}
       <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-xl border border-line bg-inset p-1">
         {opciones.map((o) => (
           <button
@@ -264,7 +264,7 @@ export function Segmentos<T extends string>({
             aria-checked={o.valor === value}
             onClick={() => onChange(o.valor)}
             className={cx(
-              'flex min-h-[34px] flex-1 items-center justify-center gap-1 rounded-lg px-2 font-mono text-xs transition',
+              'flex min-h-[34px] flex-1 items-center justify-center gap-1 rounded-lg px-2 font-mono text-mini transition',
               o.valor === value ? 'bg-accent font-bold text-on-accent shadow-glow' : 'text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >
@@ -316,8 +316,8 @@ export function Seccion({
             <Icon name={icon} className="text-[20px]" />
           </span>
           <div className="min-w-0">
-            <span className="block truncate text-sm font-bold text-ink">{titulo}</span>
-            {subtitulo && <span className="block truncate text-xs text-ink-2">{open || !resumen ? subtitulo : resumen}</span>}
+            <span className="block truncate text-cuerpo font-bold text-ink">{titulo}</span>
+            {subtitulo && <span className="block truncate text-mini text-ink-2">{open || !resumen ? subtitulo : resumen}</span>}
           </div>
         </div>
         <Icon name="expand_more" className={cx('text-ink-2 transition-transform', open ? '' : '-rotate-90')} />
@@ -341,7 +341,7 @@ export function Aviso({ tipo = 'aviso', children, titulo }: { tipo?: 'aviso' | '
   return (
     <div role={tipo === 'error' ? 'alert' : undefined} className={cx('flex gap-2.5 rounded-xl border p-3', est.c)}>
       <Icon name={est.i} className={cx('mt-px text-[18px]', est.t)} />
-      <div className="min-w-0 text-[13px] leading-snug text-ink">
+      <div className="min-w-0 text-detalle leading-snug text-ink">
         {titulo && <p className={cx('mb-0.5 font-bold', est.t)}>{titulo}</p>}
         {children}
       </div>
@@ -369,18 +369,18 @@ export function Kpi({
 }) {
   const color = tono === 'accent' ? 'text-accent-hover' : tono === 'amber' ? 'text-amber-soft' : 'text-ink';
   return (
-    <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-line bg-s2 p-3.5 shadow-card">
+    <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-line bg-s2 p-3.5 shadow-card">
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-2">{titulo}</span>
+        <span className="font-mono text-mini font-semibold uppercase tracking-wide text-ink-2">{titulo}</span>
         {simbolo && <Badge tono={tono === 'amber' ? 'amber' : tono === 'neutral' ? 'neutral' : 'accent'}>{simbolo}</Badge>}
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap items-baseline gap-1">
-        <span className={cx('break-all font-heading text-2xl font-extrabold tracking-tight', color)}>{valor}</span>
-        {unidad && unidad !== '—' && <span className="font-mono text-xs font-medium text-ink-2">{unidad}</span>}
+        <span className={cx('break-all font-heading text-dato font-bold tracking-tight', color)}>{valor}</span>
+        {unidad && unidad !== '—' && <span className="font-mono text-mini font-medium text-ink-2">{unidad}</span>}
       </div>
       {detalle && (
-        <span className="mt-1 flex items-center gap-1 font-mono text-[11px] text-ink-2">
-          {icon && <Icon name={icon} className="text-[13px] text-accent-hover" />}
+        <span className="mt-1 flex items-center gap-1 font-mono text-mini text-ink-2">
+          {icon && <Icon name={icon} className="text-detalle text-accent-hover" />}
           {detalle}
         </span>
       )}
@@ -414,13 +414,13 @@ export function Hoja({ abierta, onClose, titulo, etiqueta, children }: { abierta
         aria-label={titulo}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-2xl border-t border-accent/40 bg-s2 p-5 shadow-2xl focus:outline-none sm:rounded-2xl sm:border"
+        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-2xl border-t border-accent/40 bg-s2 p-5 shadow-2xl focus:outline-none sm:rounded-xl sm:border"
       >
         <div className="mx-auto h-1 w-12 rounded-full bg-line-strong sm:hidden" />
         <div className="flex items-start justify-between gap-3">
           <div>
             {etiqueta && <Badge>{etiqueta}</Badge>}
-            <h3 className="mt-1 font-heading text-xl font-bold text-ink">{titulo}</h3>
+            <h3 className="mt-1 font-heading text-seccion font-bold text-ink">{titulo}</h3>
           </div>
           <IconBoton icon="close" label="Cerrar" onClick={onClose} />
         </div>
@@ -447,7 +447,7 @@ export function Tabla({
 }) {
   return (
     <div className={cx('scroll-x w-full', className)}>
-      <table className="w-full border-collapse text-left font-mono text-xs">
+      <table className="w-full border-collapse text-left font-mono text-mini">
         <thead>
           <tr className="border-b border-line-strong bg-s3 text-amber-soft">
             {cabecera.map((c, i) => (
@@ -487,7 +487,7 @@ export function Pildoras<T extends string>({ value, onChange, opciones }: { valu
             type="button"
             onClick={() => onChange(o.valor)}
             className={cx(
-              'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 font-mono text-xs transition',
+              'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 font-mono text-mini transition',
               act ? 'bg-accent font-semibold text-on-accent shadow-glow' : 'border border-line bg-s2 text-ink-2 hover:bg-s3',
             )}
           >

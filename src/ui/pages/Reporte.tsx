@@ -36,19 +36,19 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
         <div className="flex items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-12 w-12" />
           <div>
-            <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-accent-soft">FEM Lab · Memoria de cálculo</p>
-            <h1 className="font-heading text-2xl font-bold leading-tight text-ink">{titulo}</h1>
-            <p className="text-sm text-ink-2">{subtitulo}</p>
+            <p className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">FEM Lab · Memoria de cálculo</p>
+            <h1 className="font-heading text-titulo font-bold leading-tight text-ink">{titulo}</h1>
+            <p className="text-cuerpo text-ink-2">{subtitulo}</p>
           </div>
         </div>
-        <div className="shrink-0 text-right font-mono text-[11px] text-ink-2">
+        <div className="shrink-0 text-right font-mono text-mini text-ink-2">
           <p>{fecha}</p>
           <p>Diseño por Elementos Finitos</p>
           <p>Universidad Distrital · 2026-1</p>
         </div>
       </header>
       <div className="flex flex-col gap-6">{children}</div>
-      <footer className="mt-8 border-t border-line pt-3 text-center font-mono text-[10px] text-ink-3">
+      <footer className="mt-8 border-t border-line pt-3 text-center font-mono text-mini text-ink-3">
         Generado con FEM Lab · elementos finitos lineales · {URL_APP}
       </footer>
     </article>
@@ -58,16 +58,16 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
 function S({ n, titulo, children, salto }: { n: number; titulo: string; children: ReactNode; salto?: boolean }) {
   return (
     <section className={salto ? 'salto' : undefined}>
-      <h2 className="mb-2 flex items-baseline gap-2 font-heading text-lg font-bold text-ink">
-        <span className="font-mono text-sm text-accent-soft">{n}.</span> {titulo}
+      <h2 className="mb-2 flex items-baseline gap-2 font-heading text-seccion font-bold text-ink">
+        <span className="font-mono text-cuerpo text-accent-soft">{n}.</span> {titulo}
       </h2>
-      <div className="flex flex-col gap-3 text-sm text-ink">{children}</div>
+      <div className="flex flex-col gap-3 text-cuerpo text-ink">{children}</div>
     </section>
   );
 }
 
 const Fx = ({ children }: { children: string }) => (
-  <div className="scroll-x text-[13px]">
+  <div className="scroll-x text-detalle">
     <Tex display>{children}</Tex>
   </div>
 );
@@ -196,7 +196,7 @@ function Reporte1D() {
             alinear={['left', 'right', 'right', 'right', 'right']}
             filas={nodal.filas.map((i) => [i + 1, fmtNum(sol.mesh.nodes[i], 6), fmtNum(snap(sol.u[i], uMax), 6), ...(sol.error ? [fmtNum(snap(sol.error.exactAtNodes[i], uMax), 6), fmtNum(snap(sol.error.nodal[i], uMax), 3)] : [])])}
           />
-          {nodal.recortado && <p className="text-xs text-ink-2">Se muestran 61 de los {n} nodos (muestra uniforme). El CSV contiene todos.</p>}
+          {nodal.recortado && <p className="text-mini text-ink-2">Se muestran 61 de los {n} nodos (muestra uniforme). El CSV contiene todos.</p>}
         </S>
 
         <S n={6} titulo="Resultados por elemento">
@@ -205,7 +205,7 @@ function Reporte1D() {
             alinear={Array(3 + t.derivadas.length).fill('right')}
             filas={elems.filas.map((el) => [el.id, fmtNum(el.xm, 5), fmtNum(el.h, 4), ...t.derivadas.map((d) => fmtNum(el.valores[d.id], 5))])}
           />
-          {elems.recortado && <p className="text-xs text-ink-2">Se muestran 40 de los {res.elementos.length} elementos.</p>}
+          {elems.recortado && <p className="text-mini text-ink-2">Se muestran 40 de los {res.elementos.length} elementos.</p>}
         </S>
 
         <S n={7} titulo="Verificación">
@@ -219,7 +219,7 @@ function Reporte1D() {
             {sol.energy.aplica && ` Energía de deformación ½uᵀKu = ${fmtNum(sol.energy.U, 6)}; trabajo externo = ${fmtNum(sol.energy.W, 6)}.`}
             {sol.error && ` Frente a la solución analítica (${res.exacta?.origen === 'automatica' ? 'calculada automáticamente' : 'escrita por el usuario'}): error nodal máximo ${fmtNum(sol.error.maxNodal, 3)}, ‖e‖L² = ${fmtNum(sol.error.L2, 3)}, |e|H¹ = ${fmtNum(sol.error.H1semi, 3)}.`}
           </p>
-          {res.avisos.length > 0 && <p className="text-xs text-ink-2">Avisos: {res.avisos.join(' ')}</p>}
+          {res.avisos.length > 0 && <p className="text-mini text-ink-2">Avisos: {res.avisos.join(' ')}</p>}
         </S>
 
         {n <= 12 && (
@@ -296,13 +296,13 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
     <>
       <figure className="scroll-x">
         <Grafica data={sol} layout={lay1} alto={260} ancho={680} etiqueta={`${t.incognita.nombre} contra x`} />
-        <figcaption className="text-center text-xs text-ink-2">
+        <figcaption className="text-center text-mini text-ink-2">
           {t.incognita.nombre}: solución MEF{exacta ? ' y analítica' : ''}.
         </figcaption>
       </figure>
       <figure className="scroll-x">
         <Grafica data={der} layout={lay2} alto={220} ancho={680} etiqueta={`${d.nombre} por elemento`} />
-        <figcaption className="text-center text-xs text-ink-2">{d.nombre} (constante en cada elemento).</figcaption>
+        <figcaption className="text-center text-mini text-ink-2">{d.nombre} (constante en cada elemento).</figcaption>
       </figure>
     </>
   );
@@ -335,7 +335,7 @@ function ReporteArmadura() {
           <div className="rounded-lg border border-line">
             <PlanoArmadura e={e} coords={coords} sol={sol} escala={sol.scaleSuggestion} verDeformada verFuerzas sel={null} onSel={() => {}} />
           </div>
-          <p className="text-center text-xs text-ink-2">
+          <p className="text-center text-mini text-ink-2">
             Armadura original y deformada (escala ×{fmtNum(sol.scaleSuggestion)}). Barras en tracción en ámbar y en compresión en azul.
           </p>
         </S>

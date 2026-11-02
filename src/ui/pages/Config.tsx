@@ -106,7 +106,7 @@ function Config1D() {
           </>
         }
         titulo="Configuración del problema"
-        subtitulo={<span className="font-mono text-xs">{t.nombre} · elementos lineales de Lagrange</span>}
+        subtitulo={<span className="font-mono text-mini">{t.nombre} · elementos lineales de Lagrange</span>}
       />
 
       <Columnas
@@ -119,7 +119,7 @@ function Config1D() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Icon name="domain_verification" className="text-[18px] text-accent-soft" />
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink">Malla · dominio [{e.x0}, {e.xL}]</span>
+            <span className="font-mono text-mini font-bold uppercase tracking-wider text-ink">Malla · dominio [{e.x0}, {e.xL}]</span>
           </div>
           {vista && (
             <Badge>
@@ -132,15 +132,15 @@ function Config1D() {
           {vista ? (
             <DiagramaMalla problem={vista.problem} nodos={vista.sol.mesh.nodes} etiquetaCarga={etiquetaCarga(t)} fuerzaX={t.id === 'barra'} simbolo={t.incognita.simbolo} />
           ) : (
-            <p className="p-6 text-center font-mono text-xs text-ink-3">Corrige los datos para ver la malla.</p>
+            <p className="p-6 text-center font-mono text-mini text-ink-3">Corrige los datos para ver la malla.</p>
           )}
         </div>
         <div className="flex flex-col gap-1 rounded-lg border border-line bg-s3 p-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-accent-soft">Formulación fuerte</span>
-            <span className="font-mono text-[10px] text-ink-2">{t.nombre}</span>
+            <span className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">Formulación fuerte</span>
+            <span className="font-mono text-mini text-ink-2">{t.nombre}</span>
           </div>
-          <div className="scroll-x text-[12.5px] text-ink sm:text-sm">
+          <div className="scroll-x text-detalle text-ink ">
             <Tex display>{t.ecuacion}</Tex>
           </div>
           {vista && (
@@ -203,11 +203,11 @@ function Config1D() {
               opciones={t.sistemas.map((x) => ({ valor: x, texto: SISTEMAS[x].nombre }))}
             />
           )}
-          {t.sistemas.length > 1 && <p className="-mt-1 text-[11px] text-ink-3">Cambiar el sistema solo cambia las unidades que se muestran: escribe los valores en esas unidades.</p>}
+          {t.sistemas.length > 1 && <p className="-mt-1 text-mini text-ink-3">Cambiar el sistema solo cambia las unidades que se muestran: escribe los valores en esas unidades.</p>}
           {t.id !== 'general' && <div className="rounded-lg border border-line bg-inset p-3">
-            <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-wider text-ink-2">Traducción al problema modelo</p>
+            <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Traducción al problema modelo</p>
             <Tex display>{String.raw`-(k\,u')' + b\,u' + c\,u = f`}</Tex>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-cuerpo">
               {(['k', 'b', 'c', 'f'] as const).map((k) => (
                 <Tex key={k}>{`${k} = ${t.traduccion[k]}`}</Tex>
               ))}
@@ -269,7 +269,7 @@ function Config1D() {
             onChange={(v) => upd((c) => void (c.gauss = Number(v)))}
             opciones={['1', '2', '3', '4', '5'].map((g) => ({ valor: g as '1', texto: g }))}
           />
-          <p className="-mt-1 text-[11px] text-ink-3">Con n puntos se integran exactamente polinomios de grado 2n − 1 (3 puntos: grado 5).</p>
+          <p className="-mt-1 text-mini text-ink-3">Con n puntos se integran exactamente polinomios de grado 2n − 1 (3 puntos: grado 5).</p>
         </Seccion>
 
         {/* 3. Propiedades por tramos */}
@@ -306,7 +306,7 @@ function Config1D() {
         {/* 4. Cargas puntuales */}
         {t.cargaPuntual && (
           <Seccion icon="north_east" titulo="4. Cargas puntuales" subtitulo={t.cargaPuntual.nombre} tono="amber" abierta={e.cargas.length > 0} resumen={`${e.cargas.length} carga(s)`}>
-            {e.cargas.length === 0 && <p className="text-xs text-ink-3">No hay cargas puntuales. Se colocará un nodo en cada posición que agregues.</p>}
+            {e.cargas.length === 0 && <p className="text-mini text-ink-3">No hay cargas puntuales. Se colocará un nodo en cada posición que agregues.</p>}
             {e.cargas.map((cg, i) => (
               <div key={i} className="flex items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
                 <CampoFisico
@@ -342,7 +342,7 @@ function Config1D() {
           {(['izquierda', 'derecha'] as const).map((lado) => (
             <FronteraEditor key={lado} t={t} e={e} lado={lado} upd={upd} />
           ))}
-          <p className="text-[11px] leading-snug text-ink-3">
+          <p className="text-mini leading-snug text-ink-3">
             Convención: <Tex>{String.raw`k\,\partial u/\partial n`}</Tex> con la normal exterior (n = −1 en x₀, n = +1 en xL). Un valor positivo significa que entra al dominio.
           </p>
         </Seccion>
@@ -389,7 +389,7 @@ function Config1D() {
               { valor: 'gauss', texto: 'Gauss' },
             ]}
           />
-          <p className="-mt-1 text-[11px] text-ink-3">Automático usa Thomas si K es tridiagonal y diagonalmente dominante; si no, eliminación gaussiana con pivoteo.</p>
+          <p className="-mt-1 text-mini text-ink-3">Automático usa Thomas si K es tridiagonal y diagonalmente dominante; si no, eliminación gaussiana con pivoteo.</p>
         </Seccion>
       </div>
 
@@ -401,7 +401,7 @@ function Config1D() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 font-bold text-on-accent shadow-glow transition active:scale-[0.99] disabled:opacity-50"
         >
           <Icon name="play_circle" className="text-[20px]" />
-          <span className="text-sm tracking-wide">Resolver sistema [K]{'{u}'} = {'{F}'}</span>
+          <span className="text-cuerpo tracking-wide">Resolver sistema [K]{'{u}'} = {'{F}'}</span>
         </button>
         <Boton variante="secundario" icon="restart_alt" onClick={restablecer}>
           Restablecer el ejemplo
@@ -441,20 +441,20 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between rounded-lg border border-line bg-inset p-3">
         <div>
-          <span className="block font-mono text-[10px] uppercase text-ink-2">Longitud L</span>
-          <span className="font-mono text-lg font-bold text-ink">
-            {fmtNum(L)} <span className="text-xs font-normal text-ink-2">{unidadL}</span>
+          <span className="block font-mono text-mini uppercase text-ink-2">Longitud L</span>
+          <span className="font-mono text-seccion font-bold text-ink">
+            {fmtNum(L)} <span className="text-mini font-normal text-ink-2">{unidadL}</span>
           </span>
         </div>
         <div className="text-right">
-          <span className="block font-mono text-[10px] text-ink-2">PASO h = L/Ne</span>
-          <span className="font-mono text-lg font-bold text-accent-soft">
-            {Number.isFinite(L / ne) ? fmtNum(L / ne) : '—'} <span className="text-xs font-normal text-ink-2">{unidadL}</span>
+          <span className="block font-mono text-mini text-ink-2">PASO h = L/Ne</span>
+          <span className="font-mono text-seccion font-bold text-accent-soft">
+            {Number.isFinite(L / ne) ? fmtNum(L / ne) : '—'} <span className="text-mini font-normal text-ink-2">{unidadL}</span>
           </span>
         </div>
       </div>
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor="ne-slider" className="text-xs font-bold text-ink">
+        <label htmlFor="ne-slider" className="text-mini font-bold text-ink">
           Número de elementos (Ne)
         </label>
         <div className="flex items-center gap-1.5">
@@ -467,7 +467,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
               const v = Number(e.target.value);
               if (Number.isInteger(v) && v >= 1 && v <= MAX_ELEMENTOS) onChange(v);
             }}
-            className={cx('w-20 rounded-lg border bg-inset px-2 py-1 text-right font-mono text-sm font-bold text-ink focus:border-accent-hover focus:outline-none', err ? 'border-danger' : 'border-line')}
+            className={cx('w-20 rounded-lg border bg-inset px-2 py-1 text-right font-mono text-cuerpo font-bold text-ink focus:border-accent-hover focus:outline-none', err ? 'border-danger' : 'border-line')}
           />
           <Badge>{ne + 1} nodos</Badge>
         </div>
@@ -482,12 +482,12 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
         onChange={(e) => onChange(Number(e.target.value))}
         className="h-2 w-full cursor-pointer accent-[var(--accent)]"
       />
-      <div className="flex justify-between px-0.5 font-mono text-[10px] text-ink-2">
+      <div className="flex justify-between px-0.5 font-mono text-mini text-ink-2">
         <span>1</span>
         <span>deslizador hasta 64 · escribe hasta {MAX_ELEMENTOS}</span>
         <span>64</span>
       </div>
-      {err && <span className="text-[11px] text-danger">{err}</span>}
+      {err && <span className="text-mini text-danger">{err}</span>}
     </div>
   );
 }
@@ -505,7 +505,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
             aria-label={`Nombre del tramo ${i + 1}`}
             value={tr.nombre ?? `Tramo ${i + 1}`}
             onChange={(ev) => upd((c) => void (c.tramos[i].nombre = ev.target.value))}
-            className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 font-heading text-sm font-bold text-ink hover:border-line focus:border-accent focus:outline-none"
+            className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 font-heading text-cuerpo font-bold text-ink hover:border-line focus:border-accent focus:outline-none"
           />
           <button
             type="button"
@@ -552,7 +552,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-line bg-inset p-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] font-bold text-ink">
+        <span className="font-mono text-mini font-bold text-ink">
           {lado === 'izquierda' ? `Extremo izquierdo · x = ${e.x0}` : `Extremo derecho · x = ${e.xL}`}
         </span>
         <Badge tono={op.campos.length === 0 ? 'neutral' : 'accent'}>{tipoBC(op.aBC)}</Badge>
@@ -567,7 +567,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
         }
         opciones={t.fronteras.map((o) => ({ valor: o.id, texto: o.nombre }))}
       />
-      {op.ayuda && <p className="-mt-1 text-[11px] text-ink-3">{op.ayuda}</p>}
+      {op.ayuda && <p className="-mt-1 text-mini text-ink-3">{op.ayuda}</p>}
       {op.campos.length > 0 && (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {op.campos.map((c) => (
@@ -629,7 +629,7 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Icon name="insights" className="text-[18px] text-accent-soft" />
-          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink">Vista previa en vivo</span>
+          <span className="font-mono text-mini font-bold uppercase tracking-wider text-ink">Vista previa en vivo</span>
         </div>
         <Badge tono="neutral">{t.incognita.nombre}</Badge>
       </div>
@@ -641,9 +641,9 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
           const p = conPrefijo(k.valor.valor, k.unidad);
           return (
             <div key={k.def.id} className="rounded-lg border border-line bg-inset px-3 py-2">
-              <p className="truncate font-mono text-[10px] uppercase text-ink-2">{k.def.nombre}</p>
-              <p className="font-heading text-lg font-bold text-accent-hover">
-                {fmtNum(p.valor, 4)} <span className="font-mono text-xs font-normal text-ink-2">{p.unidad !== '—' ? p.unidad : ''}</span>
+              <p className="truncate font-mono text-mini uppercase text-ink-2">{k.def.nombre}</p>
+              <p className="font-heading text-seccion font-bold text-accent-hover">
+                {fmtNum(p.valor, 4)} <span className="font-mono text-mini font-normal text-ink-2">{p.unidad !== '—' ? p.unidad : ''}</span>
               </p>
             </div>
           );

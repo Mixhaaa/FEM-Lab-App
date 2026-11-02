@@ -30,9 +30,9 @@ export function MatrizTabla({
   const cl = columnas ?? Array.from({ length: m }, (_, j) => j + 1);
   return (
     <div className="flex flex-col gap-1">
-      {titulo && <span className="font-mono text-[11px] font-bold text-ink-2">{titulo}</span>}
+      {titulo && <span className="font-mono text-mini font-bold text-ink-2">{titulo}</span>}
       <div className="scroll-x max-h-[360px] overflow-y-auto rounded-lg border border-line bg-inset">
-        <table className="border-collapse font-mono text-[11px]">
+        <table className="border-collapse font-mono text-mini">
           <thead className="sticky top-0 z-10">
             <tr className="bg-s3 text-amber-soft">
               <th className="sticky left-0 bg-s3 px-2 py-1" />

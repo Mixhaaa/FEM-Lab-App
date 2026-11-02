@@ -42,7 +42,7 @@ export function BotonCopiar({ texto, etiqueta = 'Copiar' }: { texto: string; eti
     setTimeout(() => setOk(false), 1500);
   };
   return (
-    <Boton variante="fantasma" icon={ok ? 'check_circle' : 'content_copy'} onClick={copiar} className="min-h-[32px] px-2 py-1 text-xs">
+    <Boton variante="fantasma" icon={ok ? 'check_circle' : 'content_copy'} onClick={copiar} className="min-h-[32px] px-2 py-1 text-mini">
       {ok ? 'Copiado' : etiqueta}
     </Boton>
   );
@@ -77,7 +77,7 @@ export function PanelMatrices({
             <Spy info={info} M={s.K} titulo={s.nombre} />
           </div>
           <div className="flex w-full flex-col gap-2">
-            <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-2">Estructura (como spy de MATLAB)</p>
+            <p className="font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Estructura (como spy de MATLAB)</p>
             <div className="flex flex-wrap gap-1.5">
               <Badge>
                 {info.filas} × {info.columnas}
@@ -88,7 +88,7 @@ export function PanelMatrices({
               <Badge tono={info.simetrica ? 'ok' : 'amber'}>{info.simetrica ? 'simétrica' : 'no simétrica'}</Badge>
               <Badge tono={info.diagonalDominante ? 'ok' : 'amber'}>{info.diagonalDominante ? 'diagonal dominante' : 'no diagonal dominante'}</Badge>
             </div>
-            <p className="text-[12px] leading-snug text-ink-2">
+            <p className="text-mini leading-snug text-ink-2">
               {info.anchoBanda === 1
                 ? 'Tridiagonal: cada nodo solo se conecta con sus vecinos, por eso se puede usar el algoritmo de Thomas.'
                 : `Matriz en banda: el ancho de banda (${info.anchoBanda}) depende de cómo se numeran los nodos.`}{' '}
@@ -111,14 +111,14 @@ export function PanelMatrices({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-bold text-ink-2">F ({s.nombre.toLowerCase()})</span>
+              <span className="font-mono text-mini font-bold text-ink-2">F ({s.nombre.toLowerCase()})</span>
               <BotonCopiar texto={vectorMatlab('Vglob', s.F)} etiqueta="MATLAB" />
             </div>
             <VectorTabla v={s.F} etiquetas={s.etiquetas} sig={6} />
           </div>
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-bold text-ink-2">u (todos los nodos)</span>
+              <span className="font-mono text-mini font-bold text-ink-2">u (todos los nodos)</span>
               <BotonCopiar texto={vectorMatlab('u', u)} etiqueta="MATLAB" />
             </div>
             <VectorTabla v={u} etiquetas={etiquetasU} sig={6} />

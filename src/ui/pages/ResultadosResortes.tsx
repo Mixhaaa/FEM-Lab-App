@@ -18,13 +18,13 @@ export function ResultadosResortes() {
   const escalaU = Math.max(...sol.u.map(Math.abs), 1e-300);
   return (
     <Pagina amplia>
-      <div className="flex items-center gap-3 rounded-2xl border border-line bg-s2 px-4 py-3 shadow-card">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-s2 px-4 py-3 shadow-card">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent-bg text-accent-soft">
           <Icon name="linear_scale" className="text-[20px]" />
         </div>
         <div className="min-w-0">
-          <p className="truncate font-heading text-base font-bold text-ink">Sistema de resortes</p>
-          <p className="truncate font-mono text-[11px] text-ink-2">
+          <p className="truncate font-heading text-seccion font-bold text-ink">Sistema de resortes</p>
+          <p className="truncate font-mono text-mini text-ink-2">
             {e.nNodos} nodos · {e.resortes.length} resortes · {e.apoyos.length} apoyo(s)
           </p>
         </div>
@@ -51,7 +51,7 @@ export function ResultadosResortes() {
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
             <Icon name="table_chart" className="text-[22px] text-accent-hover" />
-            <h3 className="font-heading text-base font-bold text-ink">Desplazamientos y reacciones</h3>
+            <h3 className="font-heading text-seccion font-bold text-ink">Desplazamientos y reacciones</h3>
           </div>
           <Badge>{e.nNodos} nodos</Badge>
         </div>
@@ -73,7 +73,7 @@ export function ResultadosResortes() {
       <Card className="overflow-hidden">
         <div className="flex items-center gap-2 border-b border-line bg-s1 p-4">
           <Icon name="linear_scale" className="text-[22px] text-accent-hover" />
-          <h3 className="font-heading text-base font-bold text-ink">Fuerzas en los resortes</h3>
+          <h3 className="font-heading text-seccion font-bold text-ink">Fuerzas en los resortes</h3>
         </div>
         <Tabla
           cabecera={['Resorte', 'Nodos', `k [${un.rigidez}]`, `Δ = uj − ui [${un.long}]`, `f = k·Δ [${un.fuerza}]`, 'Estado']}

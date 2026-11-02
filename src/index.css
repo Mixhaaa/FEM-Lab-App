@@ -1,6 +1,5 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/space-grotesk';
-@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
 @import 'katex/dist/katex.min.css';
 
@@ -29,7 +28,9 @@
   --line-strong: #574239;
   --ink: #faf4ec;
   --ink-2: #c9b8aa;
-  --ink-3: #8e7f72;
+  --ink-3: #9c8e83;
+  --field: #81716a;
+  --focus: #ffb695;
   --accent: #e06d32;
   --accent-hover: #f08244;
   --accent-soft: #ffb695;
@@ -63,18 +64,20 @@
   --line-strong: #d1c3b4;
   --ink: #2b211c;
   --ink-2: #64544a;
-  --ink-3: #8d7c70;
-  --accent: #c2652a;
+  --ink-3: #72645b;
+  --field: #8a8177;
+  --focus: #9a4a17;
+  --accent: #b25d27;
   --accent-hover: #a9531d;
   --accent-soft: #9a4a17;
   --accent-bg: rgb(194 101 42 / 0.12);
   --on-accent: #ffffff;
   --amber: #b7791f;
-  --amber-soft: #9a6412;
+  --amber-soft: #8e5c11;
   --bronze: #a8692f;
   --rose: #8c3c3c;
   --compress: #3f6c99;
-  --ok: #3f7a31;
+  --ok: #3c742f;
   --danger: #a1231b;
   --danger-bg: rgb(161 35 27 / 0.1);
   --plot-grid: #ece2d6;
@@ -108,8 +111,24 @@
   --color-ok: var(--ok);
   --color-danger: var(--danger);
   --color-danger-bg: var(--danger-bg);
-  --font-heading: 'Space Grotesk Variable', 'Space Grotesk', system-ui, sans-serif;
-  --font-sans: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, sans-serif;
+  --color-field: var(--field);
+  --color-focus: var(--focus);
+  /* Tipografía (DESIGN.md §2) */
+  --font-heading: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --text-titulo: 1.75rem;
+  --text-titulo--line-height: 2.125rem;
+  --text-titulo--letter-spacing: -0.02em;
+  --text-seccion: 1.125rem;
+  --text-seccion--line-height: 1.625rem;
+  --text-cuerpo: 0.9375rem;
+  --text-cuerpo--line-height: 1.375rem;
+  --text-detalle: 0.8125rem;
+  --text-detalle--line-height: 1.125rem;
+  --text-mini: 0.75rem;
+  --text-mini--line-height: 1rem;
+  --text-dato: 1.625rem;
+  --text-dato--line-height: 1.875rem;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   --shadow-card: var(--shadow);
   --shadow-glow: var(--glow);
@@ -142,8 +161,9 @@
   button {
     cursor: pointer;
   }
+  /* Anillo de foco único (DESIGN.md §5): 2 px, separado 2 px */
   :focus-visible {
-    outline: 2px solid var(--accent-hover);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
 }

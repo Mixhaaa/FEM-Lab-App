@@ -136,7 +136,7 @@ export function Grafica({
     <div className="relative w-full" style={{ height: alto, ...(ancho ? { width: ancho, minWidth: ancho } : {}) }} role="img" aria-label={etiqueta}>
       <div ref={ref} className="h-full w-full" />
       {estado !== 'ok' && (
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-xs text-ink-3">
+        <div className="absolute inset-0 flex items-center justify-center font-mono text-mini text-ink-3">
           {estado === 'cargando' ? 'Cargando gráfica…' : 'No se pudo cargar la gráfica.'}
         </div>
       )}

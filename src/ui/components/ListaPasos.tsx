@@ -13,13 +13,13 @@ export function ListaPasos<T extends string>({ pasos, actual, onChange }: { paso
               aria-current={act ? 'step' : undefined}
               onClick={() => onChange(p.id)}
               className={cx(
-                'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition',
+                'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-cuerpo transition',
                 act ? 'bg-accent-bg font-bold text-ink' : 'text-ink-2 hover:bg-s2 hover:text-ink',
               )}
             >
               <span
                 className={cx(
-                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold',
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-mono text-mini font-bold',
                   act ? 'bg-accent text-on-accent' : 'border border-line bg-s2 text-ink-2',
                 )}
               >

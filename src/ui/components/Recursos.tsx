@@ -6,8 +6,8 @@ import { Tex } from './Tex';
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-line bg-inset p-3">
-      <p className="mb-1 font-mono text-[11px] font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>
-      <div className="text-sm text-ink">{children}</div>
+      <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>
+      <div className="text-cuerpo text-ink">{children}</div>
     </div>
   );
 }
@@ -42,7 +42,7 @@ export function Formulario() {
             return r.xi.map((x, i) => [i === 0 ? String(n) : '', x.toFixed(6), r.w[i].toFixed(6)]);
           })}
         />
-        <p className="mt-2 text-xs text-ink-2">Con n puntos se integran exactamente polinomios de grado 2n − 1. La app admite de 1 a 5 puntos.</p>
+        <p className="mt-2 text-mini text-ink-2">Con n puntos se integran exactamente polinomios de grado 2n − 1. La app admite de 1 a 5 puntos.</p>
       </Bloque>
       <Bloque titulo="Fronteras (normal exterior n)">
         <Tex display>{String.raw`\text{Neumann: } k\frac{\partial u}{\partial n} = q \;\Rightarrow\; F_{\text{ext}} \mathrel{+}= q`}</Tex>
@@ -77,7 +77,7 @@ export function Glosario() {
           <span className="w-32 shrink-0 text-accent-soft">
             <Tex>{s}</Tex>
           </span>
-          <span className="text-[13px] leading-snug text-ink-2">{d}</span>
+          <span className="text-detalle leading-snug text-ink-2">{d}</span>
         </div>
       ))}
     </div>
