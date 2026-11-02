@@ -144,7 +144,7 @@ function Config1D() {
         </Desplazable>
         <div className="flex flex-col gap-1 rounded-lg border border-line bg-s3 p-3">
           <div className="flex items-center justify-between">
-            <span className="text-detalle font-semibold text-accent-soft">Formulación fuerte</span>
+            <span className="whitespace-nowrap text-detalle font-semibold text-accent-soft">Formulación fuerte</span>
             <span className="font-mono text-mini text-ink-2">{t.nombre}</span>
           </div>
           <Desplazable etiqueta="Ecuación del problema" className="text-detalle text-ink">
@@ -450,7 +450,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between rounded-lg border border-line bg-inset p-3">
         <div>
-          <span className="block font-mono text-mini uppercase text-ink-2">Longitud L</span>
+          <span className="block text-detalle font-semibold text-ink-2">Longitud L</span>
           <span className="font-mono text-seccion font-bold text-ink">
             {fmtNum(L)} <span className="text-mini font-normal text-ink-2">{unidadL}</span>
           </span>
@@ -491,11 +491,11 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
         onChange={(e) => onChange(Number(e.target.value))}
         className="h-11 w-full cursor-pointer accent-[var(--accent)]"
       />
-      <div className="flex justify-between px-0.5 font-mono text-mini text-ink-2">
+      <div className="flex justify-between gap-2 font-mono text-mini text-ink-2" aria-hidden="true">
         <span>1</span>
-        <span>deslizador hasta 64 · escribe hasta {MAX_ELEMENTOS}</span>
         <span>64</span>
       </div>
+      <p className="text-detalle text-ink-2">El deslizador llega a 64; en la casilla puedes escribir hasta {MAX_ELEMENTOS}.</p>
       {err && <span className="text-mini text-danger">{err}</span>}
     </div>
   );
@@ -717,7 +717,7 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
           const p = conPrefijo(k.valor.valor, k.unidad);
           return (
             <div key={k.def.id} className="rounded-lg border border-line bg-inset px-3 py-2">
-              <p className="truncate font-mono text-mini uppercase text-ink-2">{k.def.nombre}</p>
+              <p className="truncate text-detalle font-semibold text-ink-2">{k.def.nombre}</p>
               <p className="font-heading text-seccion font-bold text-accent-hover">
                 {fmtNum(p.valor, 4)} <span className="font-mono text-mini font-normal text-ink-2">{p.unidad !== '—' ? p.unidad : ''}</span>
               </p>

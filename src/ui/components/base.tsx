@@ -61,7 +61,7 @@ const TONOS: Record<Tono, string> = {
 
 export function Badge({ children, tono = 'accent', className }: { children: ReactNode; tono?: Tono; className?: string }) {
   return (
-    <span className={cx('inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-mini font-semibold', TONOS[tono], className)}>
+    <span className={cx('inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-mini font-semibold', TONOS[tono], className)}>
       {children}
     </span>
   );
@@ -434,7 +434,7 @@ export function Kpi({
   return (
     <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-line bg-s2 p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-mini font-semibold uppercase tracking-wide text-ink-2">{titulo}</span>
+        <span className="text-detalle font-semibold leading-snug text-ink-2">{titulo}</span>
         {simbolo && (
           <Badge tono={tono === 'amber' ? 'amber' : tono === 'neutral' ? 'neutral' : 'accent'}>
             <Simbolo s={simbolo} />

@@ -75,7 +75,7 @@ Las cifras usan siempre `tabular-nums` para que las columnas no salten.
 | `--text-mini` | `text-mini` | 12 / 16 px | 500–600 | Chips y notas al pie. **Nunca menos de 12 px.** |
 | `--text-dato` | `text-dato` | 26 / 30 px | 700 | Valor de un indicador |
 
-Etiquetas en mayúsculas solo para el rótulo pequeño de un indicador o una tabla, nunca para frases.
+Sin etiquetas en mayúsculas: cambian el sentido de los símbolos (u → U). Los rótulos van en tipo oración, `text-detalle` semibold.
 
 ---
 
@@ -131,7 +131,7 @@ Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el col
 
 ### Tarjeta de resultado (indicador)
 - Fondo `--s2`, borde `--line`, `rounded-xl`, relleno 16 px.
-- Rótulo (`text-mini`, mayúsculas, `--ink-2`) → valor (`text-dato`, `--accent-soft` o `--ink`) con unidad (`text-detalle`, `--ink-2`) → ubicación o detalle (`text-detalle`).
+- Rótulo (`text-detalle` semibold, tipo oración, `--ink-2`) → valor (`text-dato`, `--accent-soft` o `--ink`) con unidad (`text-detalle`, `--ink-2`) → ubicación o detalle (`text-detalle`).
 - Los símbolos se escriben con subíndices reales (u<sub>máx</sub>), no con guion bajo: componente `Simbolo`.
 
 ### Mensaje de error

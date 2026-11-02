@@ -122,7 +122,7 @@ function Banner({ res }: { res: Resultado1D }) {
           <Icon name="verified" className="text-[20px]" />
         </div>
         <div className="min-w-0">
-          <h1 className="truncate font-heading text-seccion font-bold text-ink">
+          <h1 className="line-clamp-2 font-heading text-seccion font-bold leading-tight text-ink">
             <span className="sr-only">Resultados: </span>
             {ej?.nombre ?? t.nombre}
           </h1>
@@ -132,9 +132,11 @@ function Banner({ res }: { res: Resultado1D }) {
           </p>
         </div>
       </div>
-      <Badge className="hidden shrink-0 sm:inline-flex">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. lineales C⁰
-      </Badge>
+      <span className="hidden shrink-0 sm:block">
+        <Badge>
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. lineales C⁰
+        </Badge>
+      </span>
     </div>
   );
 }
