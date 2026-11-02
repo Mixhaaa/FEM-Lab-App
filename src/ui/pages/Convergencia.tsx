@@ -3,7 +3,7 @@ import { convergenceStudy, ordenesLocales, type ConvergenceResult } from '../../
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Card, CardHeader, Icon, Kpi, Segmentos, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
-import { fmtNum, snap, sub } from '../format';
+import { fmtFijo, fmtNum, snap, sub } from '../format';
 
 type Estado = { tipo: 'calculando' } | { tipo: 'ok'; conv: ConvergenceResult; ms: number } | { tipo: 'error'; mensaje: string };
 
@@ -15,7 +15,7 @@ function OrdenKpi({ titulo, valor, esperado, simbolo }: { titulo: string; valor:
     <Kpi
       titulo={titulo}
       simbolo={simbolo}
-      valor={Number.isFinite(valor) ? valor.toFixed(2) : '—'}
+      valor={fmtFijo(valor, 2)}
       detalle={Number.isFinite(valor) ? `esperado ${esperado}` : 'no aplica'}
       icon={ok ? 'check_circle' : 'info'}
       tono={ok ? 'accent' : 'neutral'}
@@ -64,13 +64,13 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
           onChange={setNeMax}
           opciones={(['64', '128', '256', '512'] as const).map((v) => ({ valor: v, texto: v }))}
         />
-        {res.estado.malla.tipo === 'manual' && <p className="text-[11px] text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
-        {res.estado.malla.tipo === 'geometrica' && <p className="text-[11px] text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
+        {res.estado.malla.tipo === 'manual' && <p className="text-mini text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
+        {res.estado.malla.tipo === 'geometrica' && <p className="text-mini text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
       </Card>
       </div>
       {estado.tipo === 'calculando' && (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-xs text-ink-2">
-          <Icon name="query_stats" className="animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-mini text-ink-2">
+          <Icon name="query_stats" className="motion-safe:animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
         </div>
       )}
       {estado.tipo === 'error' && (
@@ -103,7 +103,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         y: s.y,
         type: 'scatter',
         mode: 'lines+markers',
-        name: `${s.nombre}${Number.isFinite(s.orden) ? ` (p = ${s.orden.toFixed(2)})` : ''}`,
+        name: `${s.nombre}${Number.isFinite(s.orden) ? ` (p = ${fmtFijo(s.orden, 2)})` : ''}`,
         line: { color: s.color, width: 2 },
         marker: { color: s.color, size: 7, symbol: s.simbolo },
         hovertemplate: `h = %{x:.3g}<br>${s.nombre} = %{y:.3e}<extra></extra>`,
@@ -162,7 +162,13 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         <Card className="flex flex-col gap-3 p-4">
           <CardHeader icon="show_chart" title="Error contra h (escala log-log)" subtitle="La pendiente de cada recta es el orden de convergencia p: error ≈ C·hᵖ." />
           <div className="rounded-xl border border-line bg-inset p-1">
-            <Grafica data={data} layout={layout} alto={360} etiqueta="Gráfica log-log del error contra el tamaño de elemento" />
+            <Grafica
+              data={data}
+              layout={layout}
+              alto={360}
+              etiqueta="Gráfica log-log del error contra el tamaño de elemento"
+              resumen={`Errores de ${rows.length} mallas, de h = ${fmtNum(h[0], 3)} a h = ${fmtNum(h[h.length - 1], 3)}. Pendientes medidas: nodal ${fmtNum(conv.orden.nodal, 3)}, L² ${fmtNum(conv.orden.L2, 3)}, H¹ ${fmtNum(conv.orden.H1, 3)}. Los valores están en la tabla «Errores por malla».`}
+            />
           </div>
         </Card>
       )}
@@ -171,7 +177,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
             <Icon name="table_chart" className="text-[22px] text-accent-hover" />
-            <h3 className="font-heading text-base font-bold text-ink">Errores por malla</h3>
+            <h3 className="font-heading text-seccion font-bold text-ink">Errores por malla</h3>
           </div>
           <Badge>{fmtNum(ms, 2)} ms</Badge>
         </div>
@@ -182,14 +188,14 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
             r.ne,
             fmtNum(r.h, 4),
             fmtNum(r.maxNodal, 3),
-            Number.isFinite(oN[i]) && !conv.superconvergenciaNodal && !conv.solucionExacta ? oN[i].toFixed(2) : '—',
+            Number.isFinite(oN[i]) && !conv.superconvergenciaNodal && !conv.solucionExacta ? fmtFijo(oN[i], 2) : '—',
             fmtNum(r.L2, 3),
-            Number.isFinite(oL[i]) && !conv.solucionExacta ? oL[i].toFixed(2) : '—',
+            Number.isFinite(oL[i]) && !conv.solucionExacta ? fmtFijo(oL[i], 2) : '—',
             fmtNum(r.H1semi, 3),
-            Number.isFinite(oH[i]) && !conv.solucionExacta ? oH[i].toFixed(2) : '—',
+            Number.isFinite(oH[i]) && !conv.solucionExacta ? fmtFijo(oH[i], 2) : '—',
           ])}
         />
-        <div className="border-t border-line bg-s1 px-4 py-2.5 text-[11px] leading-snug text-ink-2">
+        <div className="border-t border-line bg-s1 px-4 py-3 text-mini leading-snug text-ink-2">
           p = orden local entre mallas consecutivas: log(eᵢ₋₁/eᵢ) / log(hᵢ₋₁/hᵢ). El orden de arriba se ajusta por mínimos cuadrados con las mallas más finas.{' '}
           {conv.referencia === 'analitica'
             ? `Referencia: solución analítica ${res.exacta?.origen === 'automatica' ? 'calculada automáticamente' : 'escrita por ti'}.`
@@ -247,9 +253,20 @@ function ErrorNodalActual({ res }: { res: Resultado1D }) {
         right={<Badge tono="neutral">máx. en N{sub(k + 1)}</Badge>}
       />
       <div className="rounded-xl border border-line bg-inset p-1">
-        <Grafica data={data} layout={layout} alto={220} etiqueta="Gráfica del error nodal contra x" />
+        <Grafica
+          data={data}
+          layout={layout}
+          alto={220}
+          etiqueta="Gráfica del error nodal contra x"
+          resumen={`El mayor error, ${fmtNum(err.nodal[k], 3)}, está en el nodo ${k + 1} (x = ${fmtNum(nodos[k])}).`}
+          valores={{
+            cabecera: ['Nodo', 'x', `${t.incognita.simbolo} MEF − ${t.incognita.simbolo} exacta`],
+            alinear: ['center', 'right', 'right'],
+            filas: nodos.map((x, i) => [String(i + 1), fmtNum(x), fmtNum(errores[i], 3)]),
+          }}
+        />
       </div>
-      <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+      <div className="grid grid-cols-3 gap-2 font-mono text-mini">
         {(
           [
             ['máx |eᵢ|', err.maxNodal],

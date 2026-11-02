@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { compileExpr, type BoundaryCondition } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
-import { Aviso, Badge, Boton, Card, cx, Icon, Pildoras, Selector, Tabla } from '../components/base';
+import { Aviso, Badge, Boton, Card, cx, Desplazable, Icon, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum, texVector } from '../components/Tex';
-import { fmtNum, sub } from '../format';
+import { fmtFijo, fmtNum, sub } from '../format';
 import { useAvanzar } from '../presentacion';
 import { useResultado1D } from '../resultado';
 import { SinResultado } from './Resultados';
@@ -47,11 +47,11 @@ export function bcTex(bc: BoundaryCondition, x: number): string {
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-sm font-bold text-on-accent">{n}</span>
-        <h2 className="font-heading text-lg font-bold text-ink">{titulo}</h2>
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-cuerpo font-bold text-on-accent">{n}</span>
+        <h2 className="font-heading text-seccion font-bold text-ink">{titulo}</h2>
       </div>
-      <div className="flex flex-col gap-3 text-sm leading-relaxed text-ink">{children}</div>
+      <div className="flex flex-col gap-3 text-cuerpo leading-relaxed text-ink">{children}</div>
     </Card>
   );
 }
@@ -59,15 +59,15 @@ function Paso({ n, titulo, children }: { n: number; titulo: string; children: Re
 function Formula({ children, titulo }: { children: string; titulo?: string }) {
   return (
     <div className="rounded-xl border border-line bg-inset px-3 py-2">
-      {titulo && <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>}
-      <div className="scroll-x text-[12.5px] text-ink sm:text-[15px]">
+      {titulo && <p className="mb-1 text-detalle font-semibold text-accent-soft">{titulo}</p>}
+      <Desplazable etiqueta={titulo ?? 'Fórmula'} className="text-detalle text-ink sm:text-cuerpo">
         <Tex display>{children}</Tex>
-      </div>
+      </Desplazable>
     </div>
   );
 }
 
-const P = ({ children }: { children: ReactNode }) => <p className="text-[13.5px] leading-relaxed text-ink-2">{children}</p>;
+const P = ({ children }: { children: ReactNode }) => <p className="text-detalle leading-relaxed text-ink-2">{children}</p>;
 
 export function Paso1D() {
   const r = useResultado1D();
@@ -100,10 +100,11 @@ export function Paso1D() {
       />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <div className="lg:hidden">
-          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+          <Pildoras base="pasos" etiqueta="Pasos" value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {usaElemento && (
           <Selector
+            etiqueta="Elemento que se explica"
             value={e}
             onChange={setElem}
             opciones={res.sol.elements.map((el, i) => ({ valor: i, texto: `Elemento e${sub(i + 1)}: nodos ${el.nodes[0] + 1}–${el.nodes[1] + 1}, x ∈ [${fmtNum(el.xa)}, ${fmtNum(el.xb)}]` }))}
@@ -113,7 +114,7 @@ export function Paso1D() {
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
         <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
-        <div className="flex min-w-0 flex-col gap-4">
+        <PanelPestanas base="pasos" valor={paso}>
       {paso === 'problema' && <PasoProblema res={res} />}
       {paso === 'debil' && <PasoDebil res={res} />}
       {paso === 'malla' && <PasoMalla res={res} />}
@@ -128,14 +129,14 @@ export function Paso1D() {
         <Boton variante="secundario" icon="chevron_left" disabled={idx === 0} onClick={() => setPaso(PASOS[idx - 1].id)}>
           Anterior
         </Boton>
-        <span className="font-mono text-xs text-ink-2">
+        <span className="font-mono text-mini text-ink-2">
           {idx + 1} / {PASOS.length}
         </span>
         <Boton variante="primario" disabled={idx === PASOS.length - 1} onClick={() => setPaso(PASOS[idx + 1].id)}>
           Siguiente <Icon name="chevron_right" className="text-[18px]" />
         </Boton>
       </div>
-        </div>
+        </PanelPestanas>
       </div>
     </Pagina>
   );
@@ -151,7 +152,7 @@ function PasoProblema({ res }: { res: Resultado1D }) {
       <P>Se escribe como el problema modelo que resuelve FEM Lab:</P>
       <Formula>{String.raw`-\frac{d}{dx}\left(k(x)\,\frac{du}{dx}\right) + b(x)\,\frac{du}{dx} + c(x)\,u = f(x), \qquad x\in[${xTex(p.x0)},\,${xTex(p.xL)}]`}</Formula>
       {t.id !== 'general' && (
-        <div className="grid grid-cols-2 gap-1 text-sm">
+        <div className="grid grid-cols-2 gap-1 text-cuerpo">
           {(['k', 'b', 'c', 'f'] as const).map((k) => (
             <Tex key={k}>{`${k} = ${t.traduccion[k]}`}</Tex>
           ))}
@@ -199,7 +200,7 @@ function PasoDebil({ res }: { res: Resultado1D }) {
       <P>Cada extremo se trata según su condición de frontera:</P>
       <ul className="flex flex-col gap-2">
         {extremos.map(({ bc, nombre }) => (
-          <li key={nombre} className="rounded-lg border border-line bg-inset p-2.5 text-[13px] text-ink-2">
+          <li key={nombre} className="rounded-lg border border-line bg-inset p-3 text-detalle text-ink-2">
             <b className="text-ink">
               <Tex>{nombre}</Tex>:{' '}
             </b>
@@ -248,11 +249,11 @@ function PasoMalla({ res }: { res: Resultado1D }) {
       ))}
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <p className="mb-1 font-mono text-[11px] font-bold text-ink-2">Mnod: tabla de nodos</p>
+          <p className="mb-1 font-mono text-mini font-bold text-ink-2">Mnod: tabla de nodos</p>
           <Tabla cabecera={['Nodo', `x ${ul ? `[${ul}]` : ''}`]} alinear={['left', 'right']} filas={m.nodes.slice(0, lim).map((x, i) => [i + 1, fmtNum(x, 6)])} />
         </div>
         <div>
-          <p className="mb-1 font-mono text-[11px] font-bold text-ink-2">Melem: conectividad</p>
+          <p className="mb-1 font-mono text-mini font-bold text-ink-2">Melem: conectividad</p>
           <Tabla
             cabecera={['Elem.', 'Nodo 1', 'Nodo 2', 'h']}
             alinear={['left', 'center', 'center', 'right']}
@@ -260,7 +261,7 @@ function PasoMalla({ res }: { res: Resultado1D }) {
           />
         </div>
       </div>
-      {m.nodes.length > lim && <p className="text-[11px] text-ink-3">Se muestran las primeras {lim} filas.</p>}
+      {m.nodes.length > lim && <p className="text-mini text-ink-3">Se muestran las primeras {lim} filas.</p>}
       <P>La solución aproximada es una función lineal por tramos que vale u_i en cada nodo:</P>
       <Formula>{String.raw`u_h(x) = \sum_{i=1}^{${m.nodes.length}} u_i\,N_i(x)`}</Formula>
     </Paso>
@@ -345,8 +346,8 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
         alinear={Array(11).fill('right')}
         filas={el.gauss.map((g, i) => [
           i + 1,
-          g.xi.toFixed(6),
-          g.w.toFixed(6),
+          fmtFijo(g.xi, 6),
+          fmtFijo(g.w, 6),
           fmtNum(g.x, 6),
           fmtNum(g.N[0], 5),
           fmtNum(g.N[1], 5),
@@ -403,7 +404,7 @@ function PasoEnsamblaje({ res, e }: { res: Resultado1D; e: number }) {
       <Formula>{String.raw`F_{${i + 1}} \mathrel{+}= ${texNum(el.Fe[0], 5)}, \qquad F_{${j + 1}} \mathrel{+}= ${texNum(el.Fe[1], 5)}`}</Formula>
       <MatrizTabla M={res.sol.Kassembled} titulo={`K ensamblada (${n}×${n}); en color, el aporte de e${sub(e + 1)}`} resaltar={resaltar} max={24} />
       <VectorTabla v={res.sol.Fassembled} titulo="F ensamblado (solo carga distribuida)" resaltar={new Set([i, j])} />
-      {n > 24 && <p className="text-[11px] text-ink-3">Se muestran las primeras 24 filas y columnas.</p>}
+      {n > 24 && <p className="text-mini text-ink-3">Se muestran las primeras 24 filas y columnas.</p>}
     </Paso>
   );
 }
@@ -431,7 +432,7 @@ function PasoFronteras({ res }: { res: Resultado1D }) {
   return (
     <Paso n={7} titulo="Cargas puntuales y condiciones de frontera">
       <P>Primero se agregan las condiciones naturales (Neumann y Robin) y las cargas puntuales:</P>
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {ext.map(({ bc, i }) => (
           <li key={i} className="rounded-lg border border-line bg-inset px-3 py-2">
             {bc.type === 'dirichlet' && <Tex>{`\\text{Nodo } ${i + 1}: \\text{ Dirichlet } u_{${i + 1}} = ${texNum(bc.value, 6)} \\text{ (se impone después)}`}</Tex>}

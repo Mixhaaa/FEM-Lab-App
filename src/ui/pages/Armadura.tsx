@@ -95,7 +95,7 @@ export function Armadura() {
           {coordsOk ? (
             <PlanoArmadura e={e} coords={coords} sol={sol} escala={escala} verDeformada={verDef} verFuerzas={verF} sel={sel} onSel={setSel} />
           ) : (
-            <p className="p-8 text-center font-mono text-xs text-ink-3">Revisa las coordenadas de los nodos.</p>
+            <p className="p-8 text-center font-mono text-mini text-ink-3">Revisa las coordenadas de los nodos.</p>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -103,7 +103,7 @@ export function Armadura() {
             type="button"
             aria-pressed={verF}
             onClick={() => setVerF(!verF)}
-            className={cx('flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[11px]', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-line text-ink-2')}
+            className={cx('flex min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-detalle', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="palette" className="text-[15px]" /> Fuerzas
           </button>
@@ -111,12 +111,12 @@ export function Armadura() {
             type="button"
             aria-pressed={verDef}
             onClick={() => setVerDef(!verDef)}
-            className={cx('flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-[11px]', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-line text-ink-2')}
+            className={cx('flex min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-detalle', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="timeline" className="text-[15px]" /> Deformada
           </button>
           {verF && sol && (
-            <span className="flex items-center gap-2 font-mono text-[10px] text-ink-2">
+            <span className="flex items-center gap-2 font-mono text-mini text-ink-2">
               <span className="flex items-center gap-1">
                 <span className="h-1 w-4 rounded bg-amber" /> tracción
               </span>
@@ -128,7 +128,7 @@ export function Armadura() {
         </div>
         {verDef && sol && (
           <div className="flex items-center gap-3">
-            <label htmlFor="escala-def" className="shrink-0 font-mono text-[11px] text-ink-2">
+            <label htmlFor="escala-def" className="shrink-0 font-mono text-mini text-ink-2">
               Escala ×{fmtNum(escala, 3)}
             </label>
             <input
@@ -139,14 +139,19 @@ export function Armadura() {
               step={0.1}
               value={factor}
               onChange={(ev) => setFactor(Number(ev.target.value))}
-              className="h-2 w-full cursor-pointer accent-[var(--accent)]"
+              className="h-11 w-full cursor-pointer accent-[var(--accent)]"
             />
           </div>
         )}
         <Inspector e={e} sel={sel} un={un} sol={sol} escalaF={escalaF} escalaU={escalaU} />
       </Card>
 
-      {!r.ok && (
+      {!r.ok && e.barras.length === 0 && (
+        <Aviso tipo="info" titulo="Todavía no hay barras">
+          Agrega al menos una barra en la sección «3. Barras»: elige los dos nodos que une, su módulo E y su área A. También puedes cargar un ejemplo en la sección 1.
+        </Aviso>
+      )}
+      {!r.ok && e.barras.length > 0 && (
         <Aviso tipo="error" titulo="No se pudo resolver la armadura">
           {r.error.message}
         </Aviso>
@@ -172,7 +177,7 @@ export function Armadura() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         <Seccion icon="functions" titulo="1. Ejemplo, unidades y método" subtitulo="Casos precargados">
           <Selector
             label="Ejemplo precargado"
@@ -194,8 +199,8 @@ export function Armadura() {
 
         <Seccion icon="scatter_plot" titulo="2. Nodos" subtitulo={`${e.nodos.length} nodos · coordenadas en ${un.long}`} abierta={false} resumen={`${e.nodos.length} nodos`}>
           {e.nodos.map((n, i) => (
-            <div key={i} className={cx('grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2 rounded-lg border bg-inset p-2.5', sel?.tipo === 'nodo' && sel.i === i ? 'border-accent' : 'border-line')}>
-              <span className="mb-2.5 w-7 text-center font-mono text-sm font-bold text-accent-soft">{i + 1}</span>
+            <div key={i} className={cx('grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2 rounded-lg border bg-inset p-3', sel?.tipo === 'nodo' && sel.i === i ? 'border-accent' : 'border-line')}>
+              <span className="mb-3 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{i + 1}</span>
               <Campo label="x" value={n.x} unidad={un.long} inputMode="decimal" error={errNum(n.x)} onChange={(v) => upd((c) => void (c.nodos[i].x = v))} />
               <Campo label="y" value={n.y} unidad={un.long} inputMode="decimal" error={errNum(n.y)} onChange={(v) => upd((c) => void (c.nodos[i].y = v))} />
               <Quitar label={`Quitar nodo ${i + 1}`} onClick={() => quitarNodo(i)} />
@@ -204,14 +209,14 @@ export function Armadura() {
           <Boton variante="secundario" icon="add" onClick={() => upd((c) => void c.nodos.push({ x: '0', y: '0' }))}>
             Agregar nodo
           </Boton>
-          <p className="text-[11px] text-ink-3">Al quitar un nodo también se quitan sus barras, apoyos y cargas.</p>
+          <p className="text-mini text-ink-3">Al quitar un nodo también se quitan sus barras, apoyos y cargas.</p>
         </Seccion>
 
         <Seccion icon="timeline" titulo="3. Barras" subtitulo={`${e.barras.length} barras · E en ${un.esfuerzo}, A en ${un.area}`} abierta={false} resumen={`${e.barras.length} barras`}>
           {e.barras.map((b, k) => (
-            <div key={k} className={cx('flex flex-col gap-2 rounded-lg border bg-inset p-2.5', sel?.tipo === 'barra' && sel.i === k ? 'border-accent' : 'border-line')}>
+            <div key={k} className={cx('flex flex-col gap-2 rounded-lg border bg-inset p-3', sel?.tipo === 'barra' && sel.i === k ? 'border-accent' : 'border-line')}>
               <div className="grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2">
-                <span className="mb-2.5 w-7 text-center font-mono text-sm font-bold text-accent-soft">{k + 1}</span>
+                <span className="mb-3 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{k + 1}</span>
                 <Selector label="Nodo i" value={b.i} onChange={(v) => upd((c) => void (c.barras[k].i = v))} opciones={nodos} />
                 <Selector label="Nodo j" value={b.j} onChange={(v) => upd((c) => void (c.barras[k].j = v))} opciones={nodos} />
                 <Quitar label={`Quitar barra ${k + 1}`} onClick={() => upd((c) => void c.barras.splice(k, 1))} />
@@ -257,7 +262,7 @@ export function Armadura() {
 
         <Seccion icon="change_history" titulo="4. Apoyos" subtitulo={`${e.apoyos.length} apoyo(s)`} abierta={false} resumen={`${e.apoyos.length} apoyo(s)`}>
           {e.apoyos.map((a, k) => (
-            <div key={k} className="grid grid-cols-[1fr_1.4fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
+            <div key={k} className="grid grid-cols-[1fr_1.4fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-3">
               <Selector label="Nodo" value={a.nodo} onChange={(v) => upd((c) => void (c.apoyos[k].nodo = v))} opciones={nodos} />
               <Selector
                 label="Tipo"
@@ -271,12 +276,12 @@ export function Armadura() {
           <Boton variante="secundario" icon="add" onClick={() => upd((c) => void c.apoyos.push({ nodo: 0, tipo: 'articulado' }))}>
             Agregar apoyo
           </Boton>
-          <p className="text-[11px] text-ink-3">Articulado: restringe u_x y u_y. Rodillo horizontal: se desliza en x. Rodillo vertical: se desliza en y.</p>
+          <p className="text-mini text-ink-3">Articulado: restringe u_x y u_y. Rodillo horizontal: se desliza en x. Rodillo vertical: se desliza en y.</p>
         </Seccion>
 
         <Seccion icon="south" titulo="5. Cargas nodales" subtitulo={`${e.cargas.length} carga(s) · Fy positiva hacia arriba`} tono="amber" abierta={false} resumen={`${e.cargas.length} carga(s)`}>
           {e.cargas.map((a, k) => (
-            <div key={k} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
+            <div key={k} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-3">
               <Selector label="Nodo" value={a.nodo} onChange={(v) => upd((c) => void (c.cargas[k].nodo = v))} opciones={nodos} />
               <Campo label="Fx" value={a.Fx} unidad={un.fuerza} inputMode="decimal" error={errNum(a.Fx)} onChange={(v) => upd((c) => void (c.cargas[k].Fx = v))} />
               <Campo label="Fy" value={a.Fy} unidad={un.fuerza} inputMode="decimal" error={errNum(a.Fy)} onChange={(v) => upd((c) => void (c.cargas[k].Fy = v))} />
@@ -290,7 +295,7 @@ export function Armadura() {
       </div>
       {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
           Ver la solución paso a paso
         </Boton>
@@ -307,7 +312,7 @@ export function Armadura() {
             <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
               <div className="flex items-center gap-2">
                 <Icon name="table_chart" className="text-[22px] text-accent-hover" />
-                <h3 className="font-heading text-base font-bold text-ink">Fuerzas en las barras</h3>
+                <h3 className="font-heading text-seccion font-bold text-ink">Fuerzas en las barras</h3>
               </div>
               <Badge>{sol.bars.length} barras</Badge>
             </div>
@@ -329,7 +334,7 @@ export function Armadura() {
           <Card className="overflow-hidden">
             <div className="flex items-center gap-2 border-b border-line bg-s1 p-4">
               <Icon name="open_with" className="text-[22px] text-accent-hover" />
-              <h3 className="font-heading text-base font-bold text-ink">Desplazamientos y reacciones</h3>
+              <h3 className="font-heading text-seccion font-bold text-ink">Desplazamientos y reacciones</h3>
             </div>
             <Tabla
               cabecera={['Nodo', `uₓ [${un.long}]`, `u_y [${un.long}]`, `Rₓ [${un.fuerza}]`, `R_y [${un.fuerza}]`]}
@@ -359,7 +364,7 @@ export function Armadura() {
                 </Badge>
               }
             />
-            <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+            <div className="grid grid-cols-3 gap-2 font-mono text-mini">
               {(
                 [
                   ['ΣFx', sol.equilibrium.sumFx],
@@ -410,7 +415,7 @@ function Quitar({ onClick, label }: { onClick: () => void; label: string }) {
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-danger hover:text-danger"
+      className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field text-ink-2 hover:border-danger hover:text-danger"
     >
       <Icon name="delete" className="text-[18px]" />
     </button>
@@ -436,7 +441,7 @@ function Inspector({
     return (
       <div className="flex items-center gap-2 rounded-xl border border-line bg-s1 px-3 py-2">
         <Icon name="touch_app" className="text-[18px] text-accent-hover" />
-        <span className="font-mono text-xs text-ink-2">Toca un nodo o una barra del plano.</span>
+        <span className="font-mono text-mini text-ink-2">Toca un nodo o una barra del plano.</span>
       </div>
     );
   }
@@ -446,7 +451,7 @@ function Inspector({
     const ap = e.apoyos.find((a) => a.nodo === sel.i);
     const rc = sol?.reactions.find((x) => x.node === sel.i);
     return (
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-accent/50 bg-accent-bg px-3 py-2 font-mono text-xs">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-accent/50 bg-accent-bg px-3 py-2 font-mono text-mini">
         <span className="col-span-2 font-bold text-accent-soft">
           Nodo {sel.i + 1} · ({n.x}, {n.y}) {un.long}
           {ap ? ` · ${APOYOS[ap.tipo].nombre}` : ''}
@@ -466,7 +471,7 @@ function Inspector({
   const bb = e.barras[sel.i];
   if (!bb) return null;
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-accent/50 bg-accent-bg px-3 py-2 font-mono text-xs">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-accent/50 bg-accent-bg px-3 py-2 font-mono text-mini">
       <span className="col-span-2 font-bold text-accent-soft">
         Barra {sel.i + 1} · nodos {bb.i + 1}–{bb.j + 1}
       </span>

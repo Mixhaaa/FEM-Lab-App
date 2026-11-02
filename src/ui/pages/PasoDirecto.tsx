@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { APOYOS } from '../../templates';
-import { Badge, Boton, Card, Icon, Pildoras, Selector, Tabla } from '../components/base';
+import { Badge, Boton, Card, Desplazable, Icon, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
@@ -23,22 +23,22 @@ type PasoId = (typeof PASOS)[number]['id'];
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-sm font-bold text-on-accent">{n}</span>
-        <h2 className="font-heading text-lg font-bold text-ink">{titulo}</h2>
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-cuerpo font-bold text-on-accent">{n}</span>
+        <h2 className="font-heading text-seccion font-bold text-ink">{titulo}</h2>
       </div>
-      <div className="flex flex-col gap-3 text-sm leading-relaxed text-ink">{children}</div>
+      <div className="flex flex-col gap-3 text-cuerpo leading-relaxed text-ink">{children}</div>
     </Card>
   );
 }
 function F({ children }: { children: string }) {
   return (
-    <div className="scroll-x rounded-xl border border-line bg-inset px-3 py-2 text-[12.5px] sm:text-[15px]">
+    <Desplazable etiqueta="Fórmula" className="rounded-xl border border-line bg-inset px-3 py-2 text-detalle sm:text-cuerpo">
       <Tex display>{children}</Tex>
-    </div>
+    </Desplazable>
   );
 }
-const P = ({ children }: { children: ReactNode }) => <p className="text-[13.5px] leading-relaxed text-ink-2">{children}</p>;
+const P = ({ children }: { children: ReactNode }) => <p className="text-detalle leading-relaxed text-ink-2">{children}</p>;
 
 function Navegacion({ paso, setPaso }: { paso: PasoId; setPaso: (p: PasoId) => void }) {
   const idx = PASOS.findIndex((p) => p.id === paso);
@@ -47,7 +47,7 @@ function Navegacion({ paso, setPaso }: { paso: PasoId; setPaso: (p: PasoId) => v
       <Boton variante="secundario" icon="chevron_left" disabled={idx === 0} onClick={() => setPaso(PASOS[idx - 1].id)}>
         Anterior
       </Boton>
-      <span className="font-mono text-xs text-ink-2">
+      <span className="font-mono text-mini text-ink-2">
         {idx + 1} / {PASOS.length}
       </span>
       <Boton variante="primario" disabled={idx === PASOS.length - 1} onClick={() => setPaso(PASOS[idx + 1].id)}>
@@ -80,16 +80,16 @@ export function PasoArmadura() {
       <TituloPagina etiquetas={<Badge>Rigidez directa</Badge>} titulo="Armadura 2D paso a paso" subtitulo="Matriz de cada barra en coordenadas globales, ensamblaje, apoyos y fuerzas axiales." />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <div className="lg:hidden">
-          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+          <Pildoras base="pasos" etiqueta="Pasos" value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
-          <Selector value={Math.min(barra, sol.bars.length - 1)} onChange={setBarra} opciones={sol.bars.map((x, i) => ({ valor: i, texto: `Barra ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
+          <Selector etiqueta="Barra que se explica" value={Math.min(barra, sol.bars.length - 1)} onChange={setBarra} opciones={sol.bars.map((x, i) => ({ valor: i, texto: `Barra ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
         <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
-        <div className="flex min-w-0 flex-col gap-4">
+        <PanelPestanas base="pasos" valor={paso}>
       {paso === 'geometria' && (
         <Paso n={1} titulo="Geometría y cosenos directores">
           <P>Para cada barra entre los nodos i y j se calculan la longitud y los cosenos directores:</P>
@@ -158,7 +158,7 @@ export function PasoArmadura() {
         </Paso>
       )}
       <Navegacion paso={paso} setPaso={setPaso} />
-        </div>
+        </PanelPestanas>
       </div>
     </Pagina>
   );
@@ -184,15 +184,15 @@ export function PasoResortes() {
       <TituloPagina etiquetas={<Badge>Rigidez directa</Badge>} titulo="Resortes paso a paso" subtitulo="Matriz de cada resorte, ensamblaje, apoyos y fuerzas." />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <div className="lg:hidden">
-          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+          <Pildoras base="pasos" etiqueta="Pasos" value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
-          <Selector value={Math.min(res, sol.springs.length - 1)} onChange={setRes} opciones={sol.springs.map((x, i) => ({ valor: i, texto: `Resorte ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
+          <Selector etiqueta="Resorte que se explica" value={Math.min(res, sol.springs.length - 1)} onChange={setRes} opciones={sol.springs.map((x, i) => ({ valor: i, texto: `Resorte ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
         <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
-        <div className="flex min-w-0 flex-col gap-4">
+        <PanelPestanas base="pasos" valor={paso}>
       {paso === 'geometria' && (
         <Paso n={1} titulo="Conectividad">
           <P>Cada resorte une dos nodos y cada nodo tiene un grado de libertad (desplazamiento en x).</P>
@@ -234,7 +234,7 @@ export function PasoResortes() {
         </Paso>
       )}
       <Navegacion paso={paso} setPaso={setPaso} />
-        </div>
+        </PanelPestanas>
       </div>
     </Pagina>
   );

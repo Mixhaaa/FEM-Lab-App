@@ -27,8 +27,8 @@ function BotonExportar({ icon, titulo, sub, onClick, color }: { icon: string; ti
         <Icon name={icon} className="text-[22px]" />
       </span>
       <span className="flex min-w-0 flex-col">
-        <span className="truncate font-mono text-xs font-bold text-ink">{titulo}</span>
-        <span className="truncate text-[11px] text-ink-2">{sub}</span>
+        <span className="truncate font-mono text-mini font-bold text-ink">{titulo}</span>
+        <span className="truncate text-mini text-ink-2">{sub}</span>
       </span>
     </button>
   );
@@ -66,9 +66,9 @@ export function PanelExportar({ archivos }: { archivos: ArchivoExportable[] }) {
           { valor: 'excel-es', texto: 'Excel español  ; ,' },
         ]}
       />
-      <p className="-mt-1 text-[11px] text-ink-3">Estándar sirve para MATLAB (readmatrix), Python y Google Sheets. «Excel en español» abre directo en Excel con coma decimal.</p>
+      <p className="-mt-1 text-mini text-ink-3">Estándar sirve para MATLAB (readmatrix), Python y Google Sheets. «Excel en español» abre directo en Excel con coma decimal.</p>
       {aviso && (
-        <div role="status" className={cx('flex items-center gap-2 rounded-xl border p-3 font-mono text-xs', aviso.ok ? 'border-ok/40 bg-ok/10 text-ink' : 'border-danger/50 bg-danger-bg text-danger')}>
+        <div role="status" className={cx('flex items-center gap-2 rounded-xl border p-3 font-mono text-mini', aviso.ok ? 'border-ok/40 bg-ok/10 text-ink' : 'border-danger/50 bg-danger-bg text-danger')}>
           <Icon name={aviso.ok ? 'check_circle' : 'error'} className={cx('text-[18px]', aviso.ok ? 'text-ok' : 'text-danger')} />
           {aviso.texto}
         </div>

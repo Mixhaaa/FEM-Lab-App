@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
-import { unidad, type Resultado1D } from '../../templates';
-import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, Pildoras, Selector, Tabla } from '../components/base';
+import { plantilla1D, unidad, type Resultado1D } from '../../templates';
+import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
-import { Pagina } from '../components/Shell';
+import { Pagina, TituloPagina } from '../components/Shell';
+import { AvisoErrorCampo } from './Config';
 import { conPrefijo, fmtNum, snap, sub } from '../format';
 import { useResultado1D } from '../resultado';
 import { ir } from '../router';
@@ -55,13 +56,27 @@ function Resultados1D() {
   const ejemplo = useApp((s) => s.ejemplo['1d']);
   const [tab, setTab] = useState<Pestana>('solucion');
   useAvanzar((d) => setTab((t) => PESTANAS[Math.min(PESTANAS.length - 1, Math.max(0, PESTANAS.indexOf(t) + d))]));
-  if (!r.ok) return <SinResultado error={r.error} />;
+  const e1d = useApp((s) => s.e1d);
+  if (!r.ok) {
+    const t = plantilla1D(e1d.plantilla);
+    return (
+      <Pagina>
+        <TituloPagina titulo="Resultados" subtitulo="Todavía no hay resultados: hay un dato por corregir." />
+        {t ? <AvisoErrorCampo t={t} e={e1d} mensajeCalculo={r.error.message} /> : <Aviso tipo="error">{r.error.message}</Aviso>}
+        <Boton variante="secundario" icon="tune" onClick={() => ir('config')}>
+          Volver a Configuración
+        </Boton>
+      </Pagina>
+    );
+  }
   const res = r.res;
   return (
     <Pagina amplia>
       <Banner res={res} />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <Pildoras
+          base="resultados"
+          etiqueta="Vistas de los resultados"
           value={tab}
           onChange={setTab}
           opciones={[
@@ -81,10 +96,12 @@ function Resultados1D() {
           </ul>
         </Aviso>
       )}
-      {tab === 'solucion' && <PestanaSolucion res={res} />}
-      {tab === 'matrices' && <PestanaMatrices res={res} />}
-      {tab === 'derivadas' && <PestanaDerivadas res={res} />}
-      {tab === 'convergencia' && <PestanaConvergencia res={res} />}
+      <PanelPestanas base="resultados" valor={tab}>
+        {tab === 'solucion' && <PestanaSolucion res={res} />}
+        {tab === 'matrices' && <PestanaMatrices res={res} />}
+        {tab === 'derivadas' && <PestanaDerivadas res={res} />}
+        {tab === 'convergencia' && <PestanaConvergencia res={res} />}
+      </PanelPestanas>
       <PanelExportar archivos={archivos1D(res, ejemplo)} />
     </Pagina>
   );
@@ -99,22 +116,27 @@ function Banner({ res }: { res: Resultado1D }) {
     .map((c) => `${c.simbolo.replace(/\(x\)$/, '')} = ${tr.valores[c.id]}`)
     .join(' · ');
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-s2 px-4 py-3 shadow-card">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-s2 px-4 py-3 shadow-card">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent-bg text-accent-soft">
           <Icon name="verified" className="text-[20px]" />
         </div>
         <div className="min-w-0">
-          <p className="truncate font-heading text-sm font-bold text-ink sm:text-base">{ej?.nombre ?? t.nombre}</p>
-          <p className="truncate font-mono text-[11px] text-ink-2">
+          <h1 className="line-clamp-2 font-heading text-seccion font-bold leading-tight text-ink">
+            <span className="sr-only">Resultados: </span>
+            {ej?.nombre ?? t.nombre}
+          </h1>
+          <p className="truncate font-mono text-mini text-ink-2">
             {res.estado.tramos.length > 1 ? `${res.estado.tramos.length} tramos · ` : ''}
             {resumen}
           </p>
         </div>
       </div>
-      <Badge className="hidden shrink-0 sm:inline-flex">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. lineales C⁰
-      </Badge>
+      <span className="hidden shrink-0 sm:block">
+        <Badge>
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. lineales C⁰
+        </Badge>
+      </span>
     </div>
   );
 }
@@ -196,6 +218,19 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
   );
 
   const err = res.sol.error;
+  const ux = unidad(t.unidadLongitud, s);
+  const conU = (txt: string, u?: string) => (u && u !== '—' ? `${txt} [${u}]` : txt);
+  const iMin = u.indexOf(Math.min(...u));
+  const iMayor = u.indexOf(Math.max(...u));
+  const resumenSolucion =
+    `Solución MEF con ${nodos.length} nodos en x de ${fmtNum(nodos[0])} a ${fmtNum(nodos[nodos.length - 1])}. ` +
+    `Máximo ${fmtNum(u[iMayor], 5)} en x = ${fmtNum(nodos[iMayor])}; mínimo ${fmtNum(u[iMin], 5)} en x = ${fmtNum(nodos[iMin])}.` +
+    (exactFn && err ? ` Comparada con la solución analítica, la mayor diferencia en los nodos es ${fmtNum(err.maxNodal, 3)}.` : '');
+  const valoresSolucion = {
+    cabecera: ['Nodo', conU('x', ux), conU(`${t.incognita.simbolo} MEF`, un), ...(exactFn && err ? [conU(`${t.incognita.simbolo} analítica`, un), 'Diferencia'] : [])],
+    alinear: ['center', 'right', 'right', 'right', 'right'] as ('left' | 'right' | 'center')[],
+    filas: nodos.map((x, i) => [String(i + 1), fmtNum(x), fmtNum(u[i], 6), ...(exactFn && err ? [fmtNum(err.exactAtNodes[i], 6), fmtNum(err.nodal[i], 3)] : [])]),
+  };
   const normaU = useMemo(() => {
     let acc = 0;
     for (let i = 0; i < nodos.length - 1; i++) {
@@ -212,22 +247,22 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-heading text-base font-bold text-ink">{t.incognita.nombre}</h2>
+              <h2 className="font-heading text-seccion font-bold text-ink">{t.incognita.nombre}</h2>
               <Badge>
                 {t.incognita.simbolo}(x){un && un !== '—' ? ` [${un}]` : ''}
               </Badge>
             </div>
-            <p className="mt-0.5 text-xs text-ink-2">
+            <p className="mt-0.5 text-mini text-ink-2">
               {exactFn ? `MEF lineal por tramos vs. solución analítica ${res.exacta?.origen === 'automatica' ? '(automática)' : '(escrita)'}` : 'Solución MEF lineal por tramos'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {exactFn && (
-              <span className="flex items-center gap-1.5 rounded-full border border-line bg-inset px-2.5 py-1 font-mono text-[11px] text-ink">
+              <span className="flex items-center gap-2 rounded-full border border-line bg-inset px-3 py-1 font-mono text-mini text-ink">
                 <span className="h-0.5 w-3 rounded-full bg-[var(--plot-exact)]" /> Analítica
               </span>
             )}
-            <span className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-bg px-2.5 py-1 font-mono text-[11px] font-semibold text-accent-soft">
+            <span className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent-bg px-3 py-1 font-mono text-mini font-semibold text-accent-soft">
               <span className="h-2 w-2 rounded-full bg-accent-hover" /> MEF ({nodos.length} nodos)
             </span>
           </div>
@@ -238,26 +273,28 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
             layout={layout}
             alto={270}
             etiqueta={`Gráfica de ${t.incognita.nombre} contra x`}
+            resumen={resumenSolucion}
+            valores={valoresSolucion}
             onPunto={(p) => p.curva === (exactFn ? 1 : 0) && setSel(p.indice)}
           />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-s1 px-3 py-2">
           <div className="flex items-center gap-2">
             <Icon name="touch_app" className="text-[18px] text-accent-hover" />
-            <span className="font-mono text-xs text-ink">
+            <span className="font-mono text-mini text-ink">
               Nodo N{sub(nodoSel + 1)}: x = {fmtNum(nodos[nodoSel])}
             </span>
           </div>
-          <span className="font-mono text-xs font-bold text-accent-soft">
+          <span className="font-mono text-mini font-bold text-accent-soft">
             {t.incognita.simbolo} = {fmtNum(u[nodoSel], 5)} {un !== '—' ? un : ''}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <Boton variante="fantasma" icon="chevron_left" disabled={nodoSel === 0} onClick={() => setSel(nodoSel - 1)} className="min-h-[34px] py-1 text-xs">
+          <Boton variante="fantasma" icon="chevron_left" disabled={nodoSel === 0} onClick={() => setSel(nodoSel - 1)} className="text-detalle">
             Anterior
           </Boton>
-          <span className="font-mono text-[11px] text-ink-3">Toca un nodo de la gráfica</span>
-          <Boton variante="fantasma" disabled={nodoSel === nodos.length - 1} onClick={() => setSel(nodoSel + 1)} className="min-h-[34px] py-1 text-xs">
+          <span className="font-mono text-mini text-ink-3">Toca un nodo de la gráfica</span>
+          <Boton variante="fantasma" disabled={nodoSel === nodos.length - 1} onClick={() => setSel(nodoSel + 1)} className="text-detalle">
             Siguiente <Icon name="chevron_right" className="text-[18px]" />
           </Boton>
         </div>
@@ -296,7 +333,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
             <Icon name="table_chart" className="text-[22px] text-accent-hover" />
-            <h3 className="font-heading text-base font-bold text-ink">Resultados nodales</h3>
+            <h3 className="font-heading text-seccion font-bold text-ink">Resultados nodales</h3>
           </div>
           <Badge>{nodos.length} nodos</Badge>
         </div>
@@ -316,9 +353,9 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
             ...(err ? [fmtNum(snap(err.exactAtNodes[i], uMax), 5), fmtNum(snap(err.nodal[i], uMax), 3)] : []),
           ])}
         />
-        <div className="flex items-center justify-between border-t border-line bg-s1 px-4 py-2.5">
-          <span className="font-mono text-[11px] text-ink-2">Fila resaltada: |{t.incognita.simbolo}| máximo</span>
-          {un && un !== '—' && <span className="font-mono text-[11px] text-ink-3">Unidades: {un}</span>}
+        <div className="flex items-center justify-between border-t border-line bg-s1 px-4 py-3">
+          <span className="font-mono text-mini text-ink-2">Fila resaltada: |{t.incognita.simbolo}| máximo</span>
+          {un && un !== '—' && <span className="font-mono text-mini text-ink-3">Unidades: {un}</span>}
         </div>
       </Card>
     </>
@@ -373,9 +410,24 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle="Constante en cada elemento (derivada de una función lineal)" />
-        <Selector value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
+        <Selector etiqueta="Magnitud que se grafica" value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
         <div className="rounded-xl border border-line bg-inset p-1">
-          <Grafica data={data} layout={layout} alto={240} etiqueta={`Gráfica de ${d.nombre} por elemento`} />
+          <Grafica
+            data={data}
+            layout={layout}
+            alto={240}
+            etiqueta={`Gráfica de ${d.nombre} por elemento`}
+            resumen={(() => {
+              const iMx = vals.indexOf(Math.max(...vals));
+              const iMn = vals.indexOf(Math.min(...vals));
+              return `Valor constante en cada uno de los ${els.length} elementos. Máximo ${fmtNum(vals[iMx], 4)} en el elemento ${iMx + 1}; mínimo ${fmtNum(vals[iMn], 4)} en el elemento ${iMn + 1}.`;
+            })()}
+            valores={{
+              cabecera: ['Elemento', `Desde x${unidad(t.unidadLongitud, s) ? ` [${unidad(t.unidadLongitud, s)}]` : ''}`, 'Hasta x', `${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}`],
+              alinear: ['center', 'right', 'right', 'right'],
+              filas: els.map((el, i) => [String(i + 1), fmtNum(el.xa), fmtNum(el.xb), fmtNum(vals[i], 5)]),
+            }}
+          />
         </div>
       </Card>
 
@@ -398,7 +450,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
             );
           })}
           </div>
-          <p className="text-[11px] text-ink-3">{t.reaccion.nombre}. Convención: R = k·∂u/∂n con la normal exterior.</p>
+          <p className="text-mini text-ink-3">{t.reaccion.nombre}. Convención: R = k·∂u/∂n con la normal exterior.</p>
         </div>
       )}
 
@@ -407,7 +459,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
         <div className="flex items-center justify-between border-b border-line bg-s1 p-4">
           <div className="flex items-center gap-2">
             <Icon name="view_column" className="text-[22px] text-accent-hover" />
-            <h3 className="font-heading text-base font-bold text-ink">Resultados por elemento</h3>
+            <h3 className="font-heading text-seccion font-bold text-ink">Resultados por elemento</h3>
           </div>
           <Badge>{els.length} elementos</Badge>
         </div>
@@ -438,20 +490,20 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
           filas={[...bal.terms.map((x) => [x.nombre, fmtNum(snap(x.valor, bal.scale, 1e-14), 6)]), [<b key="a">Suma (residuo)</b>, <b key="b">{fmtNum(bal.residual, 3)}</b>]]}
         />
         {en.aplica ? (
-          <div className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-inset p-3 font-mono text-xs">
+          <div className="grid grid-cols-2 gap-2 rounded-lg border border-line bg-inset p-3 font-mono text-mini">
             <span className="text-ink-2">Energía de deformación ½uᵀKu</span>
             <span className="text-right text-ink">{fmtNum(en.U, 6)}</span>
             <span className="text-ink-2">Trabajo externo ½(uᵀF + Σ R·ū)</span>
             <span className="text-right text-ink">{fmtNum(en.W, 6)}</span>
           </div>
         ) : (
-          <p className="text-[11px] text-ink-3">{en.motivo}</p>
+          <p className="text-mini text-ink-3">{en.motivo}</p>
         )}
       </Card>
 
       <Card className="flex flex-col gap-2 p-4">
         <CardHeader icon="memory" title="Detalles de la solución" />
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 font-mono text-xs">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-mini">
           <span className="text-ink-2">Fronteras Dirichlet</span>
           <span className="text-right text-ink">{res.sol.bcMethod === 'eliminacion' ? 'Eliminación' : `Penalización (β = ${fmtNum(res.sol.beta ?? 0, 3)})`}</span>
           <span className="text-ink-2">Solucionador</span>
