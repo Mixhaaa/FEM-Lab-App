@@ -23,24 +23,19 @@ import { useResultado1D } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
 import { ConfigResortes } from './ConfigResortes';
+import { explicarExpresion } from '../explicarError';
+import { idCampo, irAlCampo, primerErrorDeCampo } from '../validacionCampos';
 
-/** Error de una expresión escrita en un campo (o null si es válida). */
+/** Error de una expresión escrita en un campo, explicado en lenguaje normal (o null si es válida). */
 function errorCampo(valor: string, tipo: 'numero' | 'expresion'): string | null {
-  try {
-    const ce = compileExpr(valor, 'El valor');
-    if (tipo === 'numero' && !ce.constant) return 'Debe ser un número (no puede depender de x).';
-    const v = ce.fn(ce.constant ? 0 : 0.5);
-    if (!Number.isFinite(v)) return 'La expresión no da un número finito.';
-    return null;
-  } catch (e) {
-    return (e as Error).message.replace(/^El valor /, '');
-  }
+  return explicarExpresion(valor, tipo === 'numero')?.mensaje ?? null;
 }
 
-function CampoFisico({ def, valor, onChange, sistema }: { def: CampoDef; valor: string; onChange: (v: string) => void; sistema: SistemaUnidades }) {
+function CampoFisico({ def, valor, onChange, sistema, id }: { def: CampoDef; valor: string; onChange: (v: string) => void; sistema: SistemaUnidades; id?: string }) {
   const err = useMemo(() => errorCampo(valor, def.tipo), [valor, def.tipo]);
   return (
     <Campo
+      id={id}
       label={
         <>
           {def.nombre} <span className="text-accent-soft">{def.simbolo}</span>
@@ -161,9 +156,7 @@ function Config1D() {
       </div>
 
       {!r.ok && (
-        <Aviso tipo="error" titulo="Hay un dato por corregir">
-          {r.error.message}
-        </Aviso>
+        <AvisoErrorCampo t={t} e={e} mensajeCalculo={r.error.message} />
       )}
       {r.ok && r.res.avisos.length > 0 && (
         <Aviso tipo="aviso" titulo="Avisos">
@@ -218,8 +211,8 @@ function Config1D() {
         {/* 2. Dominio y malla */}
         <Seccion icon="straighten" titulo="2. Dominio y malla" subtitulo="Longitud, número de elementos y cuadratura" resumen={`${e.malla.tipo} · Ne = ${e.malla.ne}`}>
           <div className="grid grid-cols-2 gap-2.5">
-            <CampoFisico def={{ id: 'x0', simbolo: 'x₀', nombre: 'Inicio', unidad: t.unidadLongitud, porDefecto: '0', tipo: 'numero' }} valor={e.x0} onChange={(v) => upd((c) => void (c.x0 = v))} sistema={s} />
-            <CampoFisico def={{ id: 'xL', simbolo: 'xL', nombre: 'Final', unidad: t.unidadLongitud, porDefecto: '1', tipo: 'numero' }} valor={e.xL} onChange={(v) => upd((c) => void (c.xL = v))} sistema={s} />
+            <CampoFisico def={{ id: 'x0', simbolo: 'x₀', nombre: 'Inicio', unidad: t.unidadLongitud, porDefecto: '0', tipo: 'numero' }} valor={e.x0} onChange={(v) => upd((c) => void (c.x0 = v))} sistema={s} id={idCampo.x0} />
+            <CampoFisico def={{ id: 'xL', simbolo: 'xL', nombre: 'Final', unidad: t.unidadLongitud, porDefecto: '1', tipo: 'numero' }} valor={e.xL} onChange={(v) => upd((c) => void (c.xL = v))} sistema={s} id={idCampo.xL} />
           </div>
           <Segmentos
             label="Tipo de malla"
@@ -277,7 +270,7 @@ function Config1D() {
           {t.camposGlobales.length > 0 && (
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {t.camposGlobales.map((c) => (
-                <CampoFisico key={c.id} def={c} valor={e.globales[c.id] ?? valorPorDefecto(c, s)} onChange={(v) => upd((x) => void (x.globales[c.id] = v))} sistema={s} />
+                <CampoFisico key={c.id} id={idCampo.global(c.id)} def={c} valor={e.globales[c.id] ?? valorPorDefecto(c, s)} onChange={(v) => upd((x) => void (x.globales[c.id] = v))} sistema={s} />
               ))}
             </div>
           )}
@@ -312,12 +305,14 @@ function Config1D() {
                 <CampoFisico
                   def={{ id: 'x', simbolo: 'x', nombre: 'Posición', unidad: t.unidadLongitud, porDefecto: '0', tipo: 'numero' }}
                   valor={cg.x}
+                  id={idCampo.carga(i, 'x')}
                   onChange={(v) => upd((c) => void (c.cargas[i].x = v))}
                   sistema={s}
                 />
                 <CampoFisico
                   def={{ id: 'P', simbolo: t.cargaPuntual!.simbolo, nombre: 'Valor', unidad: t.cargaPuntual!.unidad, porDefecto: '0', tipo: 'numero' }}
                   valor={cg.P}
+                  id={idCampo.carga(i, 'P')}
                   onChange={(v) => upd((c) => void (c.cargas[i].P = v))}
                   sistema={s}
                 />
@@ -348,8 +343,9 @@ function Config1D() {
         </Seccion>
 
         {/* 6. Solución */}
-        <Seccion icon="tune" titulo={`${t.cargaPuntual ? 6 : 5}. Solución analítica y solucionador`} subtitulo="Fronteras esenciales y método de solución" abierta={false} resumen={`${e.metodo} · ${e.solver}`}>
+        <Seccion icon="tune" titulo={`${t.cargaPuntual ? 6 : 5}. Solución analítica y solucionador`} subtitulo="Fronteras esenciales y método de solución" abierta={!!(e.exacta.trim() && errorCampo(e.exacta, 'expresion'))} resumen={`${e.metodo} · ${e.solver}`}>
           <Campo
+            id={idCampo.exacta}
             label="Solución analítica u(x) (opcional)"
             value={e.exacta}
             onChange={(v) => upd((c) => void (c.exacta = v))}
@@ -467,7 +463,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
               const v = Number(e.target.value);
               if (Number.isInteger(v) && v >= 1 && v <= MAX_ELEMENTOS) onChange(v);
             }}
-            className={cx('w-20 rounded-lg border bg-inset px-2 py-1 text-right font-mono text-cuerpo font-bold text-ink focus:border-accent-hover focus:outline-none', err ? 'border-danger' : 'border-line')}
+            className={cx('min-h-11 w-24 rounded-lg border bg-inset px-3 text-right font-mono text-cuerpo font-bold text-ink', err ? 'border-danger' : 'border-field')}
           />
           <Badge>{ne + 1} nodos</Badge>
         </div>
@@ -505,7 +501,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
             aria-label={`Nombre del tramo ${i + 1}`}
             value={tr.nombre ?? `Tramo ${i + 1}`}
             onChange={(ev) => upd((c) => void (c.tramos[i].nombre = ev.target.value))}
-            className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1 font-heading text-cuerpo font-bold text-ink hover:border-line focus:border-accent focus:outline-none"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-field bg-inset px-3 text-cuerpo font-semibold text-ink"
           />
           <button
             type="button"
@@ -539,7 +535,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
       )}
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {t.camposTramo.map((c) => (
-          <CampoFisico key={c.id} def={c} valor={tr.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x.tramos[i].valores[c.id] = v))} sistema={e.sistema} />
+          <CampoFisico key={c.id} id={idCampo.tramo(i, c.id)} def={c} valor={tr.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x.tramos[i].valores[c.id] = v))} sistema={e.sistema} />
         ))}
       </div>
     </div>
@@ -558,6 +554,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
         <Badge tono={op.campos.length === 0 ? 'neutral' : 'accent'}>{tipoBC(op.aBC)}</Badge>
       </div>
       <Selector
+        etiqueta={`Tipo de condición en el extremo ${lado}`}
         value={op.id}
         onChange={(id) =>
           upd((c) => {
@@ -571,7 +568,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
       {op.campos.length > 0 && (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {op.campos.map((c) => (
-            <CampoFisico key={c.id} def={c} valor={fe.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x[lado].valores[c.id] = v))} sistema={e.sistema} />
+            <CampoFisico key={c.id} id={idCampo.frontera(lado, c.id)} def={c} valor={fe.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x[lado].valores[c.id] = v))} sistema={e.sistema} />
           ))}
         </div>
       )}
@@ -650,5 +647,25 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** Aviso de error que dice qué campo revisar y lleva hasta él. */
+export function AvisoErrorCampo({ t, e, mensajeCalculo }: { t: Plantilla1D; e: Estado1D; mensajeCalculo: string }) {
+  const err = primerErrorDeCampo(t, e);
+  if (!err) {
+    return (
+      <Aviso tipo="error" titulo="El problema no se puede resolver así">
+        {mensajeCalculo}
+      </Aviso>
+    );
+  }
+  return (
+    <Aviso tipo="error" titulo={`Revisa el campo «${err.campo}»`}>
+      <p>{err.mensaje}</p>
+      <button type="button" onClick={() => irAlCampo(err.id)} className="mt-2 inline-flex min-h-11 items-center gap-1 rounded-lg border border-danger px-3 font-semibold text-danger hover:bg-danger-bg">
+        <Icon name="arrow_forward" className="text-[18px]" /> Ir al campo
+      </button>
+    </Aviso>
   );
 }

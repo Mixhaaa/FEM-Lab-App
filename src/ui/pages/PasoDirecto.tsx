@@ -83,7 +83,7 @@ export function PasoArmadura() {
           <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
-          <Selector value={Math.min(barra, sol.bars.length - 1)} onChange={setBarra} opciones={sol.bars.map((x, i) => ({ valor: i, texto: `Barra ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
+          <Selector etiqueta="Barra que se explica" value={Math.min(barra, sol.bars.length - 1)} onChange={setBarra} opciones={sol.bars.map((x, i) => ({ valor: i, texto: `Barra ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
 
@@ -187,7 +187,7 @@ export function PasoResortes() {
           <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {(paso === 'elemento' || paso === 'ensamblaje' || paso === 'fuerzas') && (
-          <Selector value={Math.min(res, sol.springs.length - 1)} onChange={setRes} opciones={sol.springs.map((x, i) => ({ valor: i, texto: `Resorte ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
+          <Selector etiqueta="Resorte que se explica" value={Math.min(res, sol.springs.length - 1)} onChange={setRes} opciones={sol.springs.map((x, i) => ({ valor: i, texto: `Resorte ${i + 1}: nodos ${x.i + 1}–${x.j + 1}` }))} />
         )}
       </div>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">

@@ -145,6 +145,8 @@ export function Campo({
   inputMode,
   className,
   mono = true,
+  id: idFijo,
+  onBlur,
 }: {
   label: ReactNode;
   value: string;
@@ -156,17 +158,22 @@ export function Campo({
   inputMode?: 'decimal' | 'text' | 'numeric';
   className?: string;
   mono?: boolean;
+  /** Id estable (permite enlazar el campo desde un aviso de error). */
+  id?: string;
+  onBlur?: () => void;
 }) {
-  const id = useId();
+  const auto = useId();
+  const id = idFijo ?? auto;
+  const idNota = `${id}-nota`;
   return (
     <div className={cx('flex min-w-0 flex-col gap-1', className)}>
-      <label htmlFor={id} className="font-mono text-mini font-medium text-ink-2">
+      <label htmlFor={id} className="text-detalle font-medium text-ink-2">
         {label}
       </label>
       <div
         className={cx(
-          'flex items-center rounded-lg border bg-inset px-3 py-2 transition focus-within:border-accent-hover focus-within:shadow-[inset_0_0_6px_var(--accent-bg)]',
-          error ? 'border-danger' : 'border-line',
+          'flex min-h-11 items-center rounded-lg border bg-inset px-3 transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus',
+          error ? 'border-danger' : 'border-field',
         )}
       >
         <input
@@ -178,31 +185,40 @@ export function Campo({
           autoCapitalize="off"
           spellCheck={false}
           aria-invalid={!!error}
+          aria-describedby={error || ayuda ? idNota : undefined}
           onChange={(e) => onChange(e.target.value)}
-          className={cx('w-full min-w-0 bg-transparent text-cuerpo text-ink placeholder:text-ink-3 focus:outline-none', mono && 'font-mono')}
+          onBlur={onBlur}
+          className={cx('w-full min-w-0 bg-transparent py-2 text-cuerpo text-ink placeholder:text-ink-3 focus:outline-none', mono && 'font-mono')}
         />
-        {unidad && unidad !== '—' && <span className="shrink-0 pl-2 font-mono text-mini text-ink-2">{unidad}</span>}
+        {unidad && unidad !== '—' && <span className="shrink-0 pl-2 font-mono text-detalle text-ink-2">{unidad}</span>}
       </div>
       {error ? (
-        <span className="flex items-start gap-1 text-mini leading-snug text-danger">
-          <Icon name="error" className="text-[14px]" />
-          {error}
+        <span id={idNota} className="flex items-start gap-1 text-detalle text-danger">
+          <Icon name="error" className="mt-px text-[16px]" />
+          <span>{error}</span>
         </span>
       ) : (
-        ayuda && <span className="text-mini leading-snug text-ink-3">{ayuda}</span>
+        ayuda && (
+          <span id={idNota} className="text-detalle text-ink-3">
+            {ayuda}
+          </span>
+        )
       )}
     </div>
   );
 }
 
+/** Lista desplegable. Si no tiene etiqueta visible, `etiqueta` es obligatoria (nombre para lectores de pantalla). */
 export function Selector<T extends string | number>({
   label,
+  etiqueta,
   value,
   onChange,
   opciones,
   className,
 }: {
   label?: ReactNode;
+  etiqueta?: string;
   value: T;
   onChange: (v: T) => void;
   opciones: { valor: T; texto: string }[];
@@ -212,19 +228,20 @@ export function Selector<T extends string | number>({
   return (
     <div className={cx('flex min-w-0 flex-col gap-1', className)}>
       {label && (
-        <label htmlFor={id} className="font-mono text-mini font-medium text-ink-2">
+        <label htmlFor={id} className="text-detalle font-medium text-ink-2">
           {label}
         </label>
       )}
       <div className="relative">
         <select
           id={id}
+          aria-label={label ? undefined : etiqueta}
           value={String(value)}
           onChange={(e) => {
             const o = opciones.find((op) => String(op.valor) === e.target.value);
             if (o) onChange(o.valor);
           }}
-          className="w-full appearance-none rounded-lg border border-line bg-inset py-2 pl-3 pr-8 font-mono text-cuerpo text-ink focus:border-accent-hover focus:outline-none"
+          className="min-h-11 w-full appearance-none rounded-lg border border-field bg-inset py-2 pl-3 pr-9 font-mono text-cuerpo text-ink"
         >
           {opciones.map((o) => (
             <option key={String(o.valor)} value={String(o.valor)}>
@@ -232,13 +249,13 @@ export function Selector<T extends string | number>({
             </option>
           ))}
         </select>
-        <Icon name="expand_more" className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[18px] text-ink-2" />
+        <Icon name="expand_more" className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[20px] text-ink-2" />
       </div>
     </div>
   );
 }
 
-/** Control segmentado (pocas opciones excluyentes). */
+/** Control segmentado (pocas opciones excluyentes). Se usa con Tab para entrar y flechas para elegir. */
 export function Segmentos<T extends string>({
   value,
   onChange,
@@ -252,20 +269,42 @@ export function Segmentos<T extends string>({
   className?: string;
   label?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mover = (d: number) => {
+    const i = opciones.findIndex((o) => o.valor === value);
+    const j = (i + d + opciones.length) % opciones.length;
+    onChange(opciones[j].valor);
+    requestAnimationFrame(() => (ref.current?.querySelectorAll('button')[j] as HTMLButtonElement | undefined)?.focus());
+  };
   return (
     <div className={cx('flex flex-col gap-1', className)}>
-      {label && <span className="font-mono text-mini font-medium text-ink-2">{label}</span>}
-      <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-xl border border-line bg-inset p-1">
+      {label && <span className="text-detalle font-medium text-ink-2">{label}</span>}
+      <div
+        ref={ref}
+        role="radiogroup"
+        aria-label={label}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            mover(1);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            mover(-1);
+          }
+        }}
+        className="flex gap-1 rounded-lg border border-field bg-inset p-1"
+      >
         {opciones.map((o) => (
           <button
             key={o.valor}
             type="button"
             role="radio"
             aria-checked={o.valor === value}
+            tabIndex={o.valor === value ? 0 : -1}
             onClick={() => onChange(o.valor)}
             className={cx(
-              'flex min-h-[34px] flex-1 items-center justify-center gap-1 rounded-lg px-2 font-mono text-mini transition',
-              o.valor === value ? 'bg-accent font-bold text-on-accent shadow-glow' : 'text-ink-2 hover:bg-s3 hover:text-ink',
+              'flex min-h-11 flex-1 items-center justify-center gap-1 rounded px-2 font-mono text-detalle transition',
+              o.valor === value ? 'bg-accent font-semibold text-on-accent' : 'text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >
             {o.icon && <Icon name={o.icon} className="text-[16px]" />}
@@ -391,11 +430,32 @@ export function Kpi({
 /** Hoja inferior modal (en móvil) / diálogo centrado (en pantallas grandes). */
 export function Hoja({ abierta, onClose, titulo, etiqueta, children }: { abierta: boolean; onClose: () => void; titulo: string; etiqueta?: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const idTitulo = useId();
   useEffect(() => {
     if (!abierta) return;
     const prev = document.activeElement as HTMLElement | null;
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      // El foco queda atrapado dentro de la hoja mientras está abierta
+      if (e.key === 'Tab' && ref.current) {
+        const f = [...ref.current.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter((el) => !el.hasAttribute('disabled'));
+        if (f.length === 0) return;
+        const primero = f[0];
+        const ultimo = f[f.length - 1];
+        const dentro = ref.current.contains(document.activeElement);
+        if (e.shiftKey && (document.activeElement === primero || !dentro)) {
+          e.preventDefault();
+          ultimo.focus();
+        } else if (!e.shiftKey && (document.activeElement === ultimo || !dentro)) {
+          e.preventDefault();
+          primero.focus();
+        }
+      }
+    };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
@@ -411,16 +471,16 @@ export function Hoja({ abierta, onClose, titulo, etiqueta, children }: { abierta
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label={titulo}
+        aria-labelledby={`${idTitulo}`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-2xl border-t border-accent/40 bg-s2 p-5 shadow-2xl focus:outline-none sm:rounded-xl sm:border"
+        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-xl border-t border-accent/40 bg-s2 p-5 shadow-2xl focus:outline-none sm:rounded-xl sm:border"
       >
         <div className="mx-auto h-1 w-12 rounded-full bg-line-strong sm:hidden" />
         <div className="flex items-start justify-between gap-3">
           <div>
             {etiqueta && <Badge>{etiqueta}</Badge>}
-            <h3 className="mt-1 font-heading text-seccion font-bold text-ink">{titulo}</h3>
+            <h2 id={idTitulo} className="mt-1 font-heading text-seccion font-bold text-ink">{titulo}</h2>
           </div>
           <IconBoton icon="close" label="Cerrar" onClick={onClose} />
         </div>

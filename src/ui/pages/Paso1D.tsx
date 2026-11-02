@@ -104,6 +104,7 @@ export function Paso1D() {
         </div>
         {usaElemento && (
           <Selector
+            etiqueta="Elemento que se explica"
             value={e}
             onChange={setElem}
             opciones={res.sol.elements.map((el, i) => ({ valor: i, texto: `Elemento e${sub(i + 1)}: nodos ${el.nodes[0] + 1}–${el.nodes[1] + 1}, x ∈ [${fmtNum(el.xa)}, ${fmtNum(el.xb)}]` }))}

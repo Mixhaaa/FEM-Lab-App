@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
-import { unidad, type Resultado1D } from '../../templates';
+import { plantilla1D, unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, Pildoras, Selector, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
-import { Pagina } from '../components/Shell';
+import { Pagina, TituloPagina } from '../components/Shell';
+import { AvisoErrorCampo } from './Config';
 import { conPrefijo, fmtNum, snap, sub } from '../format';
 import { useResultado1D } from '../resultado';
 import { ir } from '../router';
@@ -55,7 +56,19 @@ function Resultados1D() {
   const ejemplo = useApp((s) => s.ejemplo['1d']);
   const [tab, setTab] = useState<Pestana>('solucion');
   useAvanzar((d) => setTab((t) => PESTANAS[Math.min(PESTANAS.length - 1, Math.max(0, PESTANAS.indexOf(t) + d))]));
-  if (!r.ok) return <SinResultado error={r.error} />;
+  const e1d = useApp((s) => s.e1d);
+  if (!r.ok) {
+    const t = plantilla1D(e1d.plantilla);
+    return (
+      <Pagina>
+        <TituloPagina titulo="Resultados" subtitulo="Todavía no hay resultados: hay un dato por corregir." />
+        {t ? <AvisoErrorCampo t={t} e={e1d} mensajeCalculo={r.error.message} /> : <Aviso tipo="error">{r.error.message}</Aviso>}
+        <Boton variante="secundario" icon="tune" onClick={() => ir('config')}>
+          Volver a Configuración
+        </Boton>
+      </Pagina>
+    );
+  }
   const res = r.res;
   return (
     <Pagina amplia>
@@ -373,7 +386,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle="Constante en cada elemento (derivada de una función lineal)" />
-        <Selector value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
+        <Selector etiqueta="Magnitud que se grafica" value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
         <div className="rounded-xl border border-line bg-inset p-1">
           <Grafica data={data} layout={layout} alto={240} etiqueta={`Gráfica de ${d.nombre} por elemento`} />
         </div>

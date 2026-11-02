@@ -71,7 +71,7 @@ export function PanelMatrices({
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="grid_4x4" title="Matriz global" subtitle={s.descripcion} />
-        {sistemas.length > 1 && <Selector value={s.id} onChange={setId} opciones={sistemas.map((x) => ({ valor: x.id, texto: x.nombre }))} />}
+        {sistemas.length > 1 && <Selector etiqueta="Versión de la matriz" value={s.id} onChange={setId} opciones={sistemas.map((x) => ({ valor: x.id, texto: x.nombre }))} />}
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start lg:flex-col lg:items-center">
           <div className="w-full max-w-[340px] rounded-xl border border-line bg-inset p-2">
             <Spy info={info} M={s.K} titulo={s.nombre} />
@@ -129,7 +129,7 @@ export function PanelMatrices({
       {elementos && elementos.length > 0 && e && (
         <Card className="flex flex-col gap-3 p-4">
           <CardHeader icon="grid_view" title="Matrices elementales" subtitle="Antes de ensamblarse en K" right={<BotonCopiar texto={matrizMatlab('Ke', e.Ke)} etiqueta="MATLAB" />} />
-          <Selector value={Math.min(el, elementos.length - 1)} onChange={setEl} opciones={elementos.map((x, i) => ({ valor: i, texto: x.nombre }))} />
+          <Selector etiqueta="Elemento" value={Math.min(el, elementos.length - 1)} onChange={setEl} opciones={elementos.map((x, i) => ({ valor: i, texto: x.nombre }))} />
           <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
             <MatrizTabla M={e.Ke} titulo={`Ke · GDL globales ${e.gdl.join(', ')}`} filas={e.gdl} columnas={e.gdl} sig={6} />
             {e.Fe && <VectorTabla v={e.Fe} titulo="Fe" etiquetas={e.gdl} sig={6} />}
