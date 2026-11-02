@@ -3,7 +3,7 @@ import { convergenceStudy, ordenesLocales, type ConvergenceResult } from '../../
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Card, CardHeader, Icon, Kpi, Segmentos, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
-import { fmtNum, snap, sub } from '../format';
+import { fmtFijo, fmtNum, snap, sub } from '../format';
 
 type Estado = { tipo: 'calculando' } | { tipo: 'ok'; conv: ConvergenceResult; ms: number } | { tipo: 'error'; mensaje: string };
 
@@ -15,7 +15,7 @@ function OrdenKpi({ titulo, valor, esperado, simbolo }: { titulo: string; valor:
     <Kpi
       titulo={titulo}
       simbolo={simbolo}
-      valor={Number.isFinite(valor) ? valor.toFixed(2) : '—'}
+      valor={fmtFijo(valor, 2)}
       detalle={Number.isFinite(valor) ? `esperado ${esperado}` : 'no aplica'}
       icon={ok ? 'check_circle' : 'info'}
       tono={ok ? 'accent' : 'neutral'}
@@ -70,7 +70,7 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
       </div>
       {estado.tipo === 'calculando' && (
         <div className="flex items-center justify-center gap-2 rounded-xl border border-line bg-s2 p-6 font-mono text-mini text-ink-2">
-          <Icon name="query_stats" className="animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
+          <Icon name="query_stats" className="motion-safe:animate-pulse text-[20px] text-accent-hover" /> Calculando el estudio de convergencia…
         </div>
       )}
       {estado.tipo === 'error' && (
@@ -103,7 +103,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         y: s.y,
         type: 'scatter',
         mode: 'lines+markers',
-        name: `${s.nombre}${Number.isFinite(s.orden) ? ` (p = ${s.orden.toFixed(2)})` : ''}`,
+        name: `${s.nombre}${Number.isFinite(s.orden) ? ` (p = ${fmtFijo(s.orden, 2)})` : ''}`,
         line: { color: s.color, width: 2 },
         marker: { color: s.color, size: 7, symbol: s.simbolo },
         hovertemplate: `h = %{x:.3g}<br>${s.nombre} = %{y:.3e}<extra></extra>`,
@@ -188,14 +188,14 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
             r.ne,
             fmtNum(r.h, 4),
             fmtNum(r.maxNodal, 3),
-            Number.isFinite(oN[i]) && !conv.superconvergenciaNodal && !conv.solucionExacta ? oN[i].toFixed(2) : '—',
+            Number.isFinite(oN[i]) && !conv.superconvergenciaNodal && !conv.solucionExacta ? fmtFijo(oN[i], 2) : '—',
             fmtNum(r.L2, 3),
-            Number.isFinite(oL[i]) && !conv.solucionExacta ? oL[i].toFixed(2) : '—',
+            Number.isFinite(oL[i]) && !conv.solucionExacta ? fmtFijo(oL[i], 2) : '—',
             fmtNum(r.H1semi, 3),
-            Number.isFinite(oH[i]) && !conv.solucionExacta ? oH[i].toFixed(2) : '—',
+            Number.isFinite(oH[i]) && !conv.solucionExacta ? fmtFijo(oH[i], 2) : '—',
           ])}
         />
-        <div className="border-t border-line bg-s1 px-4 py-2.5 text-mini leading-snug text-ink-2">
+        <div className="border-t border-line bg-s1 px-4 py-3 text-mini leading-snug text-ink-2">
           p = orden local entre mallas consecutivas: log(eᵢ₋₁/eᵢ) / log(hᵢ₋₁/hᵢ). El orden de arriba se ajusta por mínimos cuadrados con las mallas más finas.{' '}
           {conv.referencia === 'analitica'
             ? `Referencia: solución analítica ${res.exacta?.origen === 'automatica' ? 'calculada automáticamente' : 'escrita por ti'}.`

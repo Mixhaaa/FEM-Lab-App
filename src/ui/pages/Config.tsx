@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { compileExpr, MAX_ELEMENTOS } from '../../core';
 import {
   CATEGORIAS,
@@ -13,7 +13,7 @@ import {
   type Resultado1D,
   type SistemaUnidades,
 } from '../../templates';
-import { Aviso, Badge, Boton, Campo, cx, Desplazable, Icon, Segmentos, Seccion, Selector } from '../components/base';
+import { Aviso, Badge, Boton, Campo, cx, Desplazable, Icon, Segmentos, Seccion, Selector, Simbolo } from '../components/base';
 import { DiagramaMalla } from '../components/DiagramaMalla';
 import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
@@ -32,13 +32,23 @@ function errorCampo(valor: string, tipo: 'numero' | 'expresion'): string | null 
 }
 
 function CampoFisico({ def, valor, onChange, sistema, id }: { def: CampoDef; valor: string; onChange: (v: string) => void; sistema: SistemaUnidades; id?: string }) {
-  const err = useMemo(() => errorCampo(valor, def.tipo), [valor, def.tipo]);
+  // El error aparece tras una pausa de escritura o al salir del campo, y desaparece en cuanto se corrige
+  const [revisado, setRevisado] = useState(valor);
+  useEffect(() => {
+    const id = setTimeout(() => setRevisado(valor), 700);
+    return () => clearTimeout(id);
+  }, [valor]);
+  const errAhora = useMemo(() => errorCampo(valor, def.tipo), [valor, def.tipo]);
+  const errAntes = useMemo(() => errorCampo(revisado, def.tipo), [revisado, def.tipo]);
+  const err = errAhora && (revisado === valor || errAntes) ? errAhora : null;
   return (
     <Campo
       id={id}
       label={
         <>
-          {def.nombre} <span className="text-accent-soft">{def.simbolo}</span>
+          {def.nombre} <span className="text-accent-soft">
+            <Simbolo s={def.simbolo} />
+          </span>
         </>
       }
       value={valor}
@@ -46,6 +56,7 @@ function CampoFisico({ def, valor, onChange, sistema, id }: { def: CampoDef; val
       unidad={unidad(def.unidad, sistema)}
       ayuda={[def.ayuda, def.tipo === 'expresion' ? 'Número o expresión en x. Ej.: 10*x^3 o 2 + sin(x)' : `Número. Ej.: ${valorPorDefecto(def, sistema)}`].filter(Boolean).join(' · ')}
       error={err}
+      onBlur={() => setRevisado(valor)}
       inputMode={def.tipo === 'numero' ? 'decimal' : 'text'}
     />
   );
@@ -113,9 +124,9 @@ function Config1D() {
       {/* Esquema + formulación */}
       <div className="flex flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Icon name="domain_verification" className="text-[18px] text-accent-soft" />
-            <span className="font-mono text-mini font-bold uppercase tracking-wider text-ink">Malla · dominio [{e.x0}, {e.xL}]</span>
+            <span className="text-detalle font-semibold text-ink">Malla · dominio [{e.x0}, {e.xL}]</span>
           </div>
           {vista && (
             <Badge>
@@ -133,14 +144,14 @@ function Config1D() {
         </Desplazable>
         <div className="flex flex-col gap-1 rounded-lg border border-line bg-s3 p-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">Formulación fuerte</span>
+            <span className="text-detalle font-semibold text-accent-soft">Formulación fuerte</span>
             <span className="font-mono text-mini text-ink-2">{t.nombre}</span>
           </div>
           <Desplazable etiqueta="Ecuación del problema" className="text-detalle text-ink">
             <Tex display>{t.ecuacion}</Tex>
           </Desplazable>
           {vista && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               {(['izquierda', 'derecha'] as const).map((lado) => {
                 const op = t.fronteras.find((o) => o.id === e[lado].opcion);
                 if (!op) return null;
@@ -174,7 +185,7 @@ function Config1D() {
         }
         lateral={
           <>
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         {/* 1. Plantilla */}
         <Seccion icon="functions" titulo="1. Plantilla y ecuación" subtitulo="Modelo físico, ejemplo y unidades" resumen={t.nombre}>
           <Selector
@@ -199,7 +210,7 @@ function Config1D() {
           )}
           {t.sistemas.length > 1 && <p className="-mt-1 text-mini text-ink-3">Cambiar el sistema solo cambia las unidades que se muestran: escribe los valores en esas unidades.</p>}
           {t.id !== 'general' && <div className="rounded-lg border border-line bg-inset p-3">
-            <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Traducción al problema modelo</p>
+            <p className="mb-1 text-detalle font-semibold text-ink-2">Traducción al problema modelo</p>
             <Tex display>{String.raw`-(k\,u')' + b\,u' + c\,u = f`}</Tex>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-cuerpo">
               {(['k', 'b', 'c', 'f'] as const).map((k) => (
@@ -211,7 +222,7 @@ function Config1D() {
 
         {/* 2. Dominio y malla */}
         <Seccion icon="straighten" titulo="2. Dominio y malla" subtitulo="Longitud, número de elementos y cuadratura" resumen={`${e.malla.tipo} · Ne = ${e.malla.ne}`}>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             <CampoFisico def={{ id: 'x0', simbolo: 'x₀', nombre: 'Inicio', unidad: t.unidadLongitud, porDefecto: '0', tipo: 'numero' }} valor={e.x0} onChange={(v) => upd((c) => void (c.x0 = v))} sistema={s} id={idCampo.x0} />
             <CampoFisico def={{ id: 'xL', simbolo: 'xL', nombre: 'Final', unidad: t.unidadLongitud, porDefecto: '1', tipo: 'numero' }} valor={e.xL} onChange={(v) => upd((c) => void (c.xL = v))} sistema={s} id={idCampo.xL} />
           </div>
@@ -237,7 +248,7 @@ function Config1D() {
             />
           )}
           {e.malla.tipo === 'geometrica' && (
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Campo
                 label="Razón h_max / h_min"
                 value={String(e.malla.ratio)}
@@ -270,7 +281,7 @@ function Config1D() {
         <Seccion icon="layers" titulo="3. Propiedades por tramos" subtitulo="Coeficientes físicos de cada región" resumen={`${e.tramos.length} tramo(s)`}>
           <AyudaExpresiones />
           {t.camposGlobales.length > 0 && (
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {t.camposGlobales.map((c) => (
                 <CampoFisico key={c.id} id={idCampo.global(c.id)} def={c} valor={e.globales[c.id] ?? valorPorDefecto(c, s)} onChange={(v) => upd((x) => void (x.globales[c.id] = v))} sistema={s} />
               ))}
@@ -303,7 +314,7 @@ function Config1D() {
           <Seccion icon="north_east" titulo="4. Cargas puntuales" subtitulo={t.cargaPuntual.nombre} tono="amber" abierta={e.cargas.length > 0} resumen={`${e.cargas.length} carga(s)`}>
             {e.cargas.length === 0 && <p className="text-mini text-ink-3">No hay cargas puntuales. Se colocará un nodo en cada posición que agregues.</p>}
             {e.cargas.map((cg, i) => (
-              <div key={i} className="flex items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
+              <div key={i} className="flex items-end gap-2 rounded-lg border border-line bg-inset p-3">
                 <CampoFisico
                   def={{ id: 'x', simbolo: 'x', nombre: 'Posición', unidad: t.unidadLongitud, porDefecto: '0', tipo: 'numero' }}
                   valor={cg.x}
@@ -391,12 +402,12 @@ function Config1D() {
         </Seccion>
       </div>
 
-      <div className="flex flex-col gap-2.5 pt-1">
+      <div className="flex flex-col gap-3 pt-1">
         <button
           type="button"
           disabled={!r.ok}
           onClick={() => ir('resultados')}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 font-bold text-on-accent shadow-glow transition active:scale-[0.99] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 min-h-11 rounded-lg border border-accent-hover bg-accent px-4 py-3 font-bold text-on-accent transition hover:bg-accent-hover active:scale-[0.99] disabled:opacity-50"
         >
           <Icon name="play_circle" className="text-[20px]" />
           <span className="text-cuerpo tracking-wide">Resolver sistema [K]{'{u}'} = {'{F}'}</span>
@@ -455,7 +466,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
         <label htmlFor="ne-slider" className="text-mini font-bold text-ink">
           Número de elementos (Ne)
         </label>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <input
             aria-label="Número de elementos"
             value={texto}
@@ -496,7 +507,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
   const ini = i === 0 ? e.x0 : e.tramos[i - 1].fin;
   const multi = e.tramos.length > 1;
   return (
-    <div className={cx('flex flex-col gap-2.5', multi && 'rounded-lg border border-line bg-inset p-3')}>
+    <div className={cx('flex flex-col gap-3', multi && 'rounded-lg border border-line bg-inset p-3')}>
       {multi && (
         <div className="flex items-center justify-between gap-2">
           <input
@@ -521,7 +532,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
         </div>
       )}
       {multi && (
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           <Campo label="Desde" value={ini} onChange={() => {}} unidad={unidad(t.unidadLongitud, e.sistema)} ayuda="Fin del tramo anterior" />
           {ultimo ? (
             <Campo label="Hasta" value={e.xL} onChange={() => {}} unidad={unidad(t.unidadLongitud, e.sistema)} ayuda="Termina en xL" />
@@ -535,7 +546,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
           )}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {t.camposTramo.map((c) => (
           <CampoFisico key={c.id} id={idCampo.tramo(i, c.id)} def={c} valor={tr.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x.tramos[i].valores[c.id] = v))} sistema={e.sistema} />
         ))}
@@ -548,7 +559,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
   const fe = e[lado];
   const op = t.fronteras.find((o) => o.id === fe.opcion) ?? t.fronteras[0];
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-line bg-inset p-3">
+    <div className="flex flex-col gap-3 rounded-lg border border-line bg-inset p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-mini font-bold text-ink">
           {lado === 'izquierda' ? `Extremo izquierdo · x = ${e.x0}` : `Extremo derecho · x = ${e.xL}`}
@@ -573,7 +584,7 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
         </p>
       )}
       {op.campos.length > 0 && (
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {op.campos.map((c) => (
             <CampoFisico key={c.id} id={idCampo.frontera(lado, c.id)} def={c} valor={fe.valores[c.id] ?? valorPorDefecto(c, e.sistema)} onChange={(v) => upd((x) => void (x[lado].valores[c.id] = v))} sistema={e.sistema} />
           ))}
@@ -599,7 +610,7 @@ function AyudaExpresiones() {
         Cómo escribir valores y expresiones
         <Icon name="expand_more" className="ml-auto text-[18px] transition-transform group-open:rotate-180" />
       </summary>
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 border-t border-line px-3 py-3 text-detalle">
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 border-t border-line px-3 py-3 text-detalle">
         {filas.map(([n, d]) => (
           <div key={n} className="contents">
             <dt className="font-semibold text-ink">{n}</dt>
@@ -670,7 +681,7 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
   return (
     <section aria-labelledby="titulo-vista-previa" className="flex flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Icon name="insights" className="text-[18px] text-accent-soft" />
           <h2 id="titulo-vista-previa" className="text-cuerpo font-bold text-ink">
             Vista previa: {t.incognita.nombre}
@@ -678,11 +689,11 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
         </div>
         <div className="flex items-center gap-3 font-mono text-mini text-ink-2" aria-hidden="true">
           {exacta && (
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               <span className="h-0.5 w-4 rounded-full bg-[var(--plot-exact)]" /> Analítica
             </span>
           )}
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <span className="h-0.5 w-4 rounded-full bg-accent-hover" /> MEF
           </span>
         </div>

@@ -20,6 +20,12 @@ export function fmtNum(v: number, sig = 4): string {
   return s.replace(/^-/, '−');
 }
 
+/** Número con decimales fijos (órdenes de convergencia, pesos de Gauss) y signo menos tipográfico. */
+export function fmtFijo(v: number, dec: number): string {
+  if (!Number.isFinite(v)) return '—';
+  return v.toFixed(dec).replace(/^-/, '−');
+}
+
 /** Número para tablas de matrices: siempre con la misma cantidad de cifras significativas. */
 export function fmtMat(v: number, sig = 5): string {
   if (v === 0 || Math.abs(v) < 1e-300) return '0';

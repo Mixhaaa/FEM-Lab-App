@@ -36,7 +36,7 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
         <div className="flex min-w-0 items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-12 w-12" />
           <div>
-            <p className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">FEM Lab · Memoria de cálculo</p>
+            <p className="text-detalle font-semibold text-accent-soft">FEM Lab · Memoria de cálculo</p>
             <h1 className="font-heading text-titulo font-bold leading-tight text-ink">{titulo}</h1>
             <p className="text-cuerpo text-ink-2">{subtitulo}</p>
           </div>

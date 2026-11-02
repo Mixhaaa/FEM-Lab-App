@@ -23,7 +23,7 @@ type PasoId = (typeof PASOS)[number]['id'];
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-cuerpo font-bold text-on-accent">{n}</span>
         <h2 className="font-heading text-seccion font-bold text-ink">{titulo}</h2>
       </div>

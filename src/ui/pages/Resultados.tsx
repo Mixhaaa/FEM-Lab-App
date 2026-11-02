@@ -256,11 +256,11 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {exactFn && (
-              <span className="flex items-center gap-1.5 rounded-full border border-line bg-inset px-2.5 py-1 font-mono text-mini text-ink">
+              <span className="flex items-center gap-2 rounded-full border border-line bg-inset px-3 py-1 font-mono text-mini text-ink">
                 <span className="h-0.5 w-3 rounded-full bg-[var(--plot-exact)]" /> Analítica
               </span>
             )}
-            <span className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-bg px-2.5 py-1 font-mono text-mini font-semibold text-accent-soft">
+            <span className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent-bg px-3 py-1 font-mono text-mini font-semibold text-accent-soft">
               <span className="h-2 w-2 rounded-full bg-accent-hover" /> MEF ({nodos.length} nodos)
             </span>
           </div>
@@ -351,7 +351,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
             ...(err ? [fmtNum(snap(err.exactAtNodes[i], uMax), 5), fmtNum(snap(err.nodal[i], uMax), 3)] : []),
           ])}
         />
-        <div className="flex items-center justify-between border-t border-line bg-s1 px-4 py-2.5">
+        <div className="flex items-center justify-between border-t border-line bg-s1 px-4 py-3">
           <span className="font-mono text-mini text-ink-2">Fila resaltada: |{t.incognita.simbolo}| máximo</span>
           {un && un !== '—' && <span className="font-mono text-mini text-ink-3">Unidades: {un}</span>}
         </div>
@@ -501,7 +501,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
 
       <Card className="flex flex-col gap-2 p-4">
         <CardHeader icon="memory" title="Detalles de la solución" />
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 font-mono text-mini">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-mini">
           <span className="text-ink-2">Fronteras Dirichlet</span>
           <span className="text-right text-ink">{res.sol.bcMethod === 'eliminacion' ? 'Eliminación' : `Penalización (β = ${fmtNum(res.sol.beta ?? 0, 3)})`}</span>
           <span className="text-ink-2">Solucionador</span>

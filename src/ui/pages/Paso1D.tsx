@@ -6,7 +6,7 @@ import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex, texMatriz, texNum, texVector } from '../components/Tex';
-import { fmtNum, sub } from '../format';
+import { fmtFijo, fmtNum, sub } from '../format';
 import { useAvanzar } from '../presentacion';
 import { useResultado1D } from '../resultado';
 import { SinResultado } from './Resultados';
@@ -47,7 +47,7 @@ export function bcTex(bc: BoundaryCondition, x: number): string {
 function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent font-mono text-cuerpo font-bold text-on-accent">{n}</span>
         <h2 className="font-heading text-seccion font-bold text-ink">{titulo}</h2>
       </div>
@@ -59,7 +59,7 @@ function Paso({ n, titulo, children }: { n: number; titulo: string; children: Re
 function Formula({ children, titulo }: { children: string; titulo?: string }) {
   return (
     <div className="rounded-xl border border-line bg-inset px-3 py-2">
-      {titulo && <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>}
+      {titulo && <p className="mb-1 text-detalle font-semibold text-accent-soft">{titulo}</p>}
       <Desplazable etiqueta={titulo ?? 'Fórmula'} className="text-detalle text-ink sm:text-cuerpo">
         <Tex display>{children}</Tex>
       </Desplazable>
@@ -200,7 +200,7 @@ function PasoDebil({ res }: { res: Resultado1D }) {
       <P>Cada extremo se trata según su condición de frontera:</P>
       <ul className="flex flex-col gap-2">
         {extremos.map(({ bc, nombre }) => (
-          <li key={nombre} className="rounded-lg border border-line bg-inset p-2.5 text-detalle text-ink-2">
+          <li key={nombre} className="rounded-lg border border-line bg-inset p-3 text-detalle text-ink-2">
             <b className="text-ink">
               <Tex>{nombre}</Tex>:{' '}
             </b>
@@ -346,8 +346,8 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
         alinear={Array(11).fill('right')}
         filas={el.gauss.map((g, i) => [
           i + 1,
-          g.xi.toFixed(6),
-          g.w.toFixed(6),
+          fmtFijo(g.xi, 6),
+          fmtFijo(g.w, 6),
           fmtNum(g.x, 6),
           fmtNum(g.N[0], 5),
           fmtNum(g.N[1], 5),
@@ -432,7 +432,7 @@ function PasoFronteras({ res }: { res: Resultado1D }) {
   return (
     <Paso n={7} titulo="Cargas puntuales y condiciones de frontera">
       <P>Primero se agregan las condiciones naturales (Neumann y Robin) y las cargas puntuales:</P>
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {ext.map(({ bc, i }) => (
           <li key={i} className="rounded-lg border border-line bg-inset px-3 py-2">
             {bc.type === 'dirichlet' && <Tex>{`\\text{Nodo } ${i + 1}: \\text{ Dirichlet } u_{${i + 1}} = ${texNum(bc.value, 6)} \\text{ (se impone después)}`}</Tex>}

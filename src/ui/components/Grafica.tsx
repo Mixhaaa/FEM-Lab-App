@@ -112,6 +112,7 @@ export function Grafica({
   const tema = useTema();
   const presentacion = useApp((s) => s.presentacion);
   const [estado, setEstado] = useState<'cargando' | 'ok' | 'error'>('cargando');
+  const [tablaAbierta, setTablaAbierta] = useState(false);
   const onPuntoRef = useRef(onPunto);
   useEffect(() => {
     onPuntoRef.current = onPunto;
@@ -163,12 +164,12 @@ export function Grafica({
   return (
     <div className="flex w-full flex-col gap-2">
       {grafica}
-      <details className="no-print group rounded-lg border border-line bg-s2">
+      <details className="no-print group rounded-lg border border-line bg-s2" onToggle={(ev) => setTablaAbierta((ev.currentTarget as HTMLDetailsElement).open)}>
         <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-detalle font-semibold text-ink-2 hover:text-ink">
           <span aria-hidden="true" className="material-symbols-outlined text-[18px] transition-transform group-open:rotate-90">chevron_right</span>
           Ver los valores en una tabla ({valores.filas.length} filas)
         </summary>
-        <Tabla etiqueta={`Valores de: ${etiqueta}`} cabecera={valores.cabecera} filas={valores.filas} alinear={valores.alinear} className="max-h-72 overflow-y-auto border-t border-line" />
+        {tablaAbierta && <Tabla etiqueta={`Valores de: ${etiqueta}`} cabecera={valores.cabecera} filas={valores.filas} alinear={valores.alinear} className="max-h-72 overflow-y-auto border-t border-line" />}
       </details>
     </div>
   );

@@ -37,7 +37,7 @@ export function CardHeader({
 }) {
   return (
     <div className={cx('flex items-start justify-between gap-3', className)}>
-      <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-3">
         {icon && <Icon name={icon} className="text-[22px] text-accent-hover" />}
         <div className="min-w-0">
           <h2 className="font-heading text-seccion font-bold leading-tight text-ink">{title}</h2>
@@ -67,8 +67,25 @@ export function Badge({ children, tono = 'accent', className }: { children: Reac
   );
 }
 
+/** Símbolo con subíndice real: «u_max» → u<sub>máx</sub>, «Q_{ext}» → Q<sub>ext</sub>. */
+export function Simbolo({ s }: { s: string }) {
+  const i = s.indexOf('_');
+  if (i <= 0) return <>{s}</>;
+  const sub = s
+    .slice(i + 1)
+    .replace(/[{}]/g, '')
+    .replace(/^max$/, 'máx')
+    .replace(/^min$/, 'mín');
+  return (
+    <>
+      {s.slice(0, i)}
+      <sub className="text-[0.75em]">{sub}</sub>
+    </>
+  );
+}
+
 export function Dot({ className }: { className?: string }) {
-  return <span className={cx('inline-block h-2 w-2 rounded-full bg-accent-hover shadow-[0_0_8px_var(--accent-hover)]', className)} />;
+  return <span className={cx('inline-block h-2 w-2 rounded-full bg-accent-hover', className)} />;
 }
 
 type Variante = 'primario' | 'secundario' | 'fantasma';
@@ -93,7 +110,7 @@ export function Boton({
 }) {
   const v: Record<Variante, string> = {
     primario:
-      'bg-accent text-on-accent border-accent-hover hover:bg-accent-hover hover:shadow-glow font-bold',
+      'bg-accent text-on-accent border-accent-hover hover:bg-accent-hover font-bold',
     secundario: 'bg-s3 text-ink border-line hover:border-accent hover:bg-s4 font-semibold',
     fantasma: 'bg-transparent text-ink-2 border-transparent hover:text-ink hover:bg-accent-bg font-semibold',
   };
@@ -104,7 +121,7 @@ export function Boton({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-cuerpo transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-cuerpo transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
         v[variante],
         className,
       )}
@@ -350,7 +367,7 @@ export function Seccion({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 p-3.5 text-left transition hover:bg-s3"
+        className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-s3"
       >
         <div className="flex min-w-0 items-center gap-3">
           <span
@@ -385,7 +402,7 @@ export function Aviso({ tipo = 'aviso', children, titulo }: { tipo?: 'aviso' | '
     ok: { c: 'border-ok/40 bg-ok/10', i: 'check_circle', t: 'text-ok' },
   }[tipo];
   return (
-    <div role={tipo === 'error' ? 'alert' : undefined} className={cx('flex gap-2.5 rounded-xl border p-3', est.c)}>
+    <div role={tipo === 'error' ? 'alert' : undefined} className={cx('flex gap-3 rounded-xl border p-3', est.c)}>
       <Icon name={est.i} className={cx('mt-px text-[18px]', est.t)} />
       <div className="min-w-0 text-detalle leading-snug text-ink">
         {titulo && <p className={cx('mb-0.5 font-bold', est.t)}>{titulo}</p>}
@@ -415,10 +432,14 @@ export function Kpi({
 }) {
   const color = tono === 'accent' ? 'text-accent-hover' : tono === 'amber' ? 'text-amber-soft' : 'text-ink';
   return (
-    <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-line bg-s2 p-3.5 shadow-card">
+    <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-line bg-s2 p-4 shadow-card">
       <div className="flex items-start justify-between gap-2">
         <span className="font-mono text-mini font-semibold uppercase tracking-wide text-ink-2">{titulo}</span>
-        {simbolo && <Badge tono={tono === 'amber' ? 'amber' : tono === 'neutral' ? 'neutral' : 'accent'}>{simbolo}</Badge>}
+        {simbolo && (
+          <Badge tono={tono === 'amber' ? 'amber' : tono === 'neutral' ? 'neutral' : 'accent'}>
+            <Simbolo s={simbolo} />
+          </Badge>
+        )}
       </div>
       <div className="mt-2 flex min-w-0 flex-wrap items-baseline gap-1">
         <span className={cx('break-all font-heading text-dato font-bold tracking-tight', color)}>{valor}</span>
@@ -481,7 +502,7 @@ export function Hoja({ abierta, onClose, titulo, etiqueta, children }: { abierta
         aria-labelledby={`${idTitulo}`}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-xl border-t border-accent/40 bg-s2 p-5 shadow-2xl focus:outline-none sm:rounded-xl sm:border"
+        className="pb-safe flex max-h-[88dvh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-t-xl border-t border-accent/40 bg-s2 p-6 shadow-2xl focus:outline-none sm:rounded-xl sm:border"
       >
         <div className="mx-auto h-1 w-12 rounded-full bg-line-strong sm:hidden" />
         <div className="flex items-start justify-between gap-3">
@@ -546,7 +567,7 @@ export function Tabla({
         <thead>
           <tr className="border-b border-line-strong bg-s3 text-amber-soft">
             {cabecera.map((c, i) => (
-              <th key={i} scope="col" className={cx('whitespace-nowrap px-3 py-2.5 font-semibold', alinear?.[i] === 'right' && 'text-right', alinear?.[i] === 'center' && 'text-center')}>
+              <th key={i} scope="col" className={cx('whitespace-nowrap px-3 py-3 font-semibold', alinear?.[i] === 'right' && 'text-right', alinear?.[i] === 'center' && 'text-center')}>
                 {c === '' || c == null ? <span className="sr-only">Columna {i + 1}</span> : c}
               </th>
             ))}
@@ -624,7 +645,7 @@ export function Pildoras<T extends string>({
             type="button"
             onClick={() => onChange(o.valor)}
             className={cx(
-              'flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 font-mono text-detalle transition',
+              'flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 font-mono text-detalle transition',
               act ? 'bg-accent font-semibold text-on-accent' : 'border border-field bg-s2 text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >

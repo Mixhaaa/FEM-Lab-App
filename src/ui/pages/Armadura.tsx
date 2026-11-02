@@ -103,7 +103,7 @@ export function Armadura() {
             type="button"
             aria-pressed={verF}
             onClick={() => setVerF(!verF)}
-            className={cx('flex min-h-11 items-center gap-1.5 rounded-full border px-4 font-mono text-detalle', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
+            className={cx('flex min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-detalle', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="palette" className="text-[15px]" /> Fuerzas
           </button>
@@ -111,7 +111,7 @@ export function Armadura() {
             type="button"
             aria-pressed={verDef}
             onClick={() => setVerDef(!verDef)}
-            className={cx('flex min-h-11 items-center gap-1.5 rounded-full border px-4 font-mono text-detalle', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
+            className={cx('flex min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-detalle', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="timeline" className="text-[15px]" /> Deformada
           </button>
@@ -177,7 +177,7 @@ export function Armadura() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         <Seccion icon="functions" titulo="1. Ejemplo, unidades y método" subtitulo="Casos precargados">
           <Selector
             label="Ejemplo precargado"
@@ -199,8 +199,8 @@ export function Armadura() {
 
         <Seccion icon="scatter_plot" titulo="2. Nodos" subtitulo={`${e.nodos.length} nodos · coordenadas en ${un.long}`} abierta={false} resumen={`${e.nodos.length} nodos`}>
           {e.nodos.map((n, i) => (
-            <div key={i} className={cx('grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2 rounded-lg border bg-inset p-2.5', sel?.tipo === 'nodo' && sel.i === i ? 'border-accent' : 'border-line')}>
-              <span className="mb-2.5 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{i + 1}</span>
+            <div key={i} className={cx('grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2 rounded-lg border bg-inset p-3', sel?.tipo === 'nodo' && sel.i === i ? 'border-accent' : 'border-line')}>
+              <span className="mb-3 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{i + 1}</span>
               <Campo label="x" value={n.x} unidad={un.long} inputMode="decimal" error={errNum(n.x)} onChange={(v) => upd((c) => void (c.nodos[i].x = v))} />
               <Campo label="y" value={n.y} unidad={un.long} inputMode="decimal" error={errNum(n.y)} onChange={(v) => upd((c) => void (c.nodos[i].y = v))} />
               <Quitar label={`Quitar nodo ${i + 1}`} onClick={() => quitarNodo(i)} />
@@ -214,9 +214,9 @@ export function Armadura() {
 
         <Seccion icon="timeline" titulo="3. Barras" subtitulo={`${e.barras.length} barras · E en ${un.esfuerzo}, A en ${un.area}`} abierta={false} resumen={`${e.barras.length} barras`}>
           {e.barras.map((b, k) => (
-            <div key={k} className={cx('flex flex-col gap-2 rounded-lg border bg-inset p-2.5', sel?.tipo === 'barra' && sel.i === k ? 'border-accent' : 'border-line')}>
+            <div key={k} className={cx('flex flex-col gap-2 rounded-lg border bg-inset p-3', sel?.tipo === 'barra' && sel.i === k ? 'border-accent' : 'border-line')}>
               <div className="grid grid-cols-[auto_1fr_1fr_auto] items-end gap-2">
-                <span className="mb-2.5 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{k + 1}</span>
+                <span className="mb-3 w-7 text-center font-mono text-cuerpo font-bold text-accent-soft">{k + 1}</span>
                 <Selector label="Nodo i" value={b.i} onChange={(v) => upd((c) => void (c.barras[k].i = v))} opciones={nodos} />
                 <Selector label="Nodo j" value={b.j} onChange={(v) => upd((c) => void (c.barras[k].j = v))} opciones={nodos} />
                 <Quitar label={`Quitar barra ${k + 1}`} onClick={() => upd((c) => void c.barras.splice(k, 1))} />
@@ -262,7 +262,7 @@ export function Armadura() {
 
         <Seccion icon="change_history" titulo="4. Apoyos" subtitulo={`${e.apoyos.length} apoyo(s)`} abierta={false} resumen={`${e.apoyos.length} apoyo(s)`}>
           {e.apoyos.map((a, k) => (
-            <div key={k} className="grid grid-cols-[1fr_1.4fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
+            <div key={k} className="grid grid-cols-[1fr_1.4fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-3">
               <Selector label="Nodo" value={a.nodo} onChange={(v) => upd((c) => void (c.apoyos[k].nodo = v))} opciones={nodos} />
               <Selector
                 label="Tipo"
@@ -281,7 +281,7 @@ export function Armadura() {
 
         <Seccion icon="south" titulo="5. Cargas nodales" subtitulo={`${e.cargas.length} carga(s) · Fy positiva hacia arriba`} tono="amber" abierta={false} resumen={`${e.cargas.length} carga(s)`}>
           {e.cargas.map((a, k) => (
-            <div key={k} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-2.5">
+            <div key={k} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-2 rounded-lg border border-line bg-inset p-3">
               <Selector label="Nodo" value={a.nodo} onChange={(v) => upd((c) => void (c.cargas[k].nodo = v))} opciones={nodos} />
               <Campo label="Fx" value={a.Fx} unidad={un.fuerza} inputMode="decimal" error={errNum(a.Fx)} onChange={(v) => upd((c) => void (c.cargas[k].Fx = v))} />
               <Campo label="Fy" value={a.Fy} unidad={un.fuerza} inputMode="decimal" error={errNum(a.Fy)} onChange={(v) => upd((c) => void (c.cargas[k].Fy = v))} />
@@ -295,7 +295,7 @@ export function Armadura() {
       </div>
       {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
           Ver la solución paso a paso
         </Boton>

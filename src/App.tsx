@@ -90,7 +90,7 @@ export default function App() {
       </div>
       <NavInferior ruta={ruta} />
       {ayuda && (
-        <div role="status" className="no-print fixed inset-x-0 bottom-20 z-[65] lg:bottom-8 mx-auto w-fit max-w-[92vw] rounded-xl border border-accent/50 bg-s3 px-4 py-2.5 text-center font-mono text-mini text-ink shadow-card">
+        <div role="status" className="no-print fixed inset-x-0 bottom-20 z-[65] lg:bottom-8 mx-auto w-fit max-w-[92vw] rounded-xl border border-accent/50 bg-s3 px-4 py-3 text-center font-mono text-mini text-ink shadow-card">
           Modo presentación · ← → avanzan en el paso a paso y en las pestañas · 1–5 cambian de sección · Esc para salir
         </div>
       )}

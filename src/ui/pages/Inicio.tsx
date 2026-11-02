@@ -67,20 +67,19 @@ export function Inicio() {
       <div className="flex flex-col gap-4">
       {/* Estado del banco de trabajo */}
       <div className="relative overflow-hidden rounded-xl border border-line bg-s2 p-4 shadow-card">
-        <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-accent/10 blur-2xl" />
         <div className="relative flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-amber" />
-            <span className="font-mono text-mini font-bold uppercase tracking-wider text-amber-soft">Modelo activo</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-amber" />
+            <span className="text-detalle font-semibold text-amber-soft">Modelo activo</span>
           </div>
-          <span className="rounded-full border border-line bg-bg px-2.5 py-0.5 font-mono text-mini text-ink-2">Semestre 2026-1</span>
+          <span className="rounded-full border border-line bg-bg px-3 py-0.5 font-mono text-mini text-ink-2">Semestre 2026-1</span>
         </div>
         <button
           type="button"
           onClick={() => ir(tipo === 'armadura' ? 'armadura' : 'config')}
-          className="relative mt-3 flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-inset p-2.5 text-left transition hover:border-accent/50"
+          className="relative mt-3 flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-inset p-3 text-left transition hover:border-accent/50"
         >
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-s3 text-accent-soft">
               <Icon name="engineering" className="text-[18px]" />
             </span>
@@ -95,12 +94,12 @@ export function Inicio() {
 
       {/* Bienvenida */}
       <div>
-        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="rounded bg-accent px-2 py-0.5 font-mono text-mini font-bold uppercase tracking-wide text-on-accent">Simulador académico</span>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="rounded bg-accent px-2 py-0.5 text-mini font-semibold text-on-accent">Simulador académico</span>
           <Badge tono="neutral">Método de Galerkin</Badge>
         </div>
         <h1 className="font-heading text-titulo font-bold tracking-tight text-ink ">Laboratorio MEF 1D y 2D</h1>
-        <p className="mt-1.5 text-cuerpo leading-relaxed text-ink-2">
+        <p className="mt-2 text-cuerpo leading-relaxed text-ink-2">
           Resuelve problemas lineales de ingeniería con elementos finitos lineales: discretiza el dominio, ensambla la matriz global y resuelve{' '}
           <span className="rounded border border-accent/30 bg-s2 px-1.5 py-0.5 font-mono text-mini font-semibold text-accent-soft">K·u = F</span> paso a paso.
         </p>
@@ -108,11 +107,10 @@ export function Inicio() {
 
       </div>
       {/* Ejemplo de clase recomendado */}
-      <div className="relative flex flex-col justify-center overflow-hidden rounded-xl border border-accent/40 bg-gradient-to-br from-accent-bg via-s2 to-s1 p-4 shadow-card lg:p-6">
-        <div className="pointer-events-none absolute -bottom-6 -right-6 h-36 w-36 rounded-full bg-accent/20 blur-2xl" />
+      <div className="relative flex flex-col justify-center overflow-hidden rounded-xl border border-accent/40 bg-s2 p-4 shadow-card lg:p-6">
         <div className="relative mb-1 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="rounded bg-accent px-2 py-0.5 font-mono text-mini font-bold uppercase text-on-accent">Recomendado</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-accent px-2 py-0.5 text-mini font-semibold text-on-accent">Recomendado</span>
             <span className="font-mono text-mini text-accent-soft">Ejemplo de clase</span>
           </div>
           <Icon name="stars" className="text-[20px] text-amber" />
@@ -126,7 +124,7 @@ export function Inicio() {
           <Tex>{String.raw`u = 0.1x^3 + 0.006x - 0.106\,\frac{\sinh 10x}{\sinh 10}`}</Tex>.
         </p>
         <div className="relative flex flex-wrap items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-bg/70 px-2.5 py-1.5 font-mono text-mini text-accent-soft">
+          <span className="flex items-center gap-2 rounded-lg border border-accent/30 bg-bg/70 px-3 py-2 font-mono text-mini text-accent-soft">
             <Icon name="auto_graph" className="text-[14px]" /> Analítica vs MEF
           </span>
           <div className="flex gap-2">
@@ -148,7 +146,7 @@ export function Inicio() {
       {/* Filtro de plantillas */}
       <div className="pt-1">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Plantillas de ingeniería</h2>
+          <h2 className="text-detalle font-semibold text-ink-2">Plantillas de ingeniería</h2>
           <span className="font-mono text-mini font-semibold text-accent-soft">{PLANTILLAS.length} modelos</span>
         </div>
         <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar plantillas por categoría">
@@ -171,9 +169,9 @@ export function Inicio() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {visibles.map((p) => (
-          <article key={p.id} className="flex flex-col gap-2.5 rounded-xl border border-line bg-s2 p-4 shadow-card transition-colors hover:border-accent/60">
+          <article key={p.id} className="flex flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card transition-colors hover:border-accent/60">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className={cx('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/30 bg-s3', ICONO_CATEGORIA[p.categoria])}>
                   <Icon name={p.icono} className="text-[22px]" />
                 </div>
@@ -183,11 +181,11 @@ export function Inicio() {
                 </div>
               </div>
             </div>
-            <Desplazable etiqueta={`Ecuación de ${p.nombre}`} className="rounded-lg border border-line bg-inset px-2.5 py-1.5 text-detalle text-accent-soft">
+            <Desplazable etiqueta={`Ecuación de ${p.nombre}`} className="rounded-lg border border-line bg-inset px-3 py-2 text-detalle text-accent-soft">
               <Tex>{p.tipo === '1d' ? p.ecuacion : p.tipo === 'armadura' ? String.raw`\mathbf{k}_e = \mathbf{T}^{T}\,\frac{EA}{L}\begin{bmatrix}1&-1\\-1&1\end{bmatrix}\mathbf{T}` : p.ecuacion}</Tex>
             </Desplazable>
             <p className="text-detalle leading-snug text-ink-2">{p.descripcion}</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {rasgos(p).map((r) => (
                 <span key={r} className="rounded border border-line bg-s3 px-2 py-0.5 font-mono text-mini text-ink-2">
                   {r}
@@ -246,7 +244,7 @@ export function Inicio() {
         {hoja && (
           <>
             <p className="text-cuerpo leading-relaxed text-ink-2">{hoja.descripcion}</p>
-            <p className="font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Elige un ejemplo para empezar</p>
+            <p className="text-detalle font-semibold text-ink-2">Elige un ejemplo para empezar</p>
             <div className="flex flex-col gap-2">
               {ejemplosDe(hoja).map((ej) => (
                 <button
@@ -280,7 +278,7 @@ export function Inicio() {
         <div className="flex flex-col gap-3">
           {PLANTILLAS.map((p) => (
             <div key={p.id}>
-              <p className="mb-1 flex items-center gap-1.5 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">
+              <p className="mb-1 flex items-center gap-2 text-detalle font-semibold text-accent-soft">
                 <Icon name={p.icono} className="text-[16px]" /> {p.nombre}
               </p>
               <div className="flex flex-col gap-1">

@@ -92,6 +92,8 @@ Base de 4 px. Solo estos pasos (clases de Tailwind `gap-*`, `p-*`, `m-*`):
 | 6 | 24 | Separación entre columnas en escritorio; entre secciones |
 | 8 | 32 | Margen lateral en escritorio |
 
+Excepción: el relleno interior de las insignias (`px-1.5 py-0.5`, 6 × 2 px), para que quepan junto al texto sin agrandar la línea.
+
 ---
 
 ## 4. Radios y sombras
@@ -130,7 +132,7 @@ Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el col
 ### Tarjeta de resultado (indicador)
 - Fondo `--s2`, borde `--line`, `rounded-xl`, relleno 16 px.
 - Rótulo (`text-mini`, mayúsculas, `--ink-2`) → valor (`text-dato`, `--accent-soft` o `--ink`) con unidad (`text-detalle`, `--ink-2`) → ubicación o detalle (`text-detalle`).
-- Los símbolos se escriben con subíndices reales (u<sub>máx</sub>), no con guion bajo.
+- Los símbolos se escriben con subíndices reales (u<sub>máx</sub>), no con guion bajo: componente `Simbolo`.
 
 ### Mensaje de error
 - Caja `--danger-bg` con borde `--danger`, ícono y título en `--danger`, cuerpo en `--ink`.
@@ -159,6 +161,7 @@ Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el col
 
 ## 6. Números
 
+- Decimales fijos (órdenes de convergencia, pesos de Gauss): `fmtFijo`, también con signo menos tipográfico.
 - Formato único (`fmtNum`): notación decimal entre 10⁻³ y 10⁵; fuera de ese rango, `m×10ⁿ`. Signo menos tipográfico (−).
 - Punto decimal en toda la app (coincide con MATLAB y con lo que se escribe en los campos).
 - La unidad va siempre después del número, separada por un espacio.

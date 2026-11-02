@@ -77,8 +77,8 @@ export function PanelMatrices({
             <Spy info={info} M={s.K} titulo={s.nombre} />
           </div>
           <div className="flex w-full flex-col gap-2">
-            <p className="font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Estructura (como spy de MATLAB)</p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-detalle font-semibold text-ink-2">Estructura (como spy de MATLAB)</p>
+            <div className="flex flex-wrap gap-2">
               <Badge>
                 {info.filas} × {info.columnas}
               </Badge>

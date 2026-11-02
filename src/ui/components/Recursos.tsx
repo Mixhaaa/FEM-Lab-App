@@ -1,12 +1,13 @@
 /** Contenido de referencia: formulario de matrices elementales y glosario. */
 import { gaussRule } from '../../core';
+import { fmtFijo } from '../format';
 import { Desplazable, Tabla } from './base';
 import { Tex } from './Tex';
 
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-line bg-inset p-3">
-      <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>
+      <p className="mb-1 text-detalle font-semibold text-accent-soft">{titulo}</p>
       <Desplazable etiqueta={titulo} className="text-cuerpo text-ink">
         {children}
       </Desplazable>
@@ -41,7 +42,7 @@ export function Formulario() {
           alinear={['center', 'right', 'right']}
           filas={[1, 2, 3].flatMap((n) => {
             const r = gaussRule(n);
-            return r.xi.map((x, i) => [i === 0 ? String(n) : '', x.toFixed(6), r.w[i].toFixed(6)]);
+            return r.xi.map((x, i) => [i === 0 ? String(n) : '', fmtFijo(x, 6), fmtFijo(r.w[i], 6)]);
           })}
         />
         <p className="mt-2 text-mini text-ink-2">Con n puntos se integran exactamente polinomios de grado 2n − 1. La app admite de 1 a 5 puntos.</p>
@@ -75,7 +76,7 @@ export function Glosario() {
   return (
     <div className="flex flex-col divide-y divide-line rounded-xl border border-line bg-inset">
       {GLOSARIO.map(([s, d]) => (
-        <div key={s} className="flex items-start gap-3 px-3 py-2.5">
+        <div key={s} className="flex items-start gap-3 px-3 py-3">
           <span className="w-32 shrink-0 text-accent-soft">
             <Tex>{s}</Tex>
           </span>
