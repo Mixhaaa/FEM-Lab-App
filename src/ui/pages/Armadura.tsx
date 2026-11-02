@@ -103,7 +103,7 @@ export function Armadura() {
             type="button"
             aria-pressed={verF}
             onClick={() => setVerF(!verF)}
-            className={cx('flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-mini', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-line text-ink-2')}
+            className={cx('flex min-h-11 items-center gap-1.5 rounded-full border px-4 font-mono text-detalle', verF ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="palette" className="text-[15px]" /> Fuerzas
           </button>
@@ -111,7 +111,7 @@ export function Armadura() {
             type="button"
             aria-pressed={verDef}
             onClick={() => setVerDef(!verDef)}
-            className={cx('flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-mini', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-line text-ink-2')}
+            className={cx('flex min-h-11 items-center gap-1.5 rounded-full border px-4 font-mono text-detalle', verDef ? 'border-accent bg-accent-bg text-accent-soft' : 'border-field text-ink-2 hover:text-ink')}
           >
             <Icon name="timeline" className="text-[15px]" /> Deformada
           </button>
@@ -139,14 +139,19 @@ export function Armadura() {
               step={0.1}
               value={factor}
               onChange={(ev) => setFactor(Number(ev.target.value))}
-              className="h-2 w-full cursor-pointer accent-[var(--accent)]"
+              className="h-11 w-full cursor-pointer accent-[var(--accent)]"
             />
           </div>
         )}
         <Inspector e={e} sel={sel} un={un} sol={sol} escalaF={escalaF} escalaU={escalaU} />
       </Card>
 
-      {!r.ok && (
+      {!r.ok && e.barras.length === 0 && (
+        <Aviso tipo="info" titulo="Todavía no hay barras">
+          Agrega al menos una barra en la sección «3. Barras»: elige los dos nodos que une, su módulo E y su área A. También puedes cargar un ejemplo en la sección 1.
+        </Aviso>
+      )}
+      {!r.ok && e.barras.length > 0 && (
         <Aviso tipo="error" titulo="No se pudo resolver la armadura">
           {r.error.message}
         </Aviso>
@@ -410,7 +415,7 @@ function Quitar({ onClick, label }: { onClick: () => void; label: string }) {
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-danger hover:text-danger"
+      className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field text-ink-2 hover:border-danger hover:text-danger"
     >
       <Icon name="delete" className="text-[18px]" />
     </button>

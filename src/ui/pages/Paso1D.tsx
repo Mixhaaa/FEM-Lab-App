@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { compileExpr, type BoundaryCondition } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
-import { Aviso, Badge, Boton, Card, cx, Icon, Pildoras, Selector, Tabla } from '../components/base';
+import { Aviso, Badge, Boton, Card, cx, Desplazable, Icon, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
 import { Pagina, TituloPagina } from '../components/Shell';
@@ -60,9 +60,9 @@ function Formula({ children, titulo }: { children: string; titulo?: string }) {
   return (
     <div className="rounded-xl border border-line bg-inset px-3 py-2">
       {titulo && <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>}
-      <div className="scroll-x text-detalle text-ink sm:text-[15px]">
+      <Desplazable etiqueta={titulo ?? 'Fórmula'} className="text-detalle text-ink sm:text-cuerpo">
         <Tex display>{children}</Tex>
-      </div>
+      </Desplazable>
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function Paso1D() {
       />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 flex flex-col gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <div className="lg:hidden">
-          <Pildoras value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
+          <Pildoras base="pasos" etiqueta="Pasos" value={paso} onChange={setPaso} opciones={PASOS.map((p, i) => ({ valor: p.id, texto: `${i + 1}. ${p.titulo}` }))} />
         </div>
         {usaElemento && (
           <Selector
@@ -114,7 +114,7 @@ export function Paso1D() {
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start lg:gap-6">
         <ListaPasos pasos={PASOS} actual={paso} onChange={setPaso} />
-        <div className="flex min-w-0 flex-col gap-4">
+        <PanelPestanas base="pasos" valor={paso}>
       {paso === 'problema' && <PasoProblema res={res} />}
       {paso === 'debil' && <PasoDebil res={res} />}
       {paso === 'malla' && <PasoMalla res={res} />}
@@ -136,7 +136,7 @@ export function Paso1D() {
           Siguiente <Icon name="chevron_right" className="text-[18px]" />
         </Boton>
       </div>
-        </div>
+        </PanelPestanas>
       </div>
     </Pagina>
   );

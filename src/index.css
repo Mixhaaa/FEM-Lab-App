@@ -212,6 +212,10 @@
     overflow-y: hidden;
     padding: 0.2em 0;
   }
+  /* Dentro de un contenedor desplazable, el que se desplaza (y recibe el foco) es el contenedor */
+  .scroll-x .katex-display {
+    overflow: visible;
+  }
 }
 
 /* Modo presentación: todo más grande (Tailwind usa rem) */

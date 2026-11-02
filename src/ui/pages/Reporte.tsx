@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { compileExpr } from '../../core';
 import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, unidad, valorPorDefecto, type Resultado1D } from '../../templates';
-import { Aviso, Boton, Tabla } from '../components/base';
+import { Aviso, Boton, Desplazable, Tabla } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { Grafica, type Colores } from '../components/Grafica';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
@@ -32,8 +32,8 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
   const [fecha] = useState(() => new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
   return (
     <article data-theme="light" className="reporte mx-auto w-full max-w-[210mm] rounded-xl bg-bg p-6 text-ink shadow-card sm:p-10">
-      <header className="mb-6 flex items-start justify-between gap-4 border-b-2 border-accent pb-4">
-        <div className="flex items-center gap-3">
+      <header className="mb-6 flex flex-col gap-3 border-b-2 border-accent pb-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-12 w-12" />
           <div>
             <p className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">FEM Lab · Memoria de cálculo</p>
@@ -41,7 +41,7 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
             <p className="text-cuerpo text-ink-2">{subtitulo}</p>
           </div>
         </div>
-        <div className="shrink-0 text-right font-mono text-mini text-ink-2">
+        <div className="font-mono text-mini text-ink-2 sm:shrink-0 sm:text-right">
           <p>{fecha}</p>
           <p>Diseño por Elementos Finitos</p>
           <p>Universidad Distrital · 2026-1</p>
@@ -67,9 +67,9 @@ function S({ n, titulo, children, salto }: { n: number; titulo: string; children
 }
 
 const Fx = ({ children }: { children: string }) => (
-  <div className="scroll-x text-detalle">
+  <Desplazable etiqueta="Fórmula" className="text-detalle">
     <Tex display>{children}</Tex>
-  </div>
+  </Desplazable>
 );
 
 /** Si hay muchas filas, toma una muestra uniforme (incluye siempre la primera y la última). */
@@ -225,11 +225,11 @@ function Reporte1D() {
         {n <= 12 && (
           <S n={8} titulo="Sistema de ecuaciones">
             <p>Matriz elemental del elemento 1 y sistema global con fronteras naturales (antes de imponer Dirichlet):</p>
-            <div className="grid grid-cols-[auto_1fr] gap-3">
+            <div className="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
               <MatrizTabla M={sol.elements[0].Ke} titulo="Ke (elemento 1)" sig={6} />
               <VectorTabla v={sol.elements[0].Fe} titulo="Fe (elemento 1)" sig={6} />
             </div>
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
               <MatrizTabla M={sol.K} titulo="K" />
               <VectorTabla v={sol.F} titulo="F" sig={6} />
               <VectorTabla v={sol.u} titulo="u" sig={6} />
@@ -294,14 +294,18 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
   );
   return (
     <>
-      <figure className="scroll-x">
-        <Grafica data={sol} layout={lay1} alto={260} ancho={680} etiqueta={`${t.incognita.nombre} contra x`} />
+      <figure>
+        <Desplazable etiqueta={`Gráfica de ${t.incognita.nombre}`}>
+          <Grafica data={sol} layout={lay1} alto={260} ancho={680} etiqueta={`${t.incognita.nombre} contra x`} />
+        </Desplazable>
         <figcaption className="text-center text-mini text-ink-2">
           {t.incognita.nombre}: solución MEF{exacta ? ' y analítica' : ''}.
         </figcaption>
       </figure>
-      <figure className="scroll-x">
-        <Grafica data={der} layout={lay2} alto={220} ancho={680} etiqueta={`${d.nombre} por elemento`} />
+      <figure>
+        <Desplazable etiqueta={`Gráfica de ${d.nombre}`}>
+          <Grafica data={der} layout={lay2} alto={220} ancho={680} etiqueta={`${d.nombre} por elemento`} />
+        </Desplazable>
         <figcaption className="text-center text-mini text-ink-2">{d.nombre} (constante en cada elemento).</figcaption>
       </figure>
     </>
@@ -416,7 +420,7 @@ function ReporteResortes() {
           <p>Equilibrio: Σ cargas + Σ reacciones = {fmtNum(sol.equilibrium, 3)}.</p>
         </S>
         <S n={3} titulo="Matriz de rigidez global">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-3">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
             <MatrizTabla M={sol.K} titulo="K" />
             <VectorTabla v={sol.F} titulo="F" sig={6} />
             <VectorTabla v={sol.u} titulo="u" sig={6} />

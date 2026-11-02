@@ -104,7 +104,7 @@ export function Boton({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        'inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-cuerpo transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2 text-cuerpo transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50',
         v[variante],
         className,
       )}
@@ -123,7 +123,7 @@ export function IconBoton({ icon, label, onClick, className, activo }: { icon: s
       title={label}
       onClick={onClick}
       className={cx(
-        'inline-flex h-9 w-9 items-center justify-center rounded-full border transition',
+        'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition',
         activo ? 'border-accent bg-accent-bg text-accent-soft' : 'border-line bg-s2 text-ink-2 hover:text-ink hover:border-accent/60',
         className,
       )}
@@ -171,8 +171,15 @@ export function Campo({
         {label}
       </label>
       <div
+        onMouseDown={(ev) => {
+          // Toda la caja de 44 px recibe el toque, no solo el texto
+          if (!(ev.target instanceof HTMLInputElement)) {
+            ev.preventDefault();
+            document.getElementById(id)?.focus();
+          }
+        }}
         className={cx(
-          'flex min-h-11 items-center rounded-lg border bg-inset px-3 transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus',
+          'flex min-h-11 cursor-text items-stretch rounded-lg border bg-inset px-3 transition focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus',
           error ? 'border-danger' : 'border-field',
         )}
       >
@@ -190,7 +197,7 @@ export function Campo({
           onBlur={onBlur}
           className={cx('w-full min-w-0 bg-transparent py-2 text-cuerpo text-ink placeholder:text-ink-3 focus:outline-none', mono && 'font-mono')}
         />
-        {unidad && unidad !== '—' && <span className="shrink-0 pl-2 font-mono text-detalle text-ink-2">{unidad}</span>}
+        {unidad && unidad !== '—' && <span className="flex shrink-0 items-center pl-2 font-mono text-detalle text-ink-2">{unidad}</span>}
       </div>
       {error ? (
         <span id={idNota} className="flex items-start gap-1 text-detalle text-danger">
@@ -491,6 +498,31 @@ export function Hoja({ abierta, onClose, titulo, etiqueta, children }: { abierta
   );
 }
 
+/**
+ * Contenedor con desplazamiento horizontal. Si el contenido no cabe, se vuelve un grupo con nombre
+ * que recibe el foco, para poder desplazarlo con las flechas del teclado. (Grupo y no región: hay
+ * muchas fórmulas por pantalla y las regiones son puntos de referencia que deben tener nombre único.)
+ */
+export function Desplazable({ etiqueta, children, className }: { etiqueta: string; children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [desborda, setDesborda] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const medir = () => setDesborda(el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} role={desborda ? 'group' : undefined} aria-label={desborda ? etiqueta : undefined} tabIndex={desborda ? 0 : undefined} className={cx('scroll-x', className)}>
+      {children}
+    </div>
+  );
+}
+
 /** Tabla compacta con encabezado estilo Stitch. */
 export function Tabla({
   cabecera,
@@ -498,21 +530,24 @@ export function Tabla({
   alinear,
   resaltar,
   className,
+  etiqueta,
 }: {
   cabecera: ReactNode[];
   filas: ReactNode[][];
   alinear?: ('left' | 'right' | 'center')[];
   resaltar?: number;
   className?: string;
+  /** Nombre de la tabla para lectores de pantalla. */
+  etiqueta?: string;
 }) {
   return (
-    <div className={cx('scroll-x w-full', className)}>
+    <Desplazable etiqueta={etiqueta ?? `Tabla: ${cabecera.filter((c): c is string => typeof c === 'string' && c !== '').join(', ')}`} className={cx('w-full', className)}>
       <table className="w-full border-collapse text-left font-mono text-mini">
         <thead>
           <tr className="border-b border-line-strong bg-s3 text-amber-soft">
             {cabecera.map((c, i) => (
               <th key={i} scope="col" className={cx('whitespace-nowrap px-3 py-2.5 font-semibold', alinear?.[i] === 'right' && 'text-right', alinear?.[i] === 'center' && 'text-center')}>
-                {c}
+                {c === '' || c == null ? <span className="sr-only">Columna {i + 1}</span> : c}
               </th>
             ))}
           </tr>
@@ -529,26 +564,68 @@ export function Tabla({
           ))}
         </tbody>
       </table>
-    </div>
+    </Desplazable>
   );
 }
 
-/** Pestañas tipo píldora con desplazamiento horizontal. */
-export function Pildoras<T extends string>({ value, onChange, opciones }: { value: T; onChange: (v: T) => void; opciones: { valor: T; texto: string; icon?: string }[] }) {
+/** Ids de una pestaña y de su panel (patrón ARIA de pestañas). */
+const idPestana = (base: string, valor: string) => `${base}-tab-${valor}`;
+const idPanel = (base: string) => `${base}-panel`;
+
+/**
+ * Pestañas tipo píldora con desplazamiento horizontal.
+ * Patrón ARIA: una sola pestaña en el orden de Tab; ← → Inicio Fin para moverse.
+ * El contenido va en <PanelPestanas base=… valor=…>.
+ */
+export function Pildoras<T extends string>({
+  value,
+  onChange,
+  opciones,
+  base,
+  etiqueta,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  opciones: { valor: T; texto: string; icon?: string }[];
+  base: string;
+  etiqueta: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const ir = (j: number) => {
+    onChange(opciones[j].valor);
+    requestAnimationFrame(() => (ref.current?.querySelectorAll('[role="tab"]')[j] as HTMLElement | undefined)?.focus());
+  };
   return (
-    <div role="tablist" className="no-scrollbar flex items-center gap-2 overflow-x-auto py-0.5">
+    <div
+      ref={ref}
+      role="tablist"
+      aria-label={etiqueta}
+      onKeyDown={(e) => {
+        const i = opciones.findIndex((o) => o.valor === value);
+        const n = opciones.length;
+        const j = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1;
+        if (j >= 0) {
+          e.preventDefault();
+          ir(j);
+        }
+      }}
+      className="no-scrollbar flex items-center gap-2 overflow-x-auto py-0.5"
+    >
       {opciones.map((o) => {
         const act = o.valor === value;
         return (
           <button
             key={o.valor}
+            id={idPestana(base, o.valor)}
             role="tab"
             aria-selected={act}
+            aria-controls={idPanel(base)}
+            tabIndex={act ? 0 : -1}
             type="button"
             onClick={() => onChange(o.valor)}
             className={cx(
-              'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 font-mono text-mini transition',
-              act ? 'bg-accent font-semibold text-on-accent shadow-glow' : 'border border-line bg-s2 text-ink-2 hover:bg-s3',
+              'flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 font-mono text-detalle transition',
+              act ? 'bg-accent font-semibold text-on-accent' : 'border border-field bg-s2 text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >
             {o.icon && <Icon name={o.icon} className="text-[16px]" />}
@@ -556,6 +633,15 @@ export function Pildoras<T extends string>({ value, onChange, opciones }: { valu
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Panel que muestra el contenido de la pestaña activa. */
+export function PanelPestanas({ base, valor, children, className }: { base: string; valor: string; children: ReactNode; className?: string }) {
+  return (
+    <div role="tabpanel" id={idPanel(base)} aria-labelledby={idPestana(base, valor)} className={cx('flex min-w-0 flex-col gap-4', className)}>
+      {children}
     </div>
   );
 }

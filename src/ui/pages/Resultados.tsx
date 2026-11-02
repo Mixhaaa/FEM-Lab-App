@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
 import { plantilla1D, unidad, type Resultado1D } from '../../templates';
-import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, Pildoras, Selector, Tabla } from '../components/base';
+import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { AvisoErrorCampo } from './Config';
@@ -75,6 +75,8 @@ function Resultados1D() {
       <Banner res={res} />
       <div className="sticky top-16 z-40 -mx-4 lg:-mx-8 lg:px-8 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur-md">
         <Pildoras
+          base="resultados"
+          etiqueta="Vistas de los resultados"
           value={tab}
           onChange={setTab}
           opciones={[
@@ -94,10 +96,12 @@ function Resultados1D() {
           </ul>
         </Aviso>
       )}
-      {tab === 'solucion' && <PestanaSolucion res={res} />}
-      {tab === 'matrices' && <PestanaMatrices res={res} />}
-      {tab === 'derivadas' && <PestanaDerivadas res={res} />}
-      {tab === 'convergencia' && <PestanaConvergencia res={res} />}
+      <PanelPestanas base="resultados" valor={tab}>
+        {tab === 'solucion' && <PestanaSolucion res={res} />}
+        {tab === 'matrices' && <PestanaMatrices res={res} />}
+        {tab === 'derivadas' && <PestanaDerivadas res={res} />}
+        {tab === 'convergencia' && <PestanaConvergencia res={res} />}
+      </PanelPestanas>
       <PanelExportar archivos={archivos1D(res, ejemplo)} />
     </Pagina>
   );
@@ -118,7 +122,10 @@ function Banner({ res }: { res: Resultado1D }) {
           <Icon name="verified" className="text-[20px]" />
         </div>
         <div className="min-w-0">
-          <p className="truncate font-heading text-cuerpo font-bold text-ink ">{ej?.nombre ?? t.nombre}</p>
+          <h1 className="truncate font-heading text-seccion font-bold text-ink">
+            <span className="sr-only">Resultados: </span>
+            {ej?.nombre ?? t.nombre}
+          </h1>
           <p className="truncate font-mono text-mini text-ink-2">
             {res.estado.tramos.length > 1 ? `${res.estado.tramos.length} tramos · ` : ''}
             {resumen}
@@ -209,6 +216,19 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
   );
 
   const err = res.sol.error;
+  const ux = unidad(t.unidadLongitud, s);
+  const conU = (txt: string, u?: string) => (u && u !== '—' ? `${txt} [${u}]` : txt);
+  const iMin = u.indexOf(Math.min(...u));
+  const iMayor = u.indexOf(Math.max(...u));
+  const resumenSolucion =
+    `Solución MEF con ${nodos.length} nodos en x de ${fmtNum(nodos[0])} a ${fmtNum(nodos[nodos.length - 1])}. ` +
+    `Máximo ${fmtNum(u[iMayor], 5)} en x = ${fmtNum(nodos[iMayor])}; mínimo ${fmtNum(u[iMin], 5)} en x = ${fmtNum(nodos[iMin])}.` +
+    (exactFn && err ? ` Comparada con la solución analítica, la mayor diferencia en los nodos es ${fmtNum(err.maxNodal, 3)}.` : '');
+  const valoresSolucion = {
+    cabecera: ['Nodo', conU('x', ux), conU(`${t.incognita.simbolo} MEF`, un), ...(exactFn && err ? [conU(`${t.incognita.simbolo} analítica`, un), 'Diferencia'] : [])],
+    alinear: ['center', 'right', 'right', 'right', 'right'] as ('left' | 'right' | 'center')[],
+    filas: nodos.map((x, i) => [String(i + 1), fmtNum(x), fmtNum(u[i], 6), ...(exactFn && err ? [fmtNum(err.exactAtNodes[i], 6), fmtNum(err.nodal[i], 3)] : [])]),
+  };
   const normaU = useMemo(() => {
     let acc = 0;
     for (let i = 0; i < nodos.length - 1; i++) {
@@ -251,6 +271,8 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
             layout={layout}
             alto={270}
             etiqueta={`Gráfica de ${t.incognita.nombre} contra x`}
+            resumen={resumenSolucion}
+            valores={valoresSolucion}
             onPunto={(p) => p.curva === (exactFn ? 1 : 0) && setSel(p.indice)}
           />
         </div>
@@ -266,11 +288,11 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <Boton variante="fantasma" icon="chevron_left" disabled={nodoSel === 0} onClick={() => setSel(nodoSel - 1)} className="min-h-[34px] py-1 text-mini">
+          <Boton variante="fantasma" icon="chevron_left" disabled={nodoSel === 0} onClick={() => setSel(nodoSel - 1)} className="text-detalle">
             Anterior
           </Boton>
           <span className="font-mono text-mini text-ink-3">Toca un nodo de la gráfica</span>
-          <Boton variante="fantasma" disabled={nodoSel === nodos.length - 1} onClick={() => setSel(nodoSel + 1)} className="min-h-[34px] py-1 text-mini">
+          <Boton variante="fantasma" disabled={nodoSel === nodos.length - 1} onClick={() => setSel(nodoSel + 1)} className="text-detalle">
             Siguiente <Icon name="chevron_right" className="text-[18px]" />
           </Boton>
         </div>
@@ -388,7 +410,22 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
         <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle="Constante en cada elemento (derivada de una función lineal)" />
         <Selector etiqueta="Magnitud que se grafica" value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
         <div className="rounded-xl border border-line bg-inset p-1">
-          <Grafica data={data} layout={layout} alto={240} etiqueta={`Gráfica de ${d.nombre} por elemento`} />
+          <Grafica
+            data={data}
+            layout={layout}
+            alto={240}
+            etiqueta={`Gráfica de ${d.nombre} por elemento`}
+            resumen={(() => {
+              const iMx = vals.indexOf(Math.max(...vals));
+              const iMn = vals.indexOf(Math.min(...vals));
+              return `Valor constante en cada uno de los ${els.length} elementos. Máximo ${fmtNum(vals[iMx], 4)} en el elemento ${iMx + 1}; mínimo ${fmtNum(vals[iMn], 4)} en el elemento ${iMn + 1}.`;
+            })()}
+            valores={{
+              cabecera: ['Elemento', `Desde x${unidad(t.unidadLongitud, s) ? ` [${unidad(t.unidadLongitud, s)}]` : ''}`, 'Hasta x', `${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}`],
+              alinear: ['center', 'right', 'right', 'right'],
+              filas: els.map((el, i) => [String(i + 1), fmtNum(el.xa), fmtNum(el.xb), fmtNum(vals[i], 5)]),
+            }}
+          />
         </div>
       </Card>
 

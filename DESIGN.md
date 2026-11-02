@@ -139,7 +139,8 @@ Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el col
 ### Gráfica
 - Siempre con ejes con nombre y unidad, leyenda cuando hay más de una serie.
 - Texto alternativo que resume el resultado (máximo, mínimo, comparación).
-- Una tabla con los valores, plegable, junto a la gráfica.
+- Una tabla con los valores, plegable (`<details>`), debajo de la gráfica: prop `valores` de `Grafica`.
+- En el celular no se monta la vista previa de Configuración (`useEsEscritorio`), para no cargar Plotly donde no se ve.
 
 ### Pestañas
 - Patrón ARIA: `role="tablist"` / `tab` / `tabpanel`, flechas ← → para moverse, una sola pestaña en el orden de Tab.
@@ -147,8 +148,12 @@ Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el col
 ### Hoja modal
 - `role="dialog"` con `aria-modal`, el foco queda atrapado dentro, Esc cierra y el foco vuelve al botón que la abrió.
 
-### Tabla desplazable
-- Contenedor con `tabIndex=0`, `role="region"` y `aria-label`, para poder desplazarla con el teclado.
+### Contenedor desplazable (tablas, matrices, fórmulas largas)
+- Componente `Desplazable`. Solo cuando el contenido no cabe: `tabIndex=0`, `role="group"` y `aria-label`, para poder desplazarlo con las flechas del teclado.
+- Se usa `group` y no `region` porque hay muchas fórmulas por pantalla y las regiones deben tener nombre único.
+
+### Campo: área táctil
+- La caja completa (44 px) pone el foco en el campo al tocarla, incluida la unidad; el `<input>` interior mide 42 px por el borde.
 
 ---
 

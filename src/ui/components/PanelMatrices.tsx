@@ -42,7 +42,7 @@ export function BotonCopiar({ texto, etiqueta = 'Copiar' }: { texto: string; eti
     setTimeout(() => setOk(false), 1500);
   };
   return (
-    <Boton variante="fantasma" icon={ok ? 'check_circle' : 'content_copy'} onClick={copiar} className="min-h-[32px] px-2 py-1 text-mini">
+    <Boton variante="fantasma" icon={ok ? 'check_circle' : 'content_copy'} onClick={copiar} className="px-3 text-detalle">
       {ok ? 'Copiado' : etiqueta}
     </Boton>
   );

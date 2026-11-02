@@ -1,5 +1,5 @@
 /** Matriz o vector como tabla HTML desplazable, con índices y celdas resaltadas. */
-import { cx } from './base';
+import { cx, Desplazable } from './base';
 import { fmtMat } from '../format';
 
 export function MatrizTabla({
@@ -29,19 +29,21 @@ export function MatrizTabla({
   const fl = filas ?? Array.from({ length: n }, (_, i) => i + 1);
   const cl = columnas ?? Array.from({ length: m }, (_, j) => j + 1);
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       {titulo && <span className="font-mono text-mini font-bold text-ink-2">{titulo}</span>}
-      <div className="scroll-x max-h-[360px] overflow-y-auto rounded-lg border border-line bg-inset">
+      <Desplazable etiqueta={titulo ?? `Matriz de ${n} × ${m}`} className="max-h-[360px] overflow-y-auto rounded-lg border border-line bg-inset">
         <table className="border-collapse font-mono text-mini">
           <thead className="sticky top-0 z-10">
             <tr className="bg-s3 text-amber-soft">
-              <th className="sticky left-0 bg-s3 px-2 py-1" />
+              <th className="sticky left-0 bg-s3 px-2 py-1">
+                <span className="sr-only">Fila</span>
+              </th>
               {cl.slice(0, mm).map((c, j) => (
                 <th key={j} scope="col" className="px-2 py-1 text-right font-semibold">
-                  {c}
+                  {c === '' ? <span className="sr-only">Valor</span> : c}
                 </th>
               ))}
-              {m > mm && <th className="px-2 py-1 text-ink-3">…</th>}
+              {m > mm && <th className="px-2 py-1 text-ink-3">…<span className="sr-only"> columnas omitidas</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -73,7 +75,7 @@ export function MatrizTabla({
             )}
           </tbody>
         </table>
-      </div>
+      </Desplazable>
     </div>
   );
 }

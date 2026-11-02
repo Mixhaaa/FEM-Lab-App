@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { PlotlyHTMLElement } from 'plotly.js-basic-dist-min';
 import { useApp } from '../store';
+import { Tabla } from './base';
 
 type Plotly = (typeof import('plotly.js-basic-dist-min'))['default'];
 let cargando: Promise<Plotly> | null = null;
@@ -37,6 +38,16 @@ function suscribirEsquema(cb: () => void) {
   return () => mq?.removeEventListener('change', cb);
 }
 const sistemaClaro = () => !!window.matchMedia?.('(prefers-color-scheme: light)').matches;
+
+function suscribirAncho(cb: () => void) {
+  const mq = window.matchMedia?.('(min-width: 1024px)');
+  mq?.addEventListener('change', cb);
+  return () => mq?.removeEventListener('change', cb);
+}
+/** true en pantallas de escritorio (≥ 1024 px, el punto «lg» del diseño). Evita montar lo que el celular no muestra. */
+export function useEsEscritorio(): boolean {
+  return useSyncExternalStore(suscribirAncho, () => !!window.matchMedia?.('(min-width: 1024px)').matches, () => false);
+}
 
 /** Tema efectivo ('dark' | 'light'); se actualiza si cambia la preferencia o el sistema. */
 export function useTema(): 'dark' | 'light' {
@@ -81,6 +92,8 @@ export function Grafica({
   ancho,
   onPunto,
   etiqueta,
+  resumen,
+  valores,
 }: {
   /** Recibe los colores del tema y devuelve las trazas. */
   data: (c: Colores) => unknown[];
@@ -90,6 +103,10 @@ export function Grafica({
   ancho?: number;
   onPunto?: (p: { curva: number; indice: number; x: number; y: number }) => void;
   etiqueta: string;
+  /** Frase que resume lo que muestra la gráfica (máximo, mínimo, comparación), para lectores de pantalla. */
+  resumen?: string;
+  /** Los mismos datos como tabla, que se muestra plegada debajo de la gráfica. */
+  valores?: { cabecera: string[]; filas: string[][]; alinear?: ('left' | 'right' | 'center')[] };
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const tema = useTema();
@@ -132,14 +149,27 @@ export function Grafica({
     };
   }, []);
 
-  return (
-    <div className="relative w-full" style={{ height: alto, ...(ancho ? { width: ancho, minWidth: ancho } : {}) }} role="img" aria-label={etiqueta}>
+  const grafica = (
+    <div className="relative w-full" style={{ height: alto, ...(ancho ? { width: ancho, minWidth: ancho } : {}) }} role="img" aria-label={resumen ? `${etiqueta}. ${resumen}` : etiqueta}>
       <div ref={ref} className="h-full w-full" />
       {estado !== 'ok' && (
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-mini text-ink-3">
-          {estado === 'cargando' ? 'Cargando gráfica…' : 'No se pudo cargar la gráfica.'}
+        <div role="status" className="absolute inset-0 flex items-center justify-center font-mono text-mini text-ink-2">
+          {estado === 'cargando' ? 'Cargando gráfica…' : 'No se pudo cargar la gráfica. Los valores están en la tabla.'}
         </div>
       )}
+    </div>
+  );
+  if (!valores) return grafica;
+  return (
+    <div className="flex w-full flex-col gap-2">
+      {grafica}
+      <details className="no-print group rounded-lg border border-line bg-s2">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-detalle font-semibold text-ink-2 hover:text-ink">
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px] transition-transform group-open:rotate-90">chevron_right</span>
+          Ver los valores en una tabla ({valores.filas.length} filas)
+        </summary>
+        <Tabla etiqueta={`Valores de: ${etiqueta}`} cabecera={valores.cabecera} filas={valores.filas} alinear={valores.alinear} className="max-h-72 overflow-y-auto border-t border-line" />
+      </details>
     </div>
   );
 }

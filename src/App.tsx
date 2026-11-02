@@ -13,7 +13,14 @@ const Armadura = lazy(() => import('./ui/pages/Armadura').then((m) => ({ default
 const Reporte = lazy(() => import('./ui/pages/Reporte').then((m) => ({ default: m.Reporte })));
 
 function Cargando() {
-  return <div className="flex min-h-[60dvh] items-center justify-center font-mono text-mini text-ink-3">Cargando…</div>;
+  return (
+    <main className="flex min-h-[60dvh] flex-col items-center justify-center gap-2 px-4 pt-20">
+      <h1 className="sr-only">FEM Lab</h1>
+      <p role="status" className="text-cuerpo text-ink-2">
+        Cargando la sección…
+      </p>
+    </main>
+  );
 }
 import { usePresentacion } from './ui/presentacion';
 import { useRuta } from './ui/router';

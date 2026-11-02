@@ -1,13 +1,15 @@
 /** Contenido de referencia: formulario de matrices elementales y glosario. */
 import { gaussRule } from '../../core';
-import { Tabla } from './base';
+import { Desplazable, Tabla } from './base';
 import { Tex } from './Tex';
 
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-line bg-inset p-3">
       <p className="mb-1 font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">{titulo}</p>
-      <div className="text-cuerpo text-ink">{children}</div>
+      <Desplazable etiqueta={titulo} className="text-cuerpo text-ink">
+        {children}
+      </Desplazable>
     </div>
   );
 }

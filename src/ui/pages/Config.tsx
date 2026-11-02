@@ -13,12 +13,12 @@ import {
   type Resultado1D,
   type SistemaUnidades,
 } from '../../templates';
-import { Aviso, Badge, Boton, Campo, cx, Icon, Segmentos, Seccion, Selector } from '../components/base';
+import { Aviso, Badge, Boton, Campo, cx, Desplazable, Icon, Segmentos, Seccion, Selector } from '../components/base';
 import { DiagramaMalla } from '../components/DiagramaMalla';
 import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
 import { conPrefijo, fmtNum } from '../format';
-import { Grafica, type Colores } from '../components/Grafica';
+import { Grafica, useEsEscritorio, type Colores } from '../components/Grafica';
 import { useResultado1D } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
@@ -44,7 +44,7 @@ function CampoFisico({ def, valor, onChange, sistema, id }: { def: CampoDef; val
       value={valor}
       onChange={onChange}
       unidad={unidad(def.unidad, sistema)}
-      ayuda={def.ayuda ?? (def.tipo === 'expresion' ? 'Número o expresión en x.' : undefined)}
+      ayuda={[def.ayuda, def.tipo === 'expresion' ? 'Número o expresión en x. Ej.: 10*x^3 o 2 + sin(x)' : `Número. Ej.: ${valorPorDefecto(def, sistema)}`].filter(Boolean).join(' · ')}
       error={err}
       inputMode={def.tipo === 'numero' ? 'decimal' : 'text'}
     />
@@ -75,6 +75,7 @@ function Config1D() {
   const ejemploId = useApp((s) => s.ejemplo['1d']);
   const t = plantilla1D(e.plantilla)!;
   const r = useResultado1D();
+  const escritorio = useEsEscritorio();
   // Último resultado válido: el esquema se mantiene mientras se corrige un dato
   const [ultimo, setUltimo] = useState<Resultado1D | null>(null);
   if (r.ok && r.res !== ultimo) setUltimo(r.res);
@@ -123,21 +124,21 @@ function Config1D() {
             </Badge>
           )}
         </div>
-        <div className="scroll-x rounded-lg border border-line bg-inset p-2">
+        <Desplazable etiqueta="Diagrama de la malla" className="rounded-lg border border-line bg-inset p-2">
           {vista ? (
             <DiagramaMalla problem={vista.problem} nodos={vista.sol.mesh.nodes} etiquetaCarga={etiquetaCarga(t)} fuerzaX={t.id === 'barra'} simbolo={t.incognita.simbolo} />
           ) : (
             <p className="p-6 text-center font-mono text-mini text-ink-3">Corrige los datos para ver la malla.</p>
           )}
-        </div>
+        </Desplazable>
         <div className="flex flex-col gap-1 rounded-lg border border-line bg-s3 p-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-mini font-bold uppercase tracking-wider text-accent-soft">Formulación fuerte</span>
             <span className="font-mono text-mini text-ink-2">{t.nombre}</span>
           </div>
-          <div className="scroll-x text-detalle text-ink ">
+          <Desplazable etiqueta="Ecuación del problema" className="text-detalle text-ink">
             <Tex display>{t.ecuacion}</Tex>
-          </div>
+          </Desplazable>
           {vista && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {(['izquierda', 'derecha'] as const).map((lado) => {
@@ -168,7 +169,7 @@ function Config1D() {
         </Aviso>
       )}
 
-            {r.ok && <VistaPrevia res={r.res} />}
+            {r.ok && escritorio && <VistaPrevia res={r.res} />}
           </>
         }
         lateral={
@@ -267,6 +268,7 @@ function Config1D() {
 
         {/* 3. Propiedades por tramos */}
         <Seccion icon="layers" titulo="3. Propiedades por tramos" subtitulo="Coeficientes físicos de cada región" resumen={`${e.tramos.length} tramo(s)`}>
+          <AyudaExpresiones />
           {t.camposGlobales.length > 0 && (
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {t.camposGlobales.map((c) => (
@@ -320,7 +322,7 @@ function Config1D() {
                   type="button"
                   aria-label={`Quitar carga ${i + 1}`}
                   onClick={() => upd((c) => void c.cargas.splice(i, 1))}
-                  className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-danger hover:text-danger"
+                  className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field text-ink-2 hover:border-danger hover:text-danger"
                 >
                   <Icon name="delete" className="text-[18px]" />
                 </button>
@@ -337,8 +339,8 @@ function Config1D() {
           {(['izquierda', 'derecha'] as const).map((lado) => (
             <FronteraEditor key={lado} t={t} e={e} lado={lado} upd={upd} />
           ))}
-          <p className="text-mini leading-snug text-ink-3">
-            Convención: <Tex>{String.raw`k\,\partial u/\partial n`}</Tex> con la normal exterior (n = −1 en x₀, n = +1 en xL). Un valor positivo significa que entra al dominio.
+          <p className="text-detalle leading-snug text-ink-2">
+            <strong className="font-semibold text-ink">Signos:</strong> <Tex>{String.raw`k\,\partial u/\partial n`}</Tex> usa la normal que apunta hacia afuera del dominio (n = −1 en x₀, n = +1 en xL). Un valor positivo significa que entra al dominio.
           </p>
         </Seccion>
 
@@ -476,7 +478,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
         step={1}
         value={Math.min(ne, 64)}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer accent-[var(--accent)]"
+        className="h-11 w-full cursor-pointer accent-[var(--accent)]"
       />
       <div className="flex justify-between px-0.5 font-mono text-mini text-ink-2">
         <span>1</span>
@@ -512,7 +514,7 @@ function TramoEditor({ t, e, i, upd }: { t: Plantilla1D; e: Estado1D; i: number;
                 c.tramos[c.tramos.length - 1].fin = c.xL;
               })
             }
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-danger hover:text-danger"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field text-ink-2 hover:border-danger hover:text-danger"
           >
             <Icon name="delete" className="text-[18px]" />
           </button>
@@ -564,7 +566,12 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
         }
         opciones={t.fronteras.map((o) => ({ valor: o.id, texto: o.nombre }))}
       />
-      {op.ayuda && <p className="-mt-1 text-mini text-ink-3">{op.ayuda}</p>}
+      {op.ayuda && <p className="-mt-1 text-detalle text-ink-2">{op.ayuda}</p>}
+      {op.ayuda?.includes('∂u/∂n') && (
+        <p className="-mt-1 text-detalle text-ink-2">
+          {lado === 'izquierda' ? 'En x₀ la normal exterior apunta hacia −x, así que k·∂u/∂n = −k·u′(x₀).' : 'En xL la normal exterior apunta hacia +x, así que k·∂u/∂n = k·u′(xL).'}
+        </p>
+      )}
       {op.campos.length > 0 && (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {op.campos.map((c) => (
@@ -573,6 +580,34 @@ function FronteraEditor({ t, e, lado, upd }: { t: Plantilla1D; e: Estado1D; lado
         </div>
       )}
     </div>
+  );
+}
+
+/** Guía corta para escribir números y expresiones. */
+function AyudaExpresiones() {
+  const filas: [string, string][] = [
+    ['Operaciones', '+  −  *  /  ^   (2*x, x^2, (1 - x)/2)'],
+    ['Decimales', 'Con punto: 0.25 · notación científica: 210e9 = 210×10⁹'],
+    ['Funciones', 'sin cos tan exp log (natural) log10 sqrt abs sinh cosh'],
+    ['Constantes', 'pi, e'],
+    ['Variable', 'Solo x. Escribe siempre el *: 3*x, no 3x'],
+  ];
+  return (
+    <details className="group rounded-lg border border-line bg-s1">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg px-3 text-detalle font-semibold text-ink-2 hover:text-ink">
+        <Icon name="help" className="text-[18px]" />
+        Cómo escribir valores y expresiones
+        <Icon name="expand_more" className="ml-auto text-[18px] transition-transform group-open:rotate-180" />
+      </summary>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 border-t border-line px-3 py-3 text-detalle">
+        {filas.map(([n, d]) => (
+          <div key={n} className="contents">
+            <dt className="font-semibold text-ink">{n}</dt>
+            <dd className="font-mono text-ink-2">{d}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
 
@@ -586,6 +621,9 @@ function tipoBC(aBC: Plantilla1D['fronteras'][number]['aBC']): string {
   }
 }
 
+
+/** Texto con su unidad entre corchetes, si la tiene. */
+const conU = (txt: string, x?: string) => (x && x !== '—' ? `${txt} [${x}]` : txt);
 
 /** Vista previa de la solución mientras se editan los datos (solo en pantallas grandes). */
 function VistaPrevia({ res }: { res: Resultado1D }) {
@@ -605,13 +643,14 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
       const tr: unknown[] = [];
       if (exacta) {
         const xs = Array.from({ length: 201 }, (_, i) => nodos[0] + ((nodos[nodos.length - 1] - nodos[0]) * i) / 200);
-        tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', line: { color: c.exact, width: 2 }, hoverinfo: 'skip' });
+        tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', name: 'Analítica', line: { color: c.exact, width: 2 }, hoverinfo: 'skip' });
       }
       tr.push({
         x: nodos,
         y: u,
         type: 'scatter',
         mode: nodos.length <= 60 ? 'lines+markers' : 'lines',
+        name: 'MEF',
         line: { color: c.accentHover, width: 2, dash: exacta ? 'dash' : 'solid' },
         marker: { color: c.bg, size: 7, line: { color: c.accentHover, width: 2 } },
         hovertemplate: `x = %{x:.4g}<br>${t.incognita.simbolo} = %{y:.5g}<extra></extra>`,
@@ -620,18 +659,47 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
     },
     [nodos, u, exacta, t.incognita.simbolo],
   );
-  const layout = useCallback(() => ({ margin: { l: 52, r: 10, t: 6, b: 36 } }), []);
+  const ux = unidad(t.unidadLongitud, res.estado.sistema);
+  const un = unidad(t.incognita.unidad, res.estado.sistema);
+  const layout = useCallback(
+    () => ({ margin: { l: 52, r: 10, t: 6, b: 40 }, xaxis: { title: { text: conU('x', ux) } }, yaxis: { title: { text: conU(t.incognita.simbolo, un) } } }),
+    [ux, un, t.incognita.simbolo],
+  );
+  const err = res.sol.error;
+  const iMx = u.indexOf(Math.max(...u));
   return (
-    <div className="hidden flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card lg:flex">
-      <div className="flex items-center justify-between">
+    <section aria-labelledby="titulo-vista-previa" className="flex flex-col gap-3 rounded-xl border border-line bg-s2 p-4 shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Icon name="insights" className="text-[18px] text-accent-soft" />
-          <span className="font-mono text-mini font-bold uppercase tracking-wider text-ink">Vista previa en vivo</span>
+          <h2 id="titulo-vista-previa" className="text-cuerpo font-bold text-ink">
+            Vista previa: {t.incognita.nombre}
+          </h2>
         </div>
-        <Badge tono="neutral">{t.incognita.nombre}</Badge>
+        <div className="flex items-center gap-3 font-mono text-mini text-ink-2" aria-hidden="true">
+          {exacta && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-0.5 w-4 rounded-full bg-[var(--plot-exact)]" /> Analítica
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 rounded-full bg-accent-hover" /> MEF
+          </span>
+        </div>
       </div>
       <div className="rounded-lg border border-line bg-inset p-1">
-        <Grafica data={data} layout={layout} alto={200} etiqueta={`Vista previa de ${t.incognita.nombre}`} />
+        <Grafica
+          data={data}
+          layout={layout}
+          alto={220}
+          etiqueta={`Vista previa de ${t.incognita.nombre} contra x`}
+          resumen={`Solución MEF con ${nodos.length} nodos; máximo ${fmtNum(u[iMx], 5)} en x = ${fmtNum(nodos[iMx])}.${exacta ? ' Se compara con la solución analítica.' : ''}`}
+          valores={{
+            cabecera: ['Nodo', conU('x', ux), conU(`${t.incognita.simbolo} MEF`, un), ...(err ? [conU(`${t.incognita.simbolo} analítica`, un)] : [])],
+            alinear: ['center', 'right', 'right', 'right'],
+            filas: nodos.map((x, i) => [String(i + 1), fmtNum(x), fmtNum(u[i], 6), ...(err ? [fmtNum(err.exactAtNodes[i], 6)] : [])]),
+          }}
+        />
       </div>
       <div className="grid grid-cols-2 gap-2">
         {res.kpis.slice(0, 4).map((k) => {
@@ -646,7 +714,7 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
 

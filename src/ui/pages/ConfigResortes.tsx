@@ -1,6 +1,6 @@
 import { compileExpr } from '../../core';
 import { EJEMPLOS_RESORTES, SISTEMAS, UNIDADES_RESORTES, type EstadoResortes } from '../../templates';
-import { Aviso, Badge, Boton, Campo, Icon, Segmentos, Seccion, Selector } from '../components/base';
+import { Aviso, Badge, Boton, Campo, Desplazable, Icon, Segmentos, Seccion, Selector } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { useResultadoResortes } from '../resultado';
@@ -22,7 +22,7 @@ function Quitar({ onClick, label }: { onClick: () => void; label: string }) {
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-2 hover:border-danger hover:text-danger"
+      className="mb-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field text-ink-2 hover:border-danger hover:text-danger"
     >
       <Icon name="delete" className="text-[18px]" />
     </button>
@@ -62,11 +62,11 @@ export function ConfigResortes() {
         anchoLateral="lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
         principal={
           <>
-      <div className="scroll-x rounded-xl border border-line bg-s2 p-3 shadow-card">
+      <Desplazable etiqueta="Diagrama de los resortes" className="rounded-xl border border-line bg-s2 p-3 shadow-card">
         <div className="rounded-lg border border-line bg-inset p-2">
           <DiagramaResortes e={e} />
         </div>
-      </div>
+      </Desplazable>
       {!r.ok && (
         <Aviso tipo="error" titulo="Hay un dato por corregir">
           {r.error.message}

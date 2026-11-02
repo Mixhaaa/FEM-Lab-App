@@ -8,7 +8,7 @@ import {
   type Categoria,
   type PlantillaCualquiera,
 } from '../../templates';
-import { Badge, Boton, cx, Hoja, Icon } from '../components/base';
+import { Badge, Boton, cx, Desplazable, Hoja, Icon } from '../components/base';
 import { Pagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
 import { Formulario, Glosario } from '../components/Recursos';
@@ -118,6 +118,7 @@ export function Inicio() {
           <Icon name="stars" className="text-[20px] text-amber" />
         </div>
         <h2 className="relative font-heading text-seccion font-bold text-ink">
+          <span className="sr-only">Ejemplo de clase recomendado: </span>
           <Tex>{String.raw`-u'' + 100\,u = 10x^3`}</Tex>
         </h2>
         <p className="relative mb-3 mt-1 text-detalle text-ink-2">
@@ -150,17 +151,16 @@ export function Inicio() {
           <h2 className="font-mono text-mini font-bold uppercase tracking-wider text-ink-2">Plantillas de ingeniería</h2>
           <span className="font-mono text-mini font-semibold text-accent-soft">{PLANTILLAS.length} modelos</span>
         </div>
-        <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Filtrar por categoría">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrar plantillas por categoría">
           {(['todos', ...categorias] as const).map((c) => (
             <button
               key={c}
               type="button"
-              role="tab"
-              aria-selected={filtro === c}
+              aria-pressed={filtro === c}
               onClick={() => setFiltro(c)}
               className={cx(
-                'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 font-mono text-mini transition',
-                filtro === c ? 'bg-accent font-bold text-on-accent' : 'border border-line bg-s2 text-ink-2 hover:border-accent/50',
+                'min-h-11 shrink-0 whitespace-nowrap rounded-full px-4 font-mono text-detalle transition',
+                filtro === c ? 'bg-accent font-bold text-on-accent' : 'border border-field bg-s2 text-ink-2 hover:bg-s3 hover:text-ink',
               )}
             >
               {c === 'todos' ? 'Todos' : CATEGORIAS[c]}
@@ -183,9 +183,9 @@ export function Inicio() {
                 </div>
               </div>
             </div>
-            <div className="scroll-x rounded-lg border border-line bg-inset px-2.5 py-1.5 text-detalle text-accent-soft">
+            <Desplazable etiqueta={`Ecuación de ${p.nombre}`} className="rounded-lg border border-line bg-inset px-2.5 py-1.5 text-detalle text-accent-soft">
               <Tex>{p.tipo === '1d' ? p.ecuacion : p.tipo === 'armadura' ? String.raw`\mathbf{k}_e = \mathbf{T}^{T}\,\frac{EA}{L}\begin{bmatrix}1&-1\\-1&1\end{bmatrix}\mathbf{T}` : p.ecuacion}</Tex>
-            </div>
+            </Desplazable>
             <p className="text-detalle leading-snug text-ink-2">{p.descripcion}</p>
             <div className="flex flex-wrap gap-1.5">
               {rasgos(p).map((r) => (
@@ -196,7 +196,7 @@ export function Inicio() {
             </div>
             <div className="mt-auto flex items-center justify-between pt-1">
               <span className="font-mono text-mini text-ink-3">{ejemplosDe(p).length} ejemplos</span>
-              <Boton variante={p.id === 'armadura' ? 'primario' : 'secundario'} onClick={() => setHoja(p)} className="min-h-[36px] py-1.5 text-mini">
+              <Boton variante={p.id === 'armadura' ? 'primario' : 'secundario'} onClick={() => setHoja(p)} className="text-detalle">
                 Configurar <Icon name="chevron_right" className="text-[16px]" />
               </Boton>
             </div>

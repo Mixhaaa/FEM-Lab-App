@@ -21,7 +21,7 @@ export function Encabezado() {
   return (
     <header className="no-print pt-safe fixed top-0 z-50 w-full border-b border-line bg-bg/90 shadow-[0_4px_20px_rgb(0_0_0/0.25)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4 lg:max-w-none lg:px-6">
-        <button type="button" onClick={() => ir('inicio')} className="flex min-w-0 items-center gap-2.5 text-left" aria-label="FEM Lab, ir al inicio">
+        <button type="button" onClick={() => ir('inicio')} className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg text-left">
           <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" className="h-9 w-9 shrink-0 drop-shadow-[0_2px_4px_rgb(224_109_50/0.3)]" />
           <div className="flex min-w-0 flex-col leading-tight">
             <div className="flex items-center gap-1.5">
@@ -31,6 +31,7 @@ export function Encabezado() {
             <span className="truncate text-mini text-ink-2">
               Elementos finitos lineales<span className="hidden lg:inline"> · Diseño por Elementos Finitos · Universidad Distrital 2026-1</span>
             </span>
+            <span className="sr-only">: ir al inicio</span>
           </div>
         </button>
         <div className="flex shrink-0 items-center gap-2">
@@ -106,7 +107,7 @@ export function NavLateral({ ruta }: { ruta: Ruta }) {
               ir(n.ruta);
             }}
             className={cx(
-              'flex items-center gap-3 rounded-xl border-l-2 px-3 py-2.5 text-cuerpo transition-colors',
+              'flex min-h-11 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-cuerpo transition-colors',
               act ? 'border-accent bg-accent-bg font-bold text-ink' : 'border-transparent text-ink-2 hover:bg-s3 hover:text-ink',
             )}
           >

@@ -162,7 +162,13 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
         <Card className="flex flex-col gap-3 p-4">
           <CardHeader icon="show_chart" title="Error contra h (escala log-log)" subtitle="La pendiente de cada recta es el orden de convergencia p: error ≈ C·hᵖ." />
           <div className="rounded-xl border border-line bg-inset p-1">
-            <Grafica data={data} layout={layout} alto={360} etiqueta="Gráfica log-log del error contra el tamaño de elemento" />
+            <Grafica
+              data={data}
+              layout={layout}
+              alto={360}
+              etiqueta="Gráfica log-log del error contra el tamaño de elemento"
+              resumen={`Errores de ${rows.length} mallas, de h = ${fmtNum(h[0], 3)} a h = ${fmtNum(h[h.length - 1], 3)}. Pendientes medidas: nodal ${fmtNum(conv.orden.nodal, 3)}, L² ${fmtNum(conv.orden.L2, 3)}, H¹ ${fmtNum(conv.orden.H1, 3)}. Los valores están en la tabla «Errores por malla».`}
+            />
           </div>
         </Card>
       )}
@@ -247,7 +253,18 @@ function ErrorNodalActual({ res }: { res: Resultado1D }) {
         right={<Badge tono="neutral">máx. en N{sub(k + 1)}</Badge>}
       />
       <div className="rounded-xl border border-line bg-inset p-1">
-        <Grafica data={data} layout={layout} alto={220} etiqueta="Gráfica del error nodal contra x" />
+        <Grafica
+          data={data}
+          layout={layout}
+          alto={220}
+          etiqueta="Gráfica del error nodal contra x"
+          resumen={`El mayor error, ${fmtNum(err.nodal[k], 3)}, está en el nodo ${k + 1} (x = ${fmtNum(nodos[k])}).`}
+          valores={{
+            cabecera: ['Nodo', 'x', `${t.incognita.simbolo} MEF − ${t.incognita.simbolo} exacta`],
+            alinear: ['center', 'right', 'right'],
+            filas: nodos.map((x, i) => [String(i + 1), fmtNum(x), fmtNum(errores[i], 3)]),
+          }}
+        />
       </div>
       <div className="grid grid-cols-3 gap-2 font-mono text-mini">
         {(

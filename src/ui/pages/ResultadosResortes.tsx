@@ -1,4 +1,4 @@
-import { Badge, Card, CardHeader, Icon, Kpi, Tabla } from '../components/base';
+import { Badge, Card, CardHeader, Desplazable, Icon, Kpi, Tabla } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { PanelMatrices } from '../components/PanelMatrices';
 import { PanelExportar } from '../components/PanelExportar';
@@ -33,9 +33,9 @@ export function ResultadosResortes() {
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="insights" title="Configuración deformada" subtitle="Los círculos punteados marcan la posición desplazada (escala exagerada)." />
-        <div className="scroll-x rounded-xl border border-line bg-inset p-2">
+        <Desplazable etiqueta="Diagrama de la configuración deformada" className="rounded-xl border border-line bg-inset p-2">
           <DiagramaResortes e={e} u={sol.u} />
-        </div>
+        </Desplazable>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
