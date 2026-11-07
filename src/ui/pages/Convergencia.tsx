@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { nombreElementos } from '../curvas';
 import { convergenceStudy, ordenesLocales, type ConvergenceResult } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Card, CardHeader, Icon, Kpi, Segmentos, Tabla } from '../components/base';
@@ -7,10 +8,16 @@ import { fmtFijo, fmtNum, snap, sub } from '../format';
 
 type Estado = { tipo: 'calculando' } | { tipo: 'ok'; conv: ConvergenceResult; ms: number } | { tipo: 'error'; mensaje: string };
 
-const ESPERADO = { nodal: 2, L2: 2, H1: 1 };
+/** Orden esperado y margen aceptado: lineales h², h², h; cuadráticos h⁴ (nodos, superconvergencia), h³, h². */
+const ESPERADO = {
+  1: { nodal: 2, L2: 2, H1: 1, margenNodal: 0.25 },
+  2: { nodal: 4, L2: 3, H1: 2, margenNodal: 0.6 },
+} as const;
+type NeMax = '32' | '64' | '128' | '256' | '512';
+const MALLAS_MAX: Record<1 | 2, NeMax[]> = { 1: ['64', '128', '256', '512'], 2: ['32', '64', '128'] };
 
-function OrdenKpi({ titulo, valor, esperado, simbolo }: { titulo: string; valor: number; esperado: number; simbolo: string }) {
-  const ok = Number.isFinite(valor) && Math.abs(valor - esperado) <= 0.25;
+function OrdenKpi({ titulo, valor, esperado, simbolo, margen = 0.25 }: { titulo: string; valor: number; esperado: number; simbolo: string; margen?: number }) {
+  const ok = Number.isFinite(valor) && Math.abs(valor - esperado) <= margen;
   return (
     <Kpi
       titulo={titulo}
@@ -24,7 +31,11 @@ function OrdenKpi({ titulo, valor, esperado, simbolo }: { titulo: string; valor:
 }
 
 export function PestanaConvergencia({ res }: { res: Resultado1D }) {
-  const [neMax, setNeMax] = useState<'64' | '128' | '256' | '512'>('256');
+  const ordenEl = res.sol.mesh.orden;
+  const opcionesNe = MALLAS_MAX[ordenEl];
+  const [neMaxElegido, setNeMax] = useState<NeMax>('256');
+  // Si la opción elegida no existe para este tipo de elemento, se usa la mayor disponible
+  const neMax = opcionesNe.includes(neMaxElegido) ? neMaxElegido : opcionesNe[opcionesNe.length - 1];
   // El resultado guarda la "clave" con la que se calculó; si no coincide, se está calculando
   const clave = useMemo(() => ({ problem: res.problem, exacta: res.exacta?.expr, neMax }), [res.problem, res.exacta, neMax]);
   const [hecho, setHecho] = useState<{ clave: typeof clave; estado: Estado } | null>(null);
@@ -62,8 +73,9 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
           label="Número máximo de elementos"
           value={neMax}
           onChange={setNeMax}
-          opciones={(['64', '128', '256', '512'] as const).map((v) => ({ valor: v, texto: v }))}
+          opciones={opcionesNe.map((v) => ({ valor: v, texto: v }))}
         />
+        {ordenEl === 2 && <p className="text-detalle text-ink-2">Con cuadráticos el error baja tan rápido que con más de 128 elementos llega al redondeo.</p>}
         {res.estado.malla.tipo === 'manual' && <p className="text-mini text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
         {res.estado.malla.tipo === 'geometrica' && <p className="text-mini text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
       </Card>
@@ -85,6 +97,7 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
 
 function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms: number; res: Resultado1D }) {
   const rows = conv.rows;
+  const esp = ESPERADO[res.sol.mesh.orden];
   const h = useMemo(() => rows.map((r) => r.h), [rows]);
   const oN = ordenesLocales(h, rows.map((r) => r.maxNodal));
   const oL = ordenesLocales(h, rows.map((r) => r.L2));
@@ -121,11 +134,12 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
           hoverinfo: 'skip',
         });
       };
-      if (rows.every((r) => r.L2 > 0)) ref(2, rows.map((r) => r.L2), 'Referencia ∝ h²');
-      if (rows.every((r) => r.H1semi > 0)) ref(1, rows.map((r) => r.H1semi), 'Referencia ∝ h');
+      const sup = ['', '', '²', '³', '⁴'];
+      if (rows.every((r) => r.L2 > 0)) ref(esp.L2, rows.map((r) => r.L2), `Referencia ∝ h${sup[esp.L2]}`);
+      if (rows.every((r) => r.H1semi > 0)) ref(esp.H1, rows.map((r) => r.H1semi), `Referencia ∝ h${sup[esp.H1]}`);
       return trazas;
     },
-    [rows, h, conv.orden],
+    [rows, h, conv.orden, esp],
   );
   const layout = useCallback(
     () => ({
@@ -142,18 +156,18 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
     <>
       {conv.solucionExacta ? (
         <Aviso tipo="ok" titulo="El MEF es exacto en esta malla">
-          La solución es lineal por tramos, así que los elementos lineales la reproducen sin error (salvo redondeo) con cualquier malla que tenga nodos en los cambios de tramo y en las cargas. No tiene sentido hablar de orden.
+          La solución es {res.sol.mesh.orden === 2 ? 'lineal o cuadrática' : 'lineal'} por tramos, así que los {nombreElementos(res.sol.mesh.orden)} la reproducen sin error (salvo redondeo) con cualquier malla que tenga nodos en los cambios de tramo y en las cargas. No tiene sentido hablar de orden.
         </Aviso>
       ) : (
         <div className="grid grid-cols-3 gap-2">
-          <OrdenKpi titulo="Orden nodal" simbolo="p" valor={conv.orden.nodal} esperado={ESPERADO.nodal} />
-          <OrdenKpi titulo="Orden L²" simbolo="p" valor={conv.orden.L2} esperado={ESPERADO.L2} />
-          <OrdenKpi titulo="Orden H¹" simbolo="p" valor={conv.orden.H1} esperado={ESPERADO.H1} />
+          <OrdenKpi titulo="Orden nodal" simbolo="p" valor={conv.orden.nodal} esperado={esp.nodal} margen={esp.margenNodal} />
+          <OrdenKpi titulo="Orden L²" simbolo="p" valor={conv.orden.L2} esperado={esp.L2} />
+          <OrdenKpi titulo="Orden H¹" simbolo="p" valor={conv.orden.H1} esperado={esp.H1} />
         </div>
       )}
       {conv.superconvergenciaNodal && (
         <Aviso tipo="info" titulo="Superconvergencia en los nodos">
-          El error en los nodos es del orden del redondeo: con k constante, b = c = 0 y f integrada con suficiente precisión, los elementos lineales dan los valores exactos en los nodos. El error dentro de los elementos sí disminuye como h² (L²) y h (H¹).
+          El error en los nodos es del orden del redondeo: con k constante, b = c = 0 y f integrada con suficiente precisión, los {nombreElementos(res.sol.mesh.orden)} dan los valores exactos en los nodos. El error dentro de los elementos sí disminuye como {res.sol.mesh.orden === 2 ? 'h³ (L²) y h² (H¹)' : 'h² (L²) y h (H¹)'}.
         </Aviso>
       )}
 

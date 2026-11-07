@@ -70,6 +70,7 @@ export function DiagramaMalla({
   etiquetaCarga = 'f(x)',
   fuerzaX = false,
   simbolo = 'u',
+  orden = 1,
 }: {
   problem: Problem1D;
   nodos: number[];
@@ -78,12 +79,16 @@ export function DiagramaMalla({
   fuerzaX?: boolean;
   /** Símbolo de la incógnita (u, T, h, φ, ...). */
   simbolo?: string;
+  /** 2 = elementos cuadráticos: los nodos impares son el centro de cada elemento. */
+  orden?: 1 | 2;
 }) {
   const { x0, xL } = problem;
   const X = (x: number) => X0 + ((x - x0) / (xL - x0)) * (X1 - X0);
   const n = nodos.length;
-  const ne = n - 1;
-  const conNumeros = n <= 21;
+  const ne = (n - 1) / orden;
+  const vertices = orden === 2 ? nodos.filter((_, i) => i % 2 === 0) : nodos;
+  const conNumeros = n <= 25;
+  const esCentro = (i: number) => orden === 2 && i % 2 === 1;
 
   // Perfil de la carga distribuida
   const muestras: { x: number; f: number }[] = [];
@@ -111,7 +116,7 @@ export function DiagramaMalla({
   const flechas = hayCarga ? muestras.filter((_, i) => i % 6 === 3) : [];
 
   return (
-    <svg viewBox="0 0 460 140" className="h-auto w-full min-w-[320px] select-none" role="img" aria-label={`Malla de ${ne} elementos entre x = ${x0} y x = ${xL}`}>
+    <svg viewBox="0 0 460 140" className="h-auto w-full min-w-[320px] select-none" role="img" aria-label={`Malla de ${ne} elementos${orden === 2 ? ' cuadráticos' : ''} y ${n} nodos entre x = ${x0} y x = ${xL}`}>
       <defs>
         <pattern id="rayado" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="var(--line-strong)" strokeWidth="1.5" />
@@ -181,8 +186,8 @@ export function DiagramaMalla({
 
       {/* Elementos */}
       {ne <= 12 &&
-        nodos.slice(1).map((x, e) => (
-          <text key={e} x={(X(nodos[e]) + X(x)) / 2} y={YB + 18} textAnchor="middle" fontSize={8.5} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-mono)">
+        vertices.slice(1).map((x, e) => (
+          <text key={e} x={(X(vertices[e]) + X(x)) / 2} y={YB + 18} textAnchor="middle" fontSize={8.5} fontWeight={600} fill="var(--ink-2)" fontFamily="var(--font-mono)">
             e{sub(e + 1)}
           </text>
         ))}
@@ -191,12 +196,16 @@ export function DiagramaMalla({
       {nodos.map((x, i) =>
         conNumeros ? (
           <g key={i}>
-            <circle cx={X(x)} cy={YB} r={ne <= 12 ? 7 : 4.5} fill="var(--inset)" stroke="var(--accent)" strokeWidth={1.8} />
-            {ne <= 12 && (
+            {esCentro(i) ? (
+              <rect x={X(x) - 5} y={YB - 5} width={10} height={10} rx={2} fill="var(--accent-bg)" stroke="var(--accent)" strokeWidth={1.4} />
+            ) : (
+              <circle cx={X(x)} cy={YB} r={ne <= 12 ? 7 : 4.5} fill="var(--inset)" stroke="var(--accent)" strokeWidth={1.8} />
+            )}
+            {ne <= 6 || (ne <= 12 && !esCentro(i)) ? (
               <text x={X(x)} y={YB + 3} textAnchor="middle" fontSize={7.5} fontWeight={700} fill="var(--ink)" fontFamily="var(--font-mono)">
                 {i + 1}
               </text>
-            )}
+            ) : null}
           </g>
         ) : (
           <line key={i} x1={X(x)} x2={X(x)} y1={YB - 6} y2={YB + 6} stroke="var(--accent)" strokeWidth={1} />
@@ -230,7 +239,7 @@ export function DiagramaMalla({
         x={fmtNum(xL)}
       </text>
       <text x={(X0 + X1) / 2} y={136} textAnchor="middle" fontSize={8} fill="var(--ink-3)" fontFamily="var(--font-mono)">
-        {ne} elementos · {n} nodos
+        {ne} elementos{orden === 2 ? ' cuadráticos' : ''} · {n} nodos
       </text>
     </svg>
   );

@@ -42,7 +42,9 @@ export function matlab1D(res: Resultado1D): string {
   const t = res.plantilla;
   const sol = res.sol;
   const nodos = sol.mesh.nodes;
-  const ne = nodos.length - 1;
+  const cuad = sol.mesh.orden === 2;
+  const ne = sol.mesh.elements.length;
+  const vertices = cuad ? nodos.filter((_, i) => i % 2 === 0) : nodos;
   const ej = t.ejemplos.find((e) => JSON.stringify(e.estado.tramos) === JSON.stringify(res.estado.tramos));
   const L: string[] = [];
   const ui = unidad(t.incognita.unidad, res.estado.sistema);
@@ -52,7 +54,7 @@ export function matlab1D(res: Resultado1D): string {
       ...(ej ? [`Ejemplo: ${ej.nombre}`] : []),
       `Problema modelo: -(k u')' + b u' + c u = f   en [${num(p.x0)}, ${num(p.xL)}]`,
       `Incógnita: ${t.incognita.nombre} ${t.incognita.simbolo}${ui && ui !== '—' ? ` [${ui}]` : ''}`,
-      `Elementos lineales de 2 nodos y cuadratura de Gauss de ${p.gaussPoints} punto(s).`,
+      `${cuad ? 'Elementos cuadráticos de 3 nodos (inicio, centro, fin)' : 'Elementos lineales de 2 nodos'} y cuadratura de Gauss de ${p.gaussPoints} punto(s).`,
     ]),
   );
 
@@ -91,12 +93,24 @@ export function matlab1D(res: Resultado1D): string {
   if (res.exacta) L.push(`uex = @(x) ${exprA(res.exacta.expr, 'matlab')};   % solución analítica`);
   L.push('');
 
-  L.push('%% 2. Malla: Mnod = [nodo x], Melem = [elemento nodo1 nodo2]');
-  if (esUniforme(nodos)) L.push('xn = linspace(x0, xL, Ne+1)\';');
-  else L.push(`xn = ${vectorFila(nodos)}';   % nodos (incluye cambios de tramo y cargas puntuales)`);
-  L.push('n = numel(xn);');
-  L.push('Mnod = [(1:n)\', xn];');
-  L.push('Melem = [(1:Ne)\', (1:Ne)\', (2:Ne+1)\'];');
+  if (cuad) {
+    L.push('%% 2. Malla: Mnod = [nodo x], Melem = [elemento nodo1 nodo_centro nodo3]');
+    if (esUniforme(vertices)) L.push("xv = linspace(x0, xL, Ne+1)';          % extremos de los elementos");
+    else L.push(`xv = ${vectorFila(vertices)}';   % extremos de los elementos (incluye cambios de tramo y cargas)`);
+    L.push('n = 2*Ne + 1;');
+    L.push('xn = zeros(n, 1);');
+    L.push('xn(1:2:n) = xv;                          % extremos');
+    L.push('xn(2:2:n) = (xv(1:end-1) + xv(2:end))/2;  % centro de cada elemento');
+    L.push("Mnod = [(1:n)', xn];");
+    L.push("Melem = [(1:Ne)', (1:2:n-2)', (2:2:n-1)', (3:2:n)'];");
+  } else {
+    L.push('%% 2. Malla: Mnod = [nodo x], Melem = [elemento nodo1 nodo2]');
+    if (esUniforme(nodos)) L.push('xn = linspace(x0, xL, Ne+1)\';');
+    else L.push(`xn = ${vectorFila(nodos)}';   % nodos (incluye cambios de tramo y cargas puntuales)`);
+    L.push('n = numel(xn);');
+    L.push('Mnod = [(1:n)\', xn];');
+    L.push('Melem = [(1:Ne)\', (1:Ne)\', (2:Ne+1)\'];');
+  }
   L.push('');
 
   const g = gaussRule(p.gaussPoints);
@@ -108,20 +122,39 @@ export function matlab1D(res: Resultado1D): string {
   L.push('%% 4. Matrices elementales y ensamblaje');
   L.push('Kglob = zeros(n, n);');
   L.push('Vglob = zeros(n, 1);');
-  L.push('for e = 1:Ne');
-  L.push('    n1 = Melem(e, 2);  n2 = Melem(e, 3);');
-  L.push('    x1 = Mnod(n1, 2);  x2 = Mnod(n2, 2);  h = x2 - x1;');
-  L.push('    Ke = zeros(2, 2);  Fe = zeros(2, 1);');
-  L.push('    for g = 1:numel(xi)');
-  L.push('        xg = (x1 + x2)/2 + h/2*xi(g);');
-  L.push('        N  = [(x2 - xg)/h, (xg - x1)/h];     % funciones de forma');
-  L.push('        dN = [-1/h, 1/h];                     % derivadas');
-  L.push("        Ke = Ke + w(g)*(k(xg)*(dN'*dN) + b(xg)*(N'*dN) + c(xg)*(N'*N))*h/2;");
-  L.push("        Fe = Fe + w(g)*f(xg)*N'*h/2;");
-  L.push('    end');
-  L.push('    Kglob([n1 n2], [n1 n2]) = Kglob([n1 n2], [n1 n2]) + Ke;');
-  L.push('    Vglob([n1 n2]) = Vglob([n1 n2]) + Fe;');
-  L.push('end');
+  if (cuad) {
+    L.push('for e = 1:Ne');
+    L.push('    nd = Melem(e, 2:4);                     % nodos del elemento: inicio, centro, fin');
+    L.push('    x1 = Mnod(nd(1), 2);  x3 = Mnod(nd(3), 2);  h = x3 - x1;');
+    L.push('    Ke = zeros(3, 3);  Fe = zeros(3, 1);');
+    L.push('    for g = 1:numel(xi)');
+    L.push('        s  = xi(g);');
+    L.push('        xg = (x1 + x3)/2 + h/2*s;');
+    L.push('        N  = [s*(s-1)/2, 1 - s^2, s*(s+1)/2];   % funciones de forma cuadráticas');
+    L.push('        dN = [s - 1/2, -2*s, s + 1/2]*2/h;      % derivadas dN/dx');
+    L.push("        Ke = Ke + w(g)*(k(xg)*(dN'*dN) + b(xg)*(N'*dN) + c(xg)*(N'*N))*h/2;");
+    L.push("        Fe = Fe + w(g)*f(xg)*N'*h/2;");
+    L.push('    end');
+    L.push('    Kglob(nd, nd) = Kglob(nd, nd) + Ke;');
+    L.push('    Vglob(nd) = Vglob(nd) + Fe;');
+    L.push('end');
+  }
+  if (!cuad) L.push('for e = 1:Ne');
+  if (!cuad) L.push('    n1 = Melem(e, 2);  n2 = Melem(e, 3);');
+  if (!cuad) {
+    L.push('    x1 = Mnod(n1, 2);  x2 = Mnod(n2, 2);  h = x2 - x1;');
+    L.push('    Ke = zeros(2, 2);  Fe = zeros(2, 1);');
+    L.push('    for g = 1:numel(xi)');
+    L.push('        xg = (x1 + x2)/2 + h/2*xi(g);');
+    L.push('        N  = [(x2 - xg)/h, (xg - x1)/h];     % funciones de forma');
+    L.push('        dN = [-1/h, 1/h];                     % derivadas');
+    L.push("        Ke = Ke + w(g)*(k(xg)*(dN'*dN) + b(xg)*(N'*dN) + c(xg)*(N'*N))*h/2;");
+    L.push("        Fe = Fe + w(g)*f(xg)*N'*h/2;");
+    L.push('    end');
+    L.push('    Kglob([n1 n2], [n1 n2]) = Kglob([n1 n2], [n1 n2]) + Ke;');
+    L.push('    Vglob([n1 n2]) = Vglob([n1 n2]) + Fe;');
+    L.push('end');
+  }
   L.push('');
 
   L.push('%% 5. Cargas puntuales y fronteras naturales');
@@ -174,9 +207,15 @@ export function matlab1D(res: Resultado1D): string {
   L.push('');
 
   L.push('%% 7. Posproceso');
-  L.push('h  = diff(xn);');
-  L.push('du = diff(u)./h;                       % derivada en cada elemento');
-  L.push('xm = (xn(1:end-1) + xn(2:end))/2;');
+  if (cuad) {
+    L.push('h  = xn(Melem(:, 4)) - xn(Melem(:, 2));');
+    L.push('du = (u(Melem(:, 4)) - u(Melem(:, 2)))./h;   % derivada en el centro de cada elemento');
+    L.push('xm = xn(Melem(:, 3));');
+  } else {
+    L.push('h  = diff(xn);');
+    L.push('du = diff(u)./h;                       % derivada en cada elemento');
+    L.push('xm = (xn(1:end-1) + xn(2:end))/2;');
+  }
   L.push('flujo = k(xm).*du;                     % k*du/dx en cada elemento');
   if (fijos.length) L.push('R = K0*u - V0;  R = R(fijos);          % reacciones (k*du/dn en los apoyos)');
   L.push("disp('    nodo        x              u');");
@@ -188,15 +227,32 @@ export function matlab1D(res: Resultado1D): string {
   }
   L.push('');
   L.push('%% 8. Gráficas');
-  L.push("figure; plot(xn, u, 'o-', 'LineWidth', 1.5); hold on; grid on;");
+  if (cuad) {
+    L.push('% Parábola dentro de cada elemento');
+    L.push('s = linspace(-1, 1, 13);  xs = [];  us = [];');
+    L.push('for e = 1:Ne');
+    L.push('    nd = Melem(e, 2:4);');
+    L.push('    xs = [xs, (xn(nd(1)) + xn(nd(3)))/2 + (xn(nd(3)) - xn(nd(1)))/2*s];');
+    L.push('    us = [us, s.*(s-1)/2*u(nd(1)) + (1 - s.^2)*u(nd(2)) + s.*(s+1)/2*u(nd(3))];');
+    L.push('end');
+    L.push("figure; plot(xs, us, '-', 'LineWidth', 1.5); hold on; grid on;");
+    L.push("plot(xn, u, 'o');");
+  } else {
+    L.push("figure; plot(xn, u, 'o-', 'LineWidth', 1.5); hold on; grid on;");
+  }
   if (res.exacta) {
     L.push('xx = linspace(x0, xL, 300);');
     L.push("plot(xx, uex(xx), 'LineWidth', 1.5);");
-    L.push("legend('MEF', 'Analítica');");
+    L.push(cuad ? "legend('MEF', 'Nodos', 'Analítica');" : "legend('MEF', 'Analítica');");
   }
   L.push(`xlabel('x'); ylabel('${t.incognita.simbolo}'); title('${t.incognita.nombre}');`);
-  L.push("figure; stairs(xn, [flujo; flujo(end)], 'LineWidth', 1.5); grid on;");
-  L.push("xlabel('x'); ylabel('k du/dx'); title('Flujo por elemento');");
+  if (cuad) {
+    L.push("figure; plot(xm, flujo, 'o-', 'LineWidth', 1.5); grid on;");
+    L.push("xlabel('x'); ylabel('k du/dx'); title('Flujo en el centro de cada elemento');");
+  } else {
+    L.push("figure; stairs(xn, [flujo; flujo(end)], 'LineWidth', 1.5); grid on;");
+    L.push("xlabel('x'); ylabel('k du/dx'); title('Flujo por elemento');");
+  }
   return L.join('\n') + '\n';
 }
 

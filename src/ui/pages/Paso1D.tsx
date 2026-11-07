@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { compileExpr, type BoundaryCondition } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
+import { nombreElementos } from '../curvas';
 import { Aviso, Badge, Boton, Card, cx, Desplazable, Icon, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
@@ -239,7 +240,8 @@ function PasoMalla({ res }: { res: Resultado1D }) {
   return (
     <Paso n={3} titulo="Discretización del dominio">
       <P>
-        El dominio se divide en N<sub>e</sub> = {m.elements.length} elementos lineales con {m.nodes.length} nodos.{' '}
+        El dominio se divide en N<sub>e</sub> = {m.elements.length} {nombreElementos(m.orden)} con {m.nodes.length} nodos
+        {m.orden === 2 ? ' (cada elemento tiene un nodo extra en su centro)' : ''}.{' '}
         {uniforme ? `Todos los elementos miden h = ${fmtNum(hs[0])} ${ul}.` : `Los elementos miden entre ${fmtNum(Math.min(...hs))} y ${fmtNum(Math.max(...hs))} ${ul}.`}
       </P>
       {m.warnings.map((w) => (
@@ -255,14 +257,16 @@ function PasoMalla({ res }: { res: Resultado1D }) {
         <div>
           <p className="mb-1 font-mono text-mini font-bold text-ink-2">Melem: conectividad</p>
           <Tabla
-            cabecera={['Elem.', 'Nodo 1', 'Nodo 2', 'h']}
-            alinear={['left', 'center', 'center', 'right']}
-            filas={m.elements.slice(0, lim).map(([a, b], i) => [i + 1, a + 1, b + 1, fmtNum(hs[i], 5)])}
+            cabecera={m.orden === 2 ? ['Elem.', 'Nodo 1', 'Nodo 2 (centro)', 'Nodo 3', 'h'] : ['Elem.', 'Nodo 1', 'Nodo 2', 'h']}
+            alinear={['left', 'center', 'center', 'center', 'right']}
+            filas={m.elementDofs.slice(0, lim).map((d, i) => [i + 1, ...d.map((n) => n + 1), fmtNum(hs[i], 5)])}
           />
         </div>
       </div>
       {m.nodes.length > lim && <p className="text-mini text-ink-3">Se muestran las primeras {lim} filas.</p>}
-      <P>La solución aproximada es una función lineal por tramos que vale u_i en cada nodo:</P>
+      <P>
+        La solución aproximada {m.orden === 2 ? 'es una parábola en cada elemento' : 'es una función lineal por tramos'} que vale u<sub>i</sub> en cada nodo:
+      </P>
       <Formula>{String.raw`u_h(x) = \sum_{i=1}^{${m.nodes.length}} u_i\,N_i(x)`}</Formula>
     </Paso>
   );
@@ -298,9 +302,60 @@ function SombreroSVG({ xa, xb }: { xa: number; xb: number }) {
   );
 }
 
+function ParabolasSVG({ xa, xb }: { xa: number; xb: number }) {
+  // N1, N2 y N3 en ξ ∈ [−1, 1] dibujadas de x = 30 a 270 (y = 95 es 0, y = 25 es 1)
+  const pts = (k: number) =>
+    Array.from({ length: 41 }, (_, i) => {
+      const xi = -1 + i / 20;
+      const N = [(xi * (xi - 1)) / 2, 1 - xi * xi, (xi * (xi + 1)) / 2][k];
+      return `${30 + (i / 40) * 240},${95 - N * 70}`;
+    }).join(' ');
+  const col = ['var(--accent-hover)', 'var(--compress)', 'var(--amber)'];
+  const etiqueta = (x: number, y: number, t: string, color = 'var(--ink-2)') => (
+    <text x={x} y={y} textAnchor="middle" fontSize={10} fill={color} fontFamily="var(--font-mono)">
+      {t}
+    </text>
+  );
+  return (
+    <svg viewBox="0 0 300 120" className="h-auto w-full max-w-sm" role="img" aria-label="Funciones de forma cuadráticas N1, N2 y N3 del elemento">
+      <line x1={30} x2={270} y1={95} y2={95} stroke="var(--line-strong)" />
+      {[30, 150, 270].map((x) => (
+        <line key={x} x1={x} x2={x} y1={20} y2={95} stroke="var(--line)" strokeDasharray="3 3" />
+      ))}
+      {[0, 1, 2].map((k) => (
+        <polyline key={k} points={pts(k)} fill="none" stroke={col[k]} strokeWidth={2.5} />
+      ))}
+      {etiqueta(44, 18, 'N₁', 'var(--accent-soft)')}
+      {etiqueta(150, 18, 'N₂', 'var(--compress)')}
+      {etiqueta(256, 18, 'N₃', 'var(--amber-soft)')}
+      {etiqueta(30, 112, `x₁=${fmtNum(xa)}`)}
+      {etiqueta(150, 112, `x₂=${fmtNum((xa + xb) / 2)}`)}
+      {etiqueta(270, 112, `x₃=${fmtNum(xb)}`)}
+    </svg>
+  );
+}
+
+function PasoFormaCuadratica({ e, xa, xb, h }: { e: number; xa: number; xb: number; h: number }) {
+  return (
+    <Paso n={4} titulo={`Funciones de forma del elemento e${sub(e + 1)}`}>
+      <P>
+        El elemento cuadrático e{sub(e + 1)} va de x₁ = {fmtNum(xa)} a x₃ = {fmtNum(xb)} (h = {fmtNum(h)}) y tiene un nodo en el centro, x₂ = {fmtNum((xa + xb) / 2)}.
+        Dentro del elemento la solución es una parábola, escrita con tres funciones de forma en la coordenada natural ξ ∈ [−1, 1]:
+      </P>
+      <Formula>{String.raw`x(\xi) = ${texNum((xa + xb) / 2, 6)} + ${texNum(h / 2, 6)}\,\xi, \qquad N_1 = \tfrac{1}{2}\,\xi(\xi - 1), \quad N_2 = 1 - \xi^2, \quad N_3 = \tfrac{1}{2}\,\xi(\xi + 1)`}</Formula>
+      <div className="flex justify-center rounded-xl border border-line bg-inset p-2">
+        <ParabolasSVG xa={xa} xb={xb} />
+      </div>
+      <P>Cada una vale 1 en su nodo y 0 en los otros dos, y suman 1 en todo el elemento. Sus derivadas ya no son constantes: varían linealmente.</P>
+      <Formula>{String.raw`N_1' = \left(\xi - \tfrac{1}{2}\right)\frac{2}{h}, \quad N_2' = -2\xi\,\frac{2}{h}, \quad N_3' = \left(\xi + \tfrac{1}{2}\right)\frac{2}{h}, \qquad \frac{2}{h} = ${texNum(2 / h, 6)}, \quad dx = \frac{h}{2}\,d\xi`}</Formula>
+    </Paso>
+  );
+}
+
 function PasoForma({ res, e }: { res: Resultado1D; e: number }) {
   const el = res.sol.elements[e];
   const { xa, xb, h } = el;
+  if (el.orden === 2) return <PasoFormaCuadratica e={e} xa={xa} xb={xb} h={h} />;
   return (
     <Paso n={4} titulo={`Funciones de forma del elemento e${sub(e + 1)}`}>
       <P>
@@ -342,15 +397,14 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
       <P>Las integrales del elemento se calculan con {ng} punto(s) de Gauss:</P>
       <Formula>{String.raw`K^{e}_{ij} = \sum_{g=1}^{${ng}} w_g\left[k\,N_i'N_j' + b\,N_i N_j' + c\,N_i N_j\right]_{x_g}\frac{h}{2}, \qquad F^{e}_{i} = \sum_{g=1}^{${ng}} w_g\,f(x_g)\,N_i(x_g)\,\frac{h}{2}`}</Formula>
       <Tabla
-        cabecera={['g', 'ξ_g', 'w_g', 'x_g', 'N₁', 'N₂', 'k', ...(tieneB ? ['b'] : []), ...(tieneC ? ['c'] : []), 'f']}
-        alinear={Array(11).fill('right')}
+        cabecera={['g', 'ξ_g', 'w_g', 'x_g', ...['N₁', 'N₂', 'N₃'].slice(0, el.dofs.length), 'k', ...(tieneB ? ['b'] : []), ...(tieneC ? ['c'] : []), 'f']}
+        alinear={Array(12).fill('right')}
         filas={el.gauss.map((g, i) => [
           i + 1,
           fmtFijo(g.xi, 6),
           fmtFijo(g.w, 6),
           fmtNum(g.x, 6),
-          fmtNum(g.N[0], 5),
-          fmtNum(g.N[1], 5),
+          ...g.N.map((n) => fmtNum(n, 5)),
           fmtNum(g.k, 5),
           ...(tieneB ? [fmtNum(g.b, 5)] : []),
           ...(tieneC ? [fmtNum(g.c, 5)] : []),
@@ -368,7 +422,24 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
         ].join('')}
       </Formula>
       <Formula>{`\\mathbf{F}^{e} = ${texVector(el.Fe, 6)}`}</Formula>
-      {kc !== null && bc !== null && cc !== null && (
+      {el.orden === 2 && kc !== null && bc !== null && cc !== null && (
+        <>
+          <P>Como k{tieneB ? ', b' : ''}{tieneC ? ', c' : ''} son constantes en este tramo, se puede comprobar con la fórmula cerrada del elemento cuadrático:</P>
+          <Formula>
+            {String.raw`\begin{aligned}\mathbf{K}^e &= \frac{k}{3h}\begin{bmatrix}7&-8&1\\-8&16&-8\\1&-8&7\end{bmatrix}` +
+              (tieneB ? String.raw` + \frac{b}{6}\begin{bmatrix}-3&4&-1\\-4&0&4\\1&-4&3\end{bmatrix}` : '') +
+              (tieneC ? String.raw` + \frac{c\,h}{30}\begin{bmatrix}4&2&-1\\2&16&2\\-1&2&4\end{bmatrix}` : '') +
+              ` \\\\ &= \\frac{${texNum(kc, 5)}}{3\\cdot ${texNum(el.h, 5)}}\\begin{bmatrix}7&-8&1\\\\-8&16&-8\\\\1&-8&7\\end{bmatrix}` +
+              (tieneB ? ` + \\frac{${texNum(bc, 5)}}{6}\\begin{bmatrix}-3&4&-1\\\\-4&0&4\\\\1&-4&3\\end{bmatrix}` : '') +
+              (tieneC ? ` + \\frac{${texNum(cc, 5)}\\cdot ${texNum(el.h, 5)}}{30}\\begin{bmatrix}4&2&-1\\\\2&16&2\\\\-1&2&4\\end{bmatrix}` : '') +
+              ` \\\\ &= ${texMatriz(el.Ke, 5)} \\quad\\checkmark\\end{aligned}`}
+          </Formula>
+          {fc !== null && (
+            <Formula>{String.raw`\mathbf{F}^e = \frac{f\,h}{6}\begin{bmatrix}1\\4\\1\end{bmatrix} = \frac{${texNum(fc, 5)}\cdot ${texNum(el.h, 5)}}{6}\begin{bmatrix}1\\4\\1\end{bmatrix} = ${texVector([(fc * el.h) / 6, (4 * fc * el.h) / 6, (fc * el.h) / 6], 6)}`}</Formula>
+          )}
+        </>
+      )}
+      {el.orden === 1 && kc !== null && bc !== null && cc !== null && (
         <>
           <P>Como k{tieneB ? ', b' : ''}{tieneC ? ', c' : ''} son constantes en este tramo, se puede comprobar con la fórmula cerrada:</P>
           <Formula>
@@ -385,7 +456,11 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
           )}
         </>
       )}
-      {fc === null && <P>Como f varía con x, Fe no es simplemente f·h/2: la cuadratura de Gauss pesa f con N₁ y N₂ en cada punto.</P>}
+      {fc === null && (
+        <P>
+          Como f varía con x, Fe no es simplemente {el.orden === 2 ? 'f·h/6·[1 4 1]' : 'f·h/2'}: la cuadratura de Gauss pesa f con {el.orden === 2 ? 'N₁, N₂ y N₃' : 'N₁ y N₂'} en cada punto.
+        </P>
+      )}
     </Paso>
   );
 }
@@ -393,8 +468,25 @@ function PasoElemental({ res, e }: { res: Resultado1D; e: number }) {
 function PasoEnsamblaje({ res, e }: { res: Resultado1D; e: number }) {
   const el = res.sol.elements[e];
   const [i, j] = el.nodes;
-  const resaltar = new Set([`${i},${i}`, `${i},${j}`, `${j},${i}`, `${j},${j}`]);
   const n = res.sol.mesh.nodes.length;
+  if (el.orden === 2) {
+    const d = el.dofs;
+    const resaltar = new Set(d.flatMap((a) => d.map((b) => `${a},${b}`)));
+    return (
+      <Paso n={6} titulo="Ensamblaje de la matriz global">
+        <P>
+          La matriz 3×3 de e{sub(e + 1)} se suma en las filas y columnas de sus tres nodos globales ({d.map((x) => x + 1).join(', ')}). Los nodos de los extremos se
+          comparten con los elementos vecinos y el del centro no; por eso K tiene 5 diagonales (pentadiagonal) en lugar de 3.
+        </P>
+        <Formula>{String.raw`\mathbf{K}[${d.map((x) => x + 1).join(',')};\ ${d.map((x) => x + 1).join(',')}] \mathrel{+}= \mathbf{K}^e = ${texMatriz(el.Ke, 5)}`}</Formula>
+        <Formula>{d.map((x, a) => `F_{${x + 1}} \\mathrel{+}= ${texNum(el.Fe[a], 5)}`).join(', \\quad ')}</Formula>
+        <MatrizTabla M={res.sol.Kassembled} titulo={`K ensamblada (${n}×${n}); en color, el aporte de e${sub(e + 1)}`} resaltar={resaltar} max={24} />
+        <VectorTabla v={res.sol.Fassembled} titulo="F ensamblado (solo carga distribuida)" resaltar={new Set(d)} />
+        {n > 24 && <p className="text-mini text-ink-3">Se muestran las primeras 24 filas y columnas.</p>}
+      </Paso>
+    );
+  }
+  const resaltar = new Set([`${i},${i}`, `${i},${j}`, `${j},${i}`, `${j},${j}`]);
   return (
     <Paso n={6} titulo="Ensamblaje de la matriz global">
       <P>
@@ -545,8 +637,18 @@ function PasoPosproceso({ res, e }: { res: Resultado1D; e: number }) {
   const fila = res.elementos[e];
   return (
     <Paso n={9} titulo="Posproceso: derivadas, flujos y reacciones">
-      <P>En cada elemento la derivada es constante (la solución es una recta):</P>
-      <Formula>{String.raw`u'_{e${e + 1}} = \frac{u_{${j + 1}} - u_{${i + 1}}}{h} = \frac{${texNum(sol.u[j], 6)} - (${texNum(sol.u[i], 6)})}{${texNum(el.h, 6)}} = ${hl(texNum(po.du, 6))}`}</Formula>
+      {el.orden === 2 ? (
+        <>
+          <P>En un elemento cuadrático la derivada varía linealmente. Se evalúa con las derivadas de N₁, N₂ y N₃ en el inicio (ξ = −1), el centro (ξ = 0) y el fin (ξ = 1):</P>
+          <Formula>{String.raw`u'(\xi) = \frac{2}{h}\left[\left(\xi - \tfrac{1}{2}\right)u_{${el.dofs[0] + 1}} - 2\xi\,u_{${el.dofs[1] + 1}} + \left(\xi + \tfrac{1}{2}\right)u_{${el.dofs[2] + 1}}\right]`}</Formula>
+          <Formula>{String.raw`u'_{\text{inicio}} = ${texNum(po.duA, 6)}, \qquad u'_{\text{centro}} = \frac{u_{${j + 1}} - u_{${i + 1}}}{h} = ${hl(texNum(po.du, 6))}, \qquad u'_{\text{fin}} = ${texNum(po.duB, 6)}`}</Formula>
+        </>
+      ) : (
+        <>
+          <P>En cada elemento la derivada es constante (la solución es una recta):</P>
+          <Formula>{String.raw`u'_{e${e + 1}} = \frac{u_{${j + 1}} - u_{${i + 1}}}{h} = \frac{${texNum(sol.u[j], 6)} - (${texNum(sol.u[i], 6)})}{${texNum(el.h, 6)}} = ${hl(texNum(po.du, 6))}`}</Formula>
+        </>
+      )}
       <Formula>{String.raw`k(x_m)\,u' = ${texNum(po.k, 5)} \cdot ${texNum(po.du, 5)} = ${hl(texNum(po.kdu, 6))}`}</Formula>
       <div className="flex flex-wrap gap-2">
         {t.derivadas.map((d) => (

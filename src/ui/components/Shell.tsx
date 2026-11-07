@@ -29,7 +29,7 @@ export function Encabezado() {
               <span className="rounded border border-accent/30 bg-s3 px-1.5 py-0.5 text-detalle font-semibold text-accent-soft">1D/2D</span>
             </div>
             <span className="truncate text-mini text-ink-2">
-              Elementos finitos lineales<span className="hidden lg:inline"> · Diseño por Elementos Finitos · Universidad Distrital 2026-1</span>
+              Elementos finitos lineales y cuadráticos<span className="hidden lg:inline"> · Diseño por Elementos Finitos · Universidad Distrital 2026-1</span>
             </span>
             <span className="sr-only">: ir al inicio</span>
           </div>

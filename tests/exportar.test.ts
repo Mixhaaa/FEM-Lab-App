@@ -43,6 +43,13 @@ const casos = [
     return { nombre: `resortes/${ej.id}`, u: r.sol.u, m: matlabResortes(r), py: pythonResortes(r) };
   }),
 ];
+// Todos los ejemplos 1D con elementos cuadráticos
+for (const t of PLANTILLAS_1D) {
+  for (const ej of t.ejemplos) {
+    const r = resolverPlantilla1D(t, { ...aplicarEjemplo(t, estadoPorDefecto(t), ej.id), orden: 2 });
+    casos.push({ nombre: `${t.id}/${ej.id} (cuadráticos)`, u: r.sol.u, m: matlab1D(r), py: python1D(r) });
+  }
+}
 // Variantes con penalización (como en el código de clase)
 for (const id of ['clase', 'robin']) {
   const t = PLANTILLAS_1D.find((p) => p.id === 'general')!;
