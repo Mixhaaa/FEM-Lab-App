@@ -9,6 +9,7 @@ export { computeElement } from './element1d';
 export { thomas, thomasMatrix, gaussSolve } from './solvers';
 export { solve1D, computeError } from './fem1d';
 export { analyticConstant } from './analytic';
+export { motivoExactaIncompatible } from './exactaCompatible';
 export { convergenceStudy, fitSlope, ordenesLocales } from './convergence';
 export { infoMatriz } from './matriz';
 export type { InfoMatriz } from './matriz';

@@ -4,6 +4,7 @@
  */
 import {
   analyticConstant,
+  motivoExactaIncompatible,
   compileExpr,
   evalChecked,
   FemError,
@@ -254,10 +255,19 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
   const { problem, campos, globales, avisos } = compilarEstado(t, e);
 
   let exacta: Resultado1D['exacta'];
-  if (e.exacta && e.exacta.trim() !== '') exacta = { expr: e.exacta.trim(), origen: 'usuario' };
+  const escrita = e.exacta?.trim() ?? '';
+  const motivo = escrita ? motivoExactaIncompatible(problem, escrita) : null;
+  if (escrita && !motivo) exacta = { expr: escrita, origen: 'usuario' };
   else {
     const auto = analyticConstant(problem);
     if (auto) exacta = { expr: auto, origen: 'automatica' };
+  }
+  if (motivo) {
+    avisos.push(
+      `La solución analítica escrita no corresponde a este problema: ${motivo}. ` +
+        (exacta ? 'Se compara con la solución calculada automáticamente.' : 'No se compara.') +
+        ' Corrígela o bórrala en Configuración → «Solución analítica».',
+    );
   }
   const sol = solve1D({ ...problem, exact: exacta?.expr });
   avisos.push(...sol.warnings);
