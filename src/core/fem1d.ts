@@ -2,10 +2,10 @@
  * Solución del problema 1D:  -(k u')' + b u' + c u = f  en [x0, xL]
  * con elementos lineales, ensamblaje global, fronteras y posproceso.
  */
-import { computeElement } from './element1d';
+import { computeElement, formaCuadratica } from './element1d';
 import { evalChecked, fmt } from './expr';
 import { FemError } from './errors';
-import { buildMesh } from './mesh';
+import { buildMesh, mallaCuadratica } from './mesh';
 import { integrate } from './quadrature';
 import {
   copyMatrix,
@@ -38,8 +38,10 @@ export function solve1D(problem: Problem1D): Solution1D {
   const tol = 1e-9 * L;
   const loads = problem.loads ?? [];
 
-  // 1. Malla
-  const mesh = buildMesh(x0, xL, problem.mesh, problem.regions, loads);
+  // 1. Malla (con elementos cuadráticos se agrega un nodo en el centro de cada elemento)
+  const orden = problem.orden ?? 1;
+  const mallaBase = buildMesh(x0, xL, problem.mesh, problem.regions, loads);
+  const mesh = orden === 2 ? mallaCuadratica(mallaBase) : mallaBase;
   warnings.push(...mesh.warnings);
   const nodes = mesh.nodes;
   const n = nodes.length;
@@ -49,14 +51,17 @@ export function solve1D(problem: Problem1D): Solution1D {
   const Fassembled = new Array<number>(n).fill(0);
   const elements: ElementResult[] = mesh.elements.map(([i, j], e) => {
     const r = mesh.elementRegion[e];
-    const el = computeElement(e + 1, [i, j], nodes[i], nodes[j], r, coeffs[r], problem.gaussPoints);
-    const dofs = [i, j];
-    for (let a = 0; a < 2; a++) {
+    const dofs = mesh.elementDofs[e];
+    const el = computeElement(e + 1, [i, j], nodes[i], nodes[j], r, coeffs[r], problem.gaussPoints, orden, dofs);
+    for (let a = 0; a < dofs.length; a++) {
       Fassembled[dofs[a]] += el.Fe[a];
-      for (let b = 0; b < 2; b++) Kassembled[dofs[a]][dofs[b]] += el.Ke[a][b];
+      for (let b = 0; b < dofs.length; b++) Kassembled[dofs[a]][dofs[b]] += el.Ke[a][b];
     }
     return el;
   });
+  if (orden === 2 && problem.gaussPoints < 3) {
+    warnings.push(`Con elementos cuadráticos se recomiendan al menos 3 puntos de Gauss (usas ${problem.gaussPoints}): la matriz elemental puede quedar mal integrada.`);
+  }
 
   // Avisos sobre los coeficientes
   let anyC = false;
@@ -149,7 +154,10 @@ export function solve1D(problem: Problem1D): Solution1D {
   if (system.K.length > 0) {
     const tri = isTridiagonal(system.K);
     const dom = isDiagonallyDominant(system.K);
-    if (problem.solver === 'thomas') {
+    if (problem.solver === 'thomas' && !tri && orden === 2) {
+      warnings.push('Con elementos cuadráticos K no es tridiagonal (tiene 5 diagonales), así que se usó eliminación gaussiana en lugar de Thomas.');
+      solverUsed = 'gauss';
+    } else if (problem.solver === 'thomas') {
       if (!tri) throw new FemError('El algoritmo de Thomas requiere una matriz tridiagonal.', 'solver');
       if (!dom) warnings.push('La matriz no es diagonalmente dominante: Thomas (sin pivoteo) podría ser inestable. Prueba con Gauss.');
       solverUsed = 'thomas';
@@ -172,17 +180,40 @@ export function solve1D(problem: Problem1D): Solution1D {
   const residualNorm = Math.sqrt(residualVec.reduce((s, v) => s + v * v, 0));
 
   // 7. Posproceso
+  // En el centro del elemento u' = (u_fin − u_inicio)/h tanto en lineales como en cuadráticos
   const post: ElementPost[] = elements.map((el) => {
     const [i, j] = el.nodes;
     const du = (u[j] - u[i]) / el.h;
     const xm = (el.xa + el.xb) / 2;
     const k = evalChecked(coeffs[el.region].k, xm, 'k(x)');
-    return { id: el.id, xm, h: el.h, du, k, kdu: k * du };
+    let duA = du;
+    let duB = du;
+    if (el.orden === 2) {
+      const ue = el.dofs.map((d) => u[d]);
+      const dEn = (xi: number) => formaCuadratica(xi).dNdxi.reduce((s, d, a) => s + d * ue[a], 0) / (el.h / 2);
+      duA = dEn(-1);
+      duB = dEn(1);
+    }
+    return { id: el.id, xm, h: el.h, du, duA, duB, k, kdu: k * du };
   });
-  const nodalFlux = nodes.map((_, i) => {
-    const adj = post.filter((_, e) => mesh.elements[e][0] === i || mesh.elements[e][1] === i);
-    return adj.reduce((s, p) => s + p.kdu, 0) / adj.length;
-  });
+  const nodalFlux =
+    orden === 1
+      ? nodes.map((_, i) => {
+          const adj = post.filter((_, e) => mesh.elements[e][0] === i || mesh.elements[e][1] === i);
+          return adj.reduce((s, p) => s + p.kdu, 0) / adj.length;
+        })
+      : nodes.map((x, i) => {
+          // Nodos del centro: k·u' del propio elemento; extremos: promedio de los elementos vecinos
+          const vals: number[] = [];
+          elements.forEach((el, e) => {
+            const p = post[e];
+            const kEn = (xx: number) => evalChecked(coeffs[el.region].k, xx, 'k(x)');
+            if (el.dofs[1] === i) vals.push(p.kdu);
+            if (el.dofs[0] === i) vals.push(kEn(x) * p.duA);
+            if (el.dofs[2] === i) vals.push(kEn(x) * p.duB);
+          });
+          return vals.reduce((s, v) => s + v, 0) / vals.length;
+        });
 
   const Ku = matVec(K, u);
   const reactions: Reaction[] = dirichlet.map((d) => ({
@@ -197,7 +228,7 @@ export function solve1D(problem: Problem1D): Solution1D {
 
   let error: ErrorInfo | undefined;
   if (exact) {
-    error = computeError(problem.exact!, (x) => evalChecked(exact, x, 'La solución analítica'), nodes, u);
+    error = computeError(problem.exact!, (x) => evalChecked(exact, x, 'La solución analítica'), nodes, u, orden === 2 ? mesh.elementDofs : undefined);
   }
 
   return {
@@ -249,16 +280,16 @@ function computeBalance(
   if (anyC) {
     let s = 0;
     for (const el of elements) {
-      const ue = [u[el.nodes[0]], u[el.nodes[1]]];
-      for (let a = 0; a < 2; a++) s += el.KeC[a][0] * ue[0] + el.KeC[a][1] * ue[1];
+      const ue = el.dofs.map((d) => u[d]);
+      for (let a = 0; a < ue.length; a++) for (let b = 0; b < ue.length; b++) s += el.KeC[a][b] * ue[b];
     }
     terms.push({ nombre: 'Término de reacción −∫c·u dx', valor: -s });
   }
   if (anyB) {
     let s = 0;
     for (const el of elements) {
-      const ue = [u[el.nodes[0]], u[el.nodes[1]]];
-      for (let a = 0; a < 2; a++) s += el.KeB[a][0] * ue[0] + el.KeB[a][1] * ue[1];
+      const ue = el.dofs.map((d) => u[d]);
+      for (let a = 0; a < ue.length; a++) for (let b = 0; b < ue.length; b++) s += el.KeB[a][b] * ue[b];
     }
     terms.push({ nombre: 'Término convectivo −∫b·u′ dx', valor: -s });
   }
@@ -291,12 +322,19 @@ function computeEnergy(
  * de 4.º orden con un paso proporcional a cada elemento, para no cruzar los quiebres
  * de soluciones definidas por tramos.
  */
-export function computeError(_exactSrc: string, exact: (x: number) => number, nodes: number[], u: number[]): ErrorInfo {
+export function computeError(
+  _exactSrc: string,
+  exact: (x: number) => number,
+  nodes: number[],
+  u: number[],
+  /** Con elementos cuadráticos: nodos de cada elemento [inicio, centro, fin]. */
+  elementDofs?: number[][],
+): ErrorInfo {
   const dEx = (x: number, h: number) => {
     const d = 1e-3 * h;
     return (8 * (exact(x + d) - exact(x - d)) - (exact(x + 2 * d) - exact(x - 2 * d))) / (12 * d);
   };
-  return computeErrorFns(exact, dEx, nodes, u);
+  return computeErrorFns(exact, dEx, nodes, u, elementDofs);
 }
 
 /** Errores nodal, L² y seminorma H¹ dados u exacta y su derivada. */
@@ -306,12 +344,32 @@ export function computeErrorFns(
   dEx: (x: number, h: number) => number,
   nodes: number[],
   u: number[],
+  elementDofs?: number[][],
 ): ErrorInfo {
   const exactAtNodes = nodes.map(exact);
   const nodal = u.map((v, i) => v - exactAtNodes[i]);
   const maxNodal = Math.max(...nodal.map(Math.abs));
   let L2 = 0;
   let H1 = 0;
+  if (elementDofs && elementDofs[0]?.length === 3) {
+    for (const [ia, im, ib] of elementDofs) {
+      const a = nodes[ia];
+      const b = nodes[ib];
+      const h = b - a;
+      const J = h / 2;
+      const ue = [u[ia], u[im], u[ib]];
+      const xiDe = (x: number) => (x - (a + b) / 2) / J;
+      L2 += integrate((x) => {
+        const { N } = formaCuadratica(xiDe(x));
+        return (N[0] * ue[0] + N[1] * ue[1] + N[2] * ue[2] - exact(x)) ** 2;
+      }, a, b, 5);
+      H1 += integrate((x) => {
+        const { dNdxi } = formaCuadratica(xiDe(x));
+        return ((dNdxi[0] * ue[0] + dNdxi[1] * ue[1] + dNdxi[2] * ue[2]) / J - dEx(x, h)) ** 2;
+      }, a, b, 5);
+    }
+    return { nodal, maxNodal, L2: Math.sqrt(L2), H1semi: Math.sqrt(H1), exactAtNodes };
+  }
   for (let e = 0; e < nodes.length - 1; e++) {
     const a = nodes[e];
     const b = nodes[e + 1];

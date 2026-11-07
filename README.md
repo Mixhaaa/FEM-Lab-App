@@ -1,6 +1,6 @@
 # FEM Lab
 
-**Aplicación web para resolver problemas de ingeniería lineales con el Método de Elementos Finitos (MEF) usando elementos lineales.**
+**Aplicación web para resolver problemas de ingeniería lineales con el Método de Elementos Finitos (MEF) usando elementos lineales o cuadráticos.**
 
 Proyecto de la materia *Diseño por Elementos Finitos* — Universidad Distrital Francisco José de Caldas, 2026-1.
 
@@ -113,6 +113,22 @@ $$
 
 Con la coordenada natural $\xi \in [-1, 1]$: $x = \tfrac{x_1+x_2}{2} + \tfrac{h}{2}\xi$ y $dx = \tfrac{h}{2}\,d\xi$.
 
+### 3b. Elemento cuadrático (opcional)
+
+En Configuración → *Tipo de elemento* se elige **Cuadrático · 3 nodos**. Cada elemento agrega un nodo en su centro $x_2 = \tfrac{x_1 + x_3}{2}$ y la solución es una parábola dentro del elemento:
+
+$$
+N_1 = \tfrac{1}{2}\,\xi(\xi - 1), \qquad N_2 = 1 - \xi^2, \qquad N_3 = \tfrac{1}{2}\,\xi(\xi + 1), \qquad \frac{dN_i}{dx} = \frac{dN_i}{d\xi}\,\frac{2}{h}
+$$
+
+Con coeficientes constantes:
+
+$$
+\mathbf{K}^e = \frac{k}{3h}\begin{bmatrix}7&-8&1\\-8&16&-8\\1&-8&7\end{bmatrix} + \frac{b}{6}\begin{bmatrix}-3&4&-1\\-4&0&4\\1&-4&3\end{bmatrix} + \frac{c\,h}{30}\begin{bmatrix}4&2&-1\\2&16&2\\-1&2&4\end{bmatrix}, \qquad \mathbf{F}^e = \frac{f\,h}{6}\begin{bmatrix}1\\4\\1\end{bmatrix}
+$$
+
+Los nodos se numeran en orden de $x$ (inicio, centro, fin, centro, …), así que $K$ queda con 5 diagonales y se resuelve con eliminación gaussiana en banda (Thomas solo sirve para 3 diagonales). Se recomiendan al menos 3 puntos de Gauss y el máximo es 1000 elementos.
+
 ### 4. Matriz y vector elementales (cuadratura de Gauss)
 
 $$
@@ -156,7 +172,7 @@ $$
 \max_i|u_i - u(x_i)|, \qquad \|u-u_h\|_{L^2} = \left(\int (u-u_h)^2dx\right)^{1/2}, \qquad |u-u_h|_{H^1} = \left(\int (u'-u_h')^2dx\right)^{1/2}
 $$
 
-Para elementos lineales se espera $\|e\|_{L^2} \sim h^2$ y $|e|_{H^1} \sim h$. El estudio de convergencia resuelve con $N_e = 2, 4, 8, \dots$ y ajusta la pendiente de $\log e$ contra $\log h$. La app avisa los casos especiales: **superconvergencia** nodal (con $k$ constante y $b = c = 0$ los nodos son exactos) y **solución exacta en la malla** (solución lineal por tramos).
+Para elementos lineales se espera $\|e\|_{L^2} \sim h^2$ y $|e|_{H^1} \sim h$; para cuadráticos $\|e\|_{L^2} \sim h^3$, $|e|_{H^1} \sim h^2$ y en los nodos aproximadamente $h^4$. El estudio de convergencia resuelve con $N_e = 2, 4, 8, \dots$ y ajusta la pendiente de $\log e$ contra $\log h$. La app avisa los casos especiales: **superconvergencia** nodal (con $k$ constante y $b = c = 0$ los nodos son exactos) y **solución exacta en la malla** (solución lineal por tramos).
 
 ### 8. Armadura plana y resortes
 
@@ -235,7 +251,7 @@ npm run iconos       # actualiza la fuente de íconos si se agregan íconos nuev
 
 ```
 src/core/        Núcleo de cálculo (TypeScript puro, independiente de la interfaz):
-                 expresiones, malla, Gauss, elemento lineal, ensamblaje, fronteras,
+                 expresiones, malla, Gauss, elementos lineal y cuadrático, ensamblaje, fronteras,
                  solucionadores, posproceso, convergencia, solución analítica,
                  armadura 2D y resortes
 src/templates/   Plantillas: variables físicas → k, b, c, f, y resultados con nombre y unidad

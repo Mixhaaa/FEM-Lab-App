@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { compileExpr, MAX_ELEMENTOS } from '../../core';
+import { compileExpr, MAX_ELEMENTOS, MAX_ELEMENTOS_CUADRATICOS } from '../../core';
+import { curvaMEF, nombreElementos } from '../curvas';
 import {
   CATEGORIAS,
   PLANTILLAS_1D,
@@ -113,7 +114,7 @@ function Config1D() {
           </>
         }
         titulo="Configuración del problema"
-        subtitulo={<span className="font-mono text-mini">{t.nombre} · elementos lineales de Lagrange</span>}
+        subtitulo={<span className="font-mono text-mini">{t.nombre} · {nombreElementos(e.orden)} de Lagrange</span>}
       />
 
       <Columnas
@@ -137,7 +138,7 @@ function Config1D() {
         </div>
         <Desplazable etiqueta="Diagrama de la malla" className="rounded-lg border border-line bg-inset p-2">
           {vista ? (
-            <DiagramaMalla problem={vista.problem} nodos={vista.sol.mesh.nodes} etiquetaCarga={etiquetaCarga(t)} fuerzaX={t.id === 'barra'} simbolo={t.incognita.simbolo} />
+            <DiagramaMalla problem={vista.problem} nodos={vista.sol.mesh.nodes} orden={vista.sol.mesh.orden} etiquetaCarga={etiquetaCarga(t)} fuerzaX={t.id === 'barra'} simbolo={t.incognita.simbolo} />
           ) : (
             <p className="p-6 text-center font-mono text-mini text-ink-3">Corrige los datos para ver la malla.</p>
           )}
@@ -236,8 +237,37 @@ function Config1D() {
               { valor: 'manual', texto: 'Manual' },
             ]}
           />
+          <Segmentos
+            label="Tipo de elemento"
+            value={String(e.orden ?? 1) as '1' | '2'}
+            onChange={(v) =>
+              upd((c) => {
+                c.orden = v === '2' ? 2 : 1;
+                // Los cuadráticos necesitan al menos 3 puntos de Gauss y admiten hasta 1000 elementos
+                if (c.orden === 2) {
+                  c.gauss = Math.max(c.gauss, 3);
+                  c.malla.ne = Math.min(c.malla.ne, MAX_ELEMENTOS_CUADRATICOS);
+                }
+              })
+            }
+            opciones={[
+              { valor: '1', texto: 'Lineal · 2 nodos' },
+              { valor: '2', texto: 'Cuadrático · 3 nodos' },
+            ]}
+          />
+          <p className="-mt-1 text-detalle text-ink-2">
+            {(e.orden ?? 1) === 2
+              ? 'Cada elemento tiene un nodo extra en su centro y u es una parábola dentro del elemento. Error ~ h³ (L²) y h² (H¹).'
+              : 'u es una recta dentro de cada elemento. Error ~ h² (L²) y h (H¹).'}
+          </p>
           {e.malla.tipo !== 'manual' ? (
-            <NumeroElementos ne={e.malla.ne} L={L} unidadL={unidad(t.unidadLongitud, s)} onChange={(ne) => upd((c) => void (c.malla.ne = ne))} />
+            <NumeroElementos
+              ne={e.malla.ne}
+              L={L}
+              unidadL={unidad(t.unidadLongitud, s)}
+              orden={e.orden ?? 1}
+              onChange={(ne) => upd((c) => void (c.malla.ne = ne))}
+            />
           ) : (
             <Campo
               label="Nodos (separados por espacios o comas)"
@@ -274,7 +304,10 @@ function Config1D() {
             onChange={(v) => upd((c) => void (c.gauss = Number(v)))}
             opciones={['1', '2', '3', '4', '5'].map((g) => ({ valor: g as '1', texto: g }))}
           />
-          <p className="-mt-1 text-mini text-ink-3">Con n puntos se integran exactamente polinomios de grado 2n − 1 (3 puntos: grado 5).</p>
+          <p className="-mt-1 text-detalle text-ink-2">
+            Con n puntos se integran exactamente polinomios de grado 2n − 1 (3 puntos: grado 5).
+            {(e.orden ?? 1) === 2 && ' Con cuadráticos usa al menos 3.'}
+          </p>
         </Seccion>
 
         {/* 3. Propiedades por tramos */}
@@ -437,7 +470,8 @@ function etiquetaCarga(t: Plantilla1D) {
   return id ? `${id.simbolo} · ${id.nombre.toLowerCase()}` : 'f(x)';
 }
 
-function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; unidadL: string; onChange: (n: number) => void }) {
+function NumeroElementos({ ne, L, unidadL, orden, onChange }: { ne: number; L: number; unidadL: string; orden: 1 | 2; onChange: (n: number) => void }) {
+  const max = orden === 2 ? MAX_ELEMENTOS_CUADRATICOS : MAX_ELEMENTOS;
   const [texto, setTexto] = useState(String(ne));
   const [prev, setPrev] = useState(ne);
   if (prev !== ne) {
@@ -445,7 +479,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
     setTexto(String(ne));
   }
   const n = Number(texto);
-  const err = Number.isInteger(n) && n >= 1 && n <= MAX_ELEMENTOS ? null : `Ne debe ser un entero entre 1 y ${MAX_ELEMENTOS}.`;
+  const err = Number.isInteger(n) && n >= 1 && n <= max ? null : `Ne debe ser un entero entre 1 y ${max}${orden === 2 ? ' con elementos cuadráticos' : ''}.`;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between rounded-lg border border-line bg-inset p-3">
@@ -474,11 +508,11 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
             onChange={(e) => {
               setTexto(e.target.value);
               const v = Number(e.target.value);
-              if (Number.isInteger(v) && v >= 1 && v <= MAX_ELEMENTOS) onChange(v);
+              if (Number.isInteger(v) && v >= 1 && v <= max) onChange(v);
             }}
             className={cx('min-h-11 w-24 rounded-lg border bg-inset px-3 text-right font-mono text-cuerpo font-bold text-ink', err ? 'border-danger' : 'border-field')}
           />
-          <Badge>{ne + 1} nodos</Badge>
+          <Badge>{orden * ne + 1} nodos</Badge>
         </div>
       </div>
       <input
@@ -495,7 +529,7 @@ function NumeroElementos({ ne, L, unidadL, onChange }: { ne: number; L: number; 
         <span>1</span>
         <span>64</span>
       </div>
-      <p className="text-detalle text-ink-2">El deslizador llega a 64; en la casilla puedes escribir hasta {MAX_ELEMENTOS}.</p>
+      <p className="text-detalle text-ink-2">El deslizador llega a 64; en la casilla puedes escribir hasta {max}.</p>
       {err && <span className="text-mini text-danger">{err}</span>}
     </div>
   );
@@ -656,19 +690,26 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
         const xs = Array.from({ length: 201 }, (_, i) => nodos[0] + ((nodos[nodos.length - 1] - nodos[0]) * i) / 200);
         tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', name: 'Analítica', line: { color: c.exact, width: 2 }, hoverinfo: 'skip' });
       }
+      const cuadratico = res.sol.mesh.orden === 2;
+      if (cuadratico) {
+        // Parábola dentro de cada elemento; los nodos van aparte como marcadores
+        const cv = curvaMEF(res.sol);
+        tr.push({ x: cv.x, y: cv.y, type: 'scatter', mode: 'lines', name: 'MEF', line: { color: c.accentHover, width: 2, dash: exacta ? 'dash' : 'solid' }, hoverinfo: 'skip' });
+      }
       tr.push({
         x: nodos,
         y: u,
         type: 'scatter',
-        mode: nodos.length <= 60 ? 'lines+markers' : 'lines',
-        name: 'MEF',
+        mode: cuadratico ? 'markers' : nodos.length <= 60 ? 'lines+markers' : 'lines',
+        name: cuadratico ? 'Nodos MEF' : 'MEF',
+        showlegend: !cuadratico,
         line: { color: c.accentHover, width: 2, dash: exacta ? 'dash' : 'solid' },
         marker: { color: c.bg, size: 7, line: { color: c.accentHover, width: 2 } },
         hovertemplate: `x = %{x:.4g}<br>${t.incognita.simbolo} = %{y:.5g}<extra></extra>`,
       });
       return tr;
     },
-    [nodos, u, exacta, t.incognita.simbolo],
+    [nodos, u, exacta, t.incognita.simbolo, res.sol],
   );
   const ux = unidad(t.unidadLongitud, res.estado.sistema);
   const un = unidad(t.incognita.unidad, res.estado.sistema);

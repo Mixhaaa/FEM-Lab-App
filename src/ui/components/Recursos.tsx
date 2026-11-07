@@ -22,6 +22,11 @@ export function Formulario() {
         <Tex display>{String.raw`\mathbf{K}^e = \frac{k}{h}\begin{bmatrix}1&-1\\-1&1\end{bmatrix} + \frac{b}{2}\begin{bmatrix}-1&1\\-1&1\end{bmatrix} + \frac{c\,h}{6}\begin{bmatrix}2&1\\1&2\end{bmatrix}`}</Tex>
         <Tex display>{String.raw`\mathbf{F}^e = \frac{f\,h}{2}\begin{bmatrix}1\\1\end{bmatrix}`}</Tex>
       </Bloque>
+      <Bloque titulo="Elemento cuadrático (3 nodos: inicio, centro, fin)">
+        <Tex display>{String.raw`N_1 = \tfrac{1}{2}\xi(\xi - 1),\quad N_2 = 1 - \xi^2,\quad N_3 = \tfrac{1}{2}\xi(\xi + 1),\qquad x = x_m + \tfrac{h}{2}\,\xi`}</Tex>
+        <Tex display>{String.raw`\mathbf{K}^e = \frac{k}{3h}\begin{bmatrix}7&-8&1\\-8&16&-8\\1&-8&7\end{bmatrix} + \frac{b}{6}\begin{bmatrix}-3&4&-1\\-4&0&4\\1&-4&3\end{bmatrix} + \frac{c\,h}{30}\begin{bmatrix}4&2&-1\\2&16&2\\-1&2&4\end{bmatrix}`}</Tex>
+        <Tex display>{String.raw`\mathbf{F}^e = \frac{f\,h}{6}\begin{bmatrix}1\\4\\1\end{bmatrix}`}</Tex>
+      </Bloque>
       <Bloque titulo="Coeficientes variables (cuadratura de Gauss)">
         <Tex display>{String.raw`K^e_{ij} = \sum_{g} w_g\left[k\,N_i'N_j' + b\,N_i N_j' + c\,N_i N_j\right]_{x_g}\frac{h}{2}`}</Tex>
         <Tex display>{String.raw`F^e_i = \sum_g w_g\,f(x_g)\,N_i(x_g)\,\frac{h}{2},\qquad x_g = \frac{x_1+x_2}{2} + \frac{h}{2}\,\xi_g`}</Tex>
@@ -60,6 +65,7 @@ const GLOSARIO: [string, string][] = [
   [String.raw`x_0,\ x_L`, 'Extremos del dominio.'],
   [String.raw`N_e,\ h_e`, 'Número de elementos y longitud del elemento e.'],
   [String.raw`N_1(x),\ N_2(x)`, 'Funciones de forma lineales ("sombrero") del elemento: valen 1 en su nodo y 0 en el otro.'],
+  [String.raw`N_1,\ N_2,\ N_3`, 'Funciones de forma cuadráticas: parábolas que valen 1 en su nodo (inicio, centro o fin) y 0 en los otros dos.'],
   [String.raw`\xi \in [-1, 1]`, 'Coordenada natural del elemento; x = x_m + (h/2)ξ.'],
   [String.raw`J = h/2`, 'Jacobiano de la transformación: dx = J dξ.'],
   [String.raw`\mathbf{K}^e,\ \mathbf{F}^e`, 'Matriz y vector elementales (2×2 y 2×1 en 1D).'],
@@ -69,7 +75,7 @@ const GLOSARIO: [string, string][] = [
   [String.raw`\beta`, 'Número de penalización: un número grande que obliga a u_i ≈ ū.'],
   [String.raw`R = k\,\partial u/\partial n`, 'Reacción en un apoyo: lo que el apoyo aporta al dominio (fuerza hacia +x, calor que entra, ...).'],
   [String.raw`Pe = |b|h/(2k)`, 'Número de Péclet de malla; si es mayor que 1, la solución puede oscilar.'],
-  [String.raw`\|e\|_{L^2},\ |e|_{H^1}`, 'Normas del error: para elementos lineales disminuyen como h² y h.'],
+  [String.raw`\|e\|_{L^2},\ |e|_{H^1}`, 'Normas del error: disminuyen como h² y h con elementos lineales, y como h³ y h² con cuadráticos.'],
 ];
 
 export function Glosario() {

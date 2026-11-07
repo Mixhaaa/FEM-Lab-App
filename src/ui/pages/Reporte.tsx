@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { compileExpr } from '../../core';
 import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, unidad, valorPorDefecto, type Resultado1D } from '../../templates';
 import { Aviso, Boton, Desplazable, Tabla } from '../components/base';
+import { curvaMEF, curvaPorElemento, nombreElementos } from '../curvas';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { Grafica, type Colores } from '../components/Grafica';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
@@ -49,7 +50,7 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
       </header>
       <div className="flex flex-col gap-6">{children}</div>
       <footer className="mt-8 border-t border-line pt-3 text-center font-mono text-mini text-ink-3">
-        Generado con FEM Lab · elementos finitos lineales · {URL_APP}
+        Generado con FEM Lab · elementos finitos lineales y cuadráticos · {URL_APP}
       </footer>
     </article>
   );
@@ -122,7 +123,7 @@ function Reporte1D() {
   return (
     <Contenedor>
       <Barra volver="resultados" />
-      <Hoja titulo={ej?.nombre ?? t.nombre} subtitulo={`${t.nombre} · método de elementos finitos con elementos lineales`}>
+      <Hoja titulo={ej?.nombre ?? t.nombre} subtitulo={`${t.nombre} · método de elementos finitos con ${nombreElementos(sol.mesh.orden)}`}>
         <S n={1} titulo="Planteamiento">
           <p>Ecuación gobernante:</p>
           <Fx>{t.ecuacion}</Fx>
@@ -133,7 +134,7 @@ function Reporte1D() {
                 {' '}con <Tex>{`k = ${t.traduccion.k},\\; b = ${t.traduccion.b},\\; c = ${t.traduccion.c},\\; f = ${t.traduccion.f}`}</Tex>
               </>
             )}
-            . La solución aproximada es lineal en cada elemento: <Tex>{String.raw`u_h(x) = \sum_i u_i\,N_i(x)`}</Tex>.
+            . La solución aproximada es {sol.mesh.orden === 2 ? 'una parábola (3 nodos: inicio, centro y fin)' : 'lineal'} en cada elemento: <Tex>{String.raw`u_h(x) = \sum_i u_i\,N_i(x)`}</Tex>.
           </p>
         </S>
 
@@ -262,10 +263,12 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
         const xs = Array.from({ length: 301 }, (_, i) => nodos[0] + ((nodos[nodos.length - 1] - nodos[0]) * i) / 300);
         tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', name: 'Analítica', line: { color: c.ink, width: 2 } });
       }
-      tr.push({ x: nodos, y: u, type: 'scatter', mode: nodos.length <= 80 ? 'lines+markers' : 'lines', name: 'MEF', line: { color: c.accent, width: 2, dash: exacta ? 'dash' : 'solid' }, marker: { size: 6, color: c.accent } });
+      const cv = curvaMEF(res.sol);
+      tr.push({ x: cv.x, y: cv.y, type: 'scatter', mode: 'lines', name: 'MEF', line: { color: c.accent, width: 2, dash: exacta ? 'dash' : 'solid' } });
+      if (nodos.length <= 80) tr.push({ x: nodos, y: u, type: 'scatter', mode: 'markers', name: 'Nodos', showlegend: false, marker: { size: 6, color: c.accent } });
       return tr;
     },
-    [nodos, u, exacta],
+    [nodos, u, exacta, res.sol],
   );
   const lay1 = useCallback(
     () => ({
@@ -278,12 +281,7 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
   );
   const der = useCallback(
     (c: Colores) => {
-      const xs: number[] = [];
-      const ys: number[] = [];
-      res.elementos.forEach((el) => {
-        xs.push(el.xa, el.xb);
-        ys.push(el.valores[d.id], el.valores[d.id]);
-      });
+      const { x: xs, y: ys } = curvaPorElemento(res.elementos, d.id);
       return [{ x: xs, y: ys, type: 'scatter', mode: 'lines', line: { color: c.amber, width: 2 }, fill: 'tozeroy', fillcolor: 'rgba(183,121,31,0.12)' }];
     },
     [res.elementos, d.id],
@@ -306,7 +304,9 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
         <Desplazable etiqueta={`Gráfica de ${d.nombre}`}>
           <Grafica data={der} layout={lay2} alto={220} ancho={680} etiqueta={`${d.nombre} por elemento`} />
         </Desplazable>
-        <figcaption className="text-center text-mini text-ink-2">{d.nombre} (constante en cada elemento).</figcaption>
+        <figcaption className="text-center text-mini text-ink-2">
+          {d.nombre} ({res.sol.mesh.orden === 2 ? 'lineal' : 'constante'} en cada elemento).
+        </figcaption>
       </figure>
     </>
   );

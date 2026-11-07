@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
 import { plantilla1D, unidad, type Resultado1D } from '../../templates';
+import { curvaMEF, curvaPorElemento } from '../curvas';
 import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
 import { Pagina, TituloPagina } from '../components/Shell';
@@ -134,7 +135,7 @@ function Banner({ res }: { res: Resultado1D }) {
       </div>
       <span className="hidden shrink-0 sm:block">
         <Badge>
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. lineales C⁰
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. {res.sol.mesh.orden === 2 ? 'cuadráticos' : 'lineales'} C⁰
         </Badge>
       </span>
     </div>
@@ -184,15 +185,17 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
           hovertemplate: `x = %{x:.4g}<br>${t.incognita.simbolo} exacta = %{y:.5g}<extra></extra>`,
         });
       }
+      const cuadratico = res.sol.mesh.orden === 2;
       trazas.push({
         x: nodos,
         y: u,
         type: 'scatter',
-        mode: nodos.length <= 80 ? 'lines+markers' : 'lines',
+        // En cuadráticos los nodos van solos: la curva (parábola por elemento) se agrega al final
+        mode: cuadratico ? 'markers' : nodos.length <= 80 ? 'lines+markers' : 'lines',
         name: 'MEF',
         line: { color: c.accentHover, width: 2, dash: exactFn ? 'dash' : 'solid' },
         marker: { color: c.bg, size: 9, line: { color: c.accentHover, width: 2 } },
-        fill: exactFn ? undefined : 'tozeroy',
+        fill: exactFn || cuadratico ? undefined : 'tozeroy',
         fillcolor: 'rgba(224,109,50,0.10)',
         hovertemplate: `Nodo %{pointNumber}<br>x = %{x:.4g}<br>${t.incognita.simbolo} MEF = %{y:.5g}<extra></extra>`,
       });
@@ -204,9 +207,22 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
         marker: { color: c.accentHover, size: 14, line: { color: c.amber, width: 2.5 } },
         hoverinfo: 'skip',
       });
+      if (cuadratico) {
+        const cv = curvaMEF(res.sol);
+        trazas.push({
+          x: cv.x,
+          y: cv.y,
+          type: 'scatter',
+          mode: 'lines',
+          line: { color: c.accentHover, width: 2, dash: exactFn ? 'dash' : 'solid' },
+          fill: exactFn ? undefined : 'tozeroy',
+          fillcolor: 'rgba(224,109,50,0.10)',
+          hoverinfo: 'skip',
+        });
+      }
       return trazas;
     },
-    [nodos, u, exactFn, nodoSel, t.incognita.simbolo],
+    [nodos, u, exactFn, nodoSel, t.incognita.simbolo, res.sol],
   );
   const layout = useCallback(
     (c: Colores) => ({
@@ -253,7 +269,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
               </Badge>
             </div>
             <p className="mt-0.5 text-mini text-ink-2">
-              {exactFn ? `MEF lineal por tramos vs. solución analítica ${res.exacta?.origen === 'automatica' ? '(automática)' : '(escrita)'}` : 'Solución MEF lineal por tramos'}
+              {exactFn ? `MEF ${res.sol.mesh.orden === 2 ? 'cuadrático' : 'lineal'} por tramos vs. solución analítica ${res.exacta?.origen === 'automatica' ? '(automática)' : '(escrita)'}` : `Solución MEF ${res.sol.mesh.orden === 2 ? 'cuadrática' : 'lineal'} por tramos`}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -370,15 +386,12 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
   const vals = res.porElemento[d.id];
   const els = res.elementos;
   const ud = unidad(d.unidad, s);
+  const cuadratico = res.sol.mesh.orden === 2;
 
   const data = useCallback(
     (c: Colores) => {
-      const xs: number[] = [];
-      const ys: number[] = [];
-      els.forEach((el, i) => {
-        xs.push(el.xa, el.xb);
-        ys.push(vals[i], vals[i]);
-      });
+      // Lineales: escalón (constante por elemento). Cuadráticos: recta dentro de cada elemento.
+      const { x: xs, y: ys } = curvaPorElemento(els, d.id);
       return [
         {
           x: xs,
@@ -392,7 +405,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
         },
       ];
     },
-    [els, vals, d.simbolo],
+    [els, d.id, d.simbolo],
   );
   const layout = useCallback(
     () => ({
@@ -409,7 +422,12 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
     <>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <Card className="flex flex-col gap-3 p-4">
-        <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle="Constante en cada elemento (derivada de una función lineal)" />
+        <CardHeader icon="stacked_line_chart" title={d.nombre} subtitle={
+            res.sol.mesh.orden === 2
+              ? 'Varía linealmente dentro de cada elemento (derivada de una parábola)'
+              : 'Constante en cada elemento (derivada de una función lineal)'
+          }
+        />
         <Selector etiqueta="Magnitud que se grafica" value={d.id} onChange={setMag} opciones={t.derivadas.map((x) => ({ valor: x.id, texto: `${x.simbolo} · ${x.nombre}` }))} />
         <div className="rounded-xl border border-line bg-inset p-1">
           <Grafica
@@ -418,14 +436,29 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
             alto={240}
             etiqueta={`Gráfica de ${d.nombre} por elemento`}
             resumen={(() => {
-              const iMx = vals.indexOf(Math.max(...vals));
-              const iMn = vals.indexOf(Math.min(...vals));
-              return `Valor constante en cada uno de los ${els.length} elementos. Máximo ${fmtNum(vals[iMx], 4)} en el elemento ${iMx + 1}; mínimo ${fmtNum(vals[iMn], 4)} en el elemento ${iMn + 1}.`;
+              const todos = els.flatMap((el) => el.extremos[d.id]);
+              const mx = Math.max(...todos);
+              const mn = Math.min(...todos);
+              const elDe = (v: number) => Math.floor(todos.indexOf(v) / 2) + 1;
+              const forma = cuadratico ? 'Varía linealmente dentro de cada uno' : 'Valor constante en cada uno';
+              return `${forma} de los ${els.length} elementos. Máximo ${fmtNum(mx, 4)} en el elemento ${elDe(mx)}; mínimo ${fmtNum(mn, 4)} en el elemento ${elDe(mn)}.`;
             })()}
             valores={{
-              cabecera: ['Elemento', `Desde x${unidad(t.unidadLongitud, s) ? ` [${unidad(t.unidadLongitud, s)}]` : ''}`, 'Hasta x', `${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}`],
-              alinear: ['center', 'right', 'right', 'right'],
-              filas: els.map((el, i) => [String(i + 1), fmtNum(el.xa), fmtNum(el.xb), fmtNum(vals[i], 5)]),
+              cabecera: [
+                'Elemento',
+                `Desde x${unidad(t.unidadLongitud, s) ? ` [${unidad(t.unidadLongitud, s)}]` : ''}`,
+                'Hasta x',
+                ...(cuadratico
+                  ? [`${d.simbolo} inicio`, `${d.simbolo} centro`, `${d.simbolo} fin${ud && ud !== '—' ? ` [${ud}]` : ''}`]
+                  : [`${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}`]),
+              ],
+              alinear: ['center', 'right', 'right', 'right', 'right', 'right'],
+              filas: els.map((el, i) => [
+                String(i + 1),
+                fmtNum(el.xa),
+                fmtNum(el.xb),
+                ...(cuadratico ? [fmtNum(el.extremos[d.id][0], 5), fmtNum(vals[i], 5), fmtNum(el.extremos[d.id][1], 5)] : [fmtNum(vals[i], 5)]),
+              ]),
             }}
           />
         </div>
@@ -468,7 +501,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
           alinear={['left', 'center', 'right', 'right', ...t.derivadas.map(() => 'right' as const)]}
           filas={els.map((el, i) => [
             <span key="e" className="font-bold text-accent-soft">e{sub(el.id)}</span>,
-            `${res.sol.elements[i].nodes[0] + 1}–${res.sol.elements[i].nodes[1] + 1}`,
+            res.sol.elements[i].dofs.map((n) => n + 1).join('–'),
             fmtNum(el.xm),
             fmtNum(el.h),
             ...t.derivadas.map((x) => fmtNum(el.valores[x.id], 5)),
@@ -541,10 +574,10 @@ function PestanaMatrices({ res }: { res: Resultado1D }) {
       u={sol.u}
       etiquetasU={todos}
       elementos={sol.elements.map((el) => ({
-        nombre: `e${sub(el.id)}: nodos ${el.nodes[0] + 1}–${el.nodes[1] + 1}, h = ${fmtNum(el.h)}`,
+        nombre: `e${sub(el.id)}: nodos ${el.dofs.map((n) => n + 1).join('–')}, h = ${fmtNum(el.h)}`,
         Ke: el.Ke,
         Fe: el.Fe,
-        gdl: [el.nodes[0] + 1, el.nodes[1] + 1],
+        gdl: el.dofs.map((n) => n + 1),
       }))}
     />
   );

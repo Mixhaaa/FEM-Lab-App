@@ -194,5 +194,30 @@ export function buildMesh(
     elementRegion.push(r);
   }
 
-  return { nodes, elements, elementRegion, forcedNodes: forced, warnings };
+  return { nodes, elements, elementDofs: elements.map((e) => [...e]), orden: 1, elementRegion, forcedNodes: forced, warnings };
+}
+
+/** Máximo de elementos cuadráticos (mismo número de nodos que 2000 lineales). */
+export const MAX_ELEMENTOS_CUADRATICOS = 1000;
+
+/**
+ * Convierte una malla lineal en cuadrática: agrega un nodo en el centro de cada elemento.
+ * La numeración sigue el orden en x (inicio, centro, fin, centro, ...), así K queda en banda.
+ */
+export function mallaCuadratica(m: MeshInfo): MeshInfo {
+  const ne = m.elements.length;
+  if (ne > MAX_ELEMENTOS_CUADRATICOS) {
+    throw new FemError(`Con elementos cuadráticos el máximo es ${MAX_ELEMENTOS_CUADRATICOS} elementos (tienes ${ne}).`, 'Ne');
+  }
+  const nodes: number[] = [];
+  const elements: [number, number][] = [];
+  const elementDofs: number[][] = [];
+  for (let e = 0; e < ne; e++) {
+    const [a, b] = m.elements[e];
+    nodes.push(m.nodes[a], (m.nodes[a] + m.nodes[b]) / 2);
+    elements.push([2 * e, 2 * e + 2]);
+    elementDofs.push([2 * e, 2 * e + 1, 2 * e + 2]);
+  }
+  nodes.push(m.nodes[m.nodes.length - 1]);
+  return { ...m, nodes, elements, elementDofs, orden: 2 };
 }

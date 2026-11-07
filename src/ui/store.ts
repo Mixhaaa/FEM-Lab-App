@@ -64,7 +64,8 @@ export const useApp = create<AppState>()(
         }
         const t = plantilla1D(plantillaId);
         if (!t) return;
-        const base = estadoPorDefecto(t);
+        // Se conserva el tipo de elemento elegido al cambiar de plantilla o de ejemplo
+        const base = { ...estadoPorDefecto(t), orden: get().e1d?.orden ?? 1 };
         const id = ejemploId ?? t.ejemplos[0]?.id ?? '';
         const e1d = id ? aplicarEjemplo(t, base, id) : base;
         set((s) => ({ tipo: '1d', e1d, ejemplo: { ...s.ejemplo, '1d': id } }));

@@ -19,6 +19,7 @@ export function problema(
     bcMethod: over.bcMethod ?? 'eliminacion',
     penaltyExp: over.penaltyExp ?? 8,
     solver: over.solver ?? 'auto',
+    orden: over.orden,
     exact: over.exact,
   };
 }

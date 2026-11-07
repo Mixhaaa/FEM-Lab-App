@@ -9,6 +9,7 @@ import {
   type PlantillaCualquiera,
 } from '../../templates';
 import { Badge, Boton, cx, Desplazable, Hoja, Icon } from '../components/base';
+import { nombreElementos } from '../curvas';
 import { Pagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
 import { Formulario, Glosario } from '../components/Recursos';
@@ -54,7 +55,7 @@ export function Inicio() {
     if (tipo === 'armadura') return { nombre: 'Armadura plana 2D', a: `${armadura.nodos.length} nodos`, b: `${armadura.barras.length} barras` };
     if (tipo === 'resortes') return { nombre: 'Sistema de resortes', a: `${resortes.nNodos} nodos`, b: `${resortes.resortes.length} resortes` };
     const t = plantilla1D(e1d.plantilla);
-    const ne = e1d.malla.tipo === 'manual' ? 'malla manual' : `${e1d.malla.ne} elementos lineales`;
+    const ne = e1d.malla.tipo === 'manual' ? 'malla manual' : `${e1d.malla.ne} ${nombreElementos(e1d.orden)}`;
     return { nombre: t?.nombre ?? '—', a: `[${e1d.x0}, ${e1d.xL}]`, b: ne };
   }, [tipo, e1d, armadura, resortes]);
 
@@ -100,7 +101,7 @@ export function Inicio() {
         </div>
         <h1 className="font-heading text-titulo font-bold tracking-tight text-ink ">Laboratorio MEF 1D y 2D</h1>
         <p className="mt-2 text-cuerpo leading-relaxed text-ink-2">
-          Resuelve problemas lineales de ingeniería con elementos finitos lineales: discretiza el dominio, ensambla la matriz global y resuelve{' '}
+          Resuelve problemas lineales de ingeniería con elementos finitos lineales o cuadráticos: discretiza el dominio, ensambla la matriz global y resuelve{' '}
           <span className="rounded border border-accent/30 bg-s2 px-1.5 py-0.5 font-mono text-mini font-semibold text-accent-soft">K·u = F</span> paso a paso.
         </p>
       </div>

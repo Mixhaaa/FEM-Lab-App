@@ -4,10 +4,12 @@
  */
 import {
   analyticConstant,
+  motivoExactaIncompatible,
   compileExpr,
   evalChecked,
   FemError,
   fmt,
+  formaCuadratica,
   gaussRule,
   parseNumber,
   solve1D,
@@ -214,6 +216,7 @@ export function compilarEstado(t: Plantilla1D, e: Estado1D): Compilado {
     bcMethod: e.metodo,
     penaltyExp: e.penalizacion,
     solver: e.solver,
+    orden: e.orden ?? 1,
   };
   return { problem, campos, globales, avisos };
 }
@@ -226,6 +229,8 @@ export interface FilaElemento {
   h: number;
   tramo: number;
   valores: Record<string, number>;
+  /** Valores al inicio y al fin del elemento (en cuadráticos varían dentro; en lineales son iguales a `valores`). */
+  extremos: Record<string, [number, number]>;
 }
 
 export interface ReaccionNombrada {
@@ -254,10 +259,19 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
   const { problem, campos, globales, avisos } = compilarEstado(t, e);
 
   let exacta: Resultado1D['exacta'];
-  if (e.exacta && e.exacta.trim() !== '') exacta = { expr: e.exacta.trim(), origen: 'usuario' };
+  const escrita = e.exacta?.trim() ?? '';
+  const motivo = escrita ? motivoExactaIncompatible(problem, escrita) : null;
+  if (escrita && !motivo) exacta = { expr: escrita, origen: 'usuario' };
   else {
     const auto = analyticConstant(problem);
     if (auto) exacta = { expr: auto, origen: 'automatica' };
+  }
+  if (motivo) {
+    avisos.push(
+      `La solución analítica escrita no corresponde a este problema: ${motivo}. ` +
+        (exacta ? 'Se compara con la solución calculada automáticamente.' : 'No se compara.') +
+        ' Corrígela o bórrala en Configuración → «Solución analítica».',
+    );
   }
   const sol = solve1D({ ...problem, exact: exacta?.expr });
   avisos.push(...sol.warnings);
@@ -270,13 +284,15 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
   };
   const global = (id: string) => globales[id];
 
+  const kRegion = problem.regions.map((rg) => compileExpr(rg.k, 'k(x)'));
   const porElemento: Record<string, number[]> = Object.fromEntries(t.derivadas.map((d) => [d.id, [] as number[]]));
   const elementos: FilaElemento[] = sol.elements.map((el, idx) => {
     const p = sol.post[idx];
     const [i, j] = el.nodes;
     const ctx = {
       x: p.xm,
-      u: (sol.u[i] + sol.u[j]) / 2,
+      // u en el centro: promedio en lineales; nodo del centro en cuadráticos
+      u: el.orden === 2 ? sol.u[el.dofs[1]] : (sol.u[i] + sol.u[j]) / 2,
       du: p.du,
       kdu: p.kdu,
       campo: (id: string) => campoEnTramo(el.region, id, p.xm),
@@ -287,7 +303,24 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
       valores[d.id] = d.calc(ctx);
       porElemento[d.id].push(valores[d.id]);
     }
-    return { id: el.id, xa: el.xa, xb: el.xb, xm: p.xm, h: el.h, tramo: el.region, valores };
+    const extremos: Record<string, [number, number]> = {};
+    if (el.orden === 2) {
+      const kReg = kRegion[el.region];
+      const en = (x: number, du: number, u: number) => ({
+        x,
+        u,
+        du,
+        kdu: evalChecked(kReg, x, 'k(x)') * du,
+        campo: (id: string) => campoEnTramo(el.region, id, x),
+        global,
+      });
+      const ca = en(el.xa, p.duA, sol.u[i]);
+      const cb = en(el.xb, p.duB, sol.u[j]);
+      for (const d of t.derivadas) extremos[d.id] = [d.calc(ca), d.calc(cb)];
+    } else {
+      for (const d of t.derivadas) extremos[d.id] = [valores[d.id], valores[d.id]];
+    }
+    return { id: el.id, xa: el.xa, xb: el.xb, xm: p.xm, h: el.h, tramo: el.region, valores, extremos };
   });
 
   const s = e.sistema;
@@ -315,7 +348,10 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
       for (let q = 0; q < xi.length; q++) {
         const x = (el.xa + el.xb) / 2 + J * xi[q];
         const t2 = (x - el.xa) / el.h;
-        const uh = sol.u[i] * (1 - t2) + sol.u[j] * t2;
+        const uh =
+          el.orden === 2
+            ? formaCuadratica(xi[q]).N.reduce((s, n, a) => s + n * sol.u[el.dofs[a]], 0)
+            : sol.u[i] * (1 - t2) + sol.u[j] * t2;
         total += w[q] * J * g(x, uh, (id) => campoEnTramo(el.region, id, x));
       }
     }
@@ -324,8 +360,16 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
   const kctx = {
     nodos: sol.mesh.nodes,
     u: sol.u,
-    porElemento,
-    xm: sol.post.map((p) => p.xm),
+    // En cuadráticos las magnitudes varían dentro del elemento: se miran inicio, centro y fin
+    ...(problem.orden === 2
+      ? {
+          porElemento: Object.fromEntries(
+            t.derivadas.map((d) => [d.id, elementos.flatMap((el) => [el.extremos[d.id][0], el.valores[d.id], el.extremos[d.id][1]])]),
+          ),
+          // Extremos apenas hacia adentro, para que un cambio de tramo en el borde lea las propiedades de su elemento
+          xm: elementos.flatMap((el) => [el.xa + 1e-9 * el.h, el.xm, el.xb - 1e-9 * el.h]),
+        }
+      : { porElemento, xm: sol.post.map((p) => p.xm) }),
     reacciones: sol.reactions.map((r) => ({ lado: r.lado, x: r.x, valor: r.value })),
     entrante: { izquierda: entra(problem.bcLeft, 0, 'izquierda'), derecha: entra(problem.bcRight, n - 1, 'derecha') },
     integrar,

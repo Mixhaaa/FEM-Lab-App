@@ -31,7 +31,9 @@ export function python1D(res: Resultado1D): string {
   const p = res.problem;
   const t = res.plantilla;
   const nodos = res.sol.mesh.nodes;
-  const ne = nodos.length - 1;
+  const cuad = res.sol.mesh.orden === 2;
+  const ne = res.sol.mesh.elements.length;
+  const vertices = cuad ? nodos.filter((_, i) => i % 2 === 0) : nodos;
   const ui = unidad(t.incognita.unidad, res.estado.sistema);
   const L: string[] = [];
   L.push(
@@ -72,11 +74,22 @@ export function python1D(res: Resultado1D): string {
   if (p.loads.length) L.push(`Pcarga = [${p.loads.map((l) => `(${num(l.x)}, ${num(l.P)})`).join(', ')}]  # (posición, valor)`);
   if (res.exacta) L.push(`uex = lambda x: ${exprA(res.exacta.expr, 'python')}  # solución analítica`);
   L.push('');
-  L.push('# 2. Malla: Mnod = [nodo, x], Melem = [elemento, nodo1, nodo2] (numeración desde 1, como en MATLAB)');
-  L.push(`xn = np.array(${lista(nodos)})`);
-  L.push('n = len(xn)');
-  L.push('Mnod = np.column_stack([np.arange(1, n + 1), xn])');
-  L.push('Melem = np.column_stack([np.arange(1, Ne + 1), np.arange(1, Ne + 1), np.arange(2, Ne + 2)])');
+  if (cuad) {
+    L.push('# 2. Malla: Mnod = [nodo, x], Melem = [elemento, nodo1, nodo_centro, nodo3] (numeración desde 1, como en MATLAB)');
+    L.push(`xv = np.array(${lista(vertices)})  # extremos de los elementos`);
+    L.push('n = 2 * Ne + 1');
+    L.push('xn = np.zeros(n)');
+    L.push('xn[0::2] = xv  # extremos');
+    L.push('xn[1::2] = (xv[:-1] + xv[1:]) / 2  # centro de cada elemento');
+    L.push('Mnod = np.column_stack([np.arange(1, n + 1), xn])');
+    L.push('Melem = np.column_stack([np.arange(1, Ne + 1), np.arange(1, n - 1, 2), np.arange(2, n, 2), np.arange(3, n + 1, 2)])');
+  } else {
+    L.push('# 2. Malla: Mnod = [nodo, x], Melem = [elemento, nodo1, nodo2] (numeración desde 1, como en MATLAB)');
+    L.push(`xn = np.array(${lista(nodos)})`);
+    L.push('n = len(xn)');
+    L.push('Mnod = np.column_stack([np.arange(1, n + 1), xn])');
+    L.push('Melem = np.column_stack([np.arange(1, Ne + 1), np.arange(1, Ne + 1), np.arange(2, Ne + 2)])');
+  }
   L.push('');
   const g = gaussRule(p.gaussPoints);
   L.push('# 3. Cuadratura de Gauss en [-1, 1]');
@@ -87,18 +100,31 @@ export function python1D(res: Resultado1D): string {
   L.push('Kglob = np.zeros((n, n))');
   L.push('Vglob = np.zeros(n)');
   L.push('for e in range(Ne):');
-  L.push('    n1, n2 = Melem[e, 1] - 1, Melem[e, 2] - 1  # índices desde 0');
-  L.push('    x1, x2 = xn[n1], xn[n2]')
-  L.push('    h = x2 - x1');
-  L.push('    Ke = np.zeros((2, 2))');
-  L.push('    Fe = np.zeros(2)');
-  L.push('    for g in range(len(xi)):');
-  L.push('        xg = (x1 + x2) / 2 + h / 2 * xi[g]');
-  L.push('        N = np.array([(x2 - xg) / h, (xg - x1) / h])');
-  L.push('        dN = np.array([-1 / h, 1 / h])');
+  if (cuad) {
+    L.push('    idx = Melem[e, 1:4] - 1  # nodos del elemento (desde 0): inicio, centro, fin');
+    L.push('    x1, x3 = xn[idx[0]], xn[idx[2]]');
+    L.push('    h = x3 - x1');
+    L.push('    Ke = np.zeros((3, 3))');
+    L.push('    Fe = np.zeros(3)');
+    L.push('    for g in range(len(xi)):');
+    L.push('        s = xi[g]');
+    L.push('        xg = (x1 + x3) / 2 + h / 2 * s');
+    L.push('        N = np.array([s * (s - 1) / 2, 1 - s**2, s * (s + 1) / 2])  # funciones de forma cuadráticas');
+    L.push('        dN = np.array([s - 0.5, -2 * s, s + 0.5]) * 2 / h  # derivadas dN/dx');
+  } else {
+    L.push('    n1, n2 = Melem[e, 1] - 1, Melem[e, 2] - 1  # índices desde 0');
+    L.push('    x1, x2 = xn[n1], xn[n2]');
+    L.push('    h = x2 - x1');
+    L.push('    Ke = np.zeros((2, 2))');
+    L.push('    Fe = np.zeros(2)');
+    L.push('    for g in range(len(xi)):');
+    L.push('        xg = (x1 + x2) / 2 + h / 2 * xi[g]');
+    L.push('        N = np.array([(x2 - xg) / h, (xg - x1) / h])');
+    L.push('        dN = np.array([-1 / h, 1 / h])');
+  }
   L.push('        Ke += w[g] * (k(xg) * np.outer(dN, dN) + b(xg) * np.outer(N, dN) + c(xg) * np.outer(N, N)) * h / 2');
   L.push('        Fe += w[g] * f(xg) * N * h / 2');
-  L.push('    idx = [n1, n2]');
+  if (!cuad) L.push('    idx = [n1, n2]');
   L.push('    Kglob[np.ix_(idx, idx)] += Ke');
   L.push('    Vglob[idx] += Fe');
   L.push('');
@@ -148,8 +174,14 @@ export function python1D(res: Resultado1D): string {
   }
   L.push('');
   L.push('# 7. Posproceso');
-  L.push('du = np.diff(u) / np.diff(xn)  # derivada en cada elemento');
-  L.push('xm = (xn[:-1] + xn[1:]) / 2');
+  if (cuad) {
+    L.push('i1, ic, i3 = Melem[:, 1] - 1, Melem[:, 2] - 1, Melem[:, 3] - 1');
+    L.push('du = (u[i3] - u[i1]) / (xn[i3] - xn[i1])  # derivada en el centro de cada elemento');
+    L.push('xm = xn[ic]');
+  } else {
+    L.push('du = np.diff(u) / np.diff(xn)  # derivada en cada elemento');
+    L.push('xm = (xn[:-1] + xn[1:]) / 2');
+  }
   L.push('flujo = k(xm) * du  # k du/dx en cada elemento');
   L.push(imprimir('u', 'u'));
   if (fijos.length) {
@@ -161,7 +193,18 @@ export function python1D(res: Resultado1D): string {
   L.push('# 8. Gráficas');
   L.push('if plt is not None:');
   L.push('    plt.figure(); plt.spy(Kglob, markersize=6); plt.title("Estructura de Kglob")');
-  L.push("    plt.figure(); plt.plot(xn, u, 'o-', label='MEF')");
+  if (cuad) {
+    L.push('    plt.figure()');
+    L.push('    s = np.linspace(-1, 1, 13)');
+    L.push('    for e in range(Ne):  # parábola dentro de cada elemento');
+    L.push('        a, m, z = Melem[e, 1:4] - 1');
+    L.push('        xs = (xn[a] + xn[z]) / 2 + (xn[z] - xn[a]) / 2 * s');
+    L.push('        us = s * (s - 1) / 2 * u[a] + (1 - s**2) * u[m] + s * (s + 1) / 2 * u[z]');
+    L.push("        plt.plot(xs, us, 'C0-', label='MEF' if e == 0 else None)");
+    L.push("    plt.plot(xn, u, 'C0o', label='Nodos')");
+  } else {
+    L.push("    plt.figure(); plt.plot(xn, u, 'o-', label='MEF')");
+  }
   if (res.exacta) L.push("    xx = np.linspace(x0, xL, 300); plt.plot(xx, uex(xx), label='Analítica')");
   L.push(`    plt.xlabel('x'); plt.ylabel('${t.incognita.simbolo}'); plt.title('${t.incognita.nombre}'); plt.grid(True); plt.legend()`);
   L.push('    plt.show()');

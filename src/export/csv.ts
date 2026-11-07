@@ -48,11 +48,13 @@ export function csvElementos1D(res: Resultado1D, formato: FormatoCSV = 'estandar
   const t = res.plantilla;
   const s = res.estado.sistema;
   const ul = unidad(t.unidadLongitud, s);
-  const cab = ['elemento', 'nodo 1', 'nodo 2', conU('x inicio', ul), conU('x fin', ul), conU('h', ul), 'tramo', ...t.derivadas.map((d) => conU(d.simbolo, unidad(d.unidad, s)))];
+  const cuad = res.sol.mesh.orden === 2;
+  const nodosCab = cuad ? ['nodo 1', 'nodo centro', 'nodo 3'] : ['nodo 1', 'nodo 2'];
+  // En cuadráticos las magnitudes varían dentro del elemento: se dan en el centro
+  const cab = ['elemento', ...nodosCab, conU('x inicio', ul), conU('x fin', ul), conU('h', ul), 'tramo', ...t.derivadas.map((d) => conU(cuad ? `${d.simbolo} (centro)` : d.simbolo, unidad(d.unidad, s)))];
   const filas = res.elementos.map((el, i) => [
     el.id,
-    res.sol.elements[i].nodes[0] + 1,
-    res.sol.elements[i].nodes[1] + 1,
+    ...res.sol.elements[i].dofs.map((n) => n + 1),
     el.xa,
     el.xb,
     el.h,
