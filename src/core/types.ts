@@ -47,6 +47,8 @@ export type MeshSpec =
   | { type: 'manual'; nodes: number[] };
 
 export type BCMethod = 'eliminacion' | 'penalizacion';
+/** Orden de los elementos: 1 = lineales (2 nodos), 2 = cuadráticos (3 nodos: extremo, centro, extremo). */
+export type OrdenElemento = 1 | 2;
 export type SolverType = 'auto' | 'thomas' | 'gauss';
 
 export interface Problem1D {
@@ -63,6 +65,8 @@ export interface Problem1D {
   /** β = 10^penaltyExp · max|K_ii|. */
   penaltyExp: number;
   solver: SolverType;
+  /** Orden de los elementos (por defecto 1, lineales). */
+  orden?: OrdenElemento;
   /** Solución analítica opcional, expresión en x. */
   exact?: string;
 }
@@ -72,7 +76,8 @@ export interface GaussPointData {
   xi: number;
   w: number;
   x: number;
-  N: [number, number];
+  /** Funciones de forma en el punto (2 lineales, 3 cuadráticas). */
+  N: number[];
   k: number;
   b: number;
   c: number;
@@ -81,7 +86,11 @@ export interface GaussPointData {
 
 export interface ElementResult {
   id: number; // 1-based
-  nodes: [number, number]; // índices 0-based
+  /** Nodos extremos del elemento (índices 0-based). */
+  nodes: [number, number];
+  /** Todos los nodos del elemento en orden local: [inicio, fin] o [inicio, centro, fin]. */
+  dofs: number[];
+  orden: OrdenElemento;
   xa: number;
   xb: number;
   h: number;
@@ -96,9 +105,13 @@ export interface ElementResult {
 }
 
 export interface MeshInfo {
+  /** Todos los nodos (con elementos cuadráticos incluye los del centro de cada elemento). */
   nodes: number[];
   /** Conectividad 0-based: [nodo inicial, nodo final]. */
   elements: [number, number][];
+  /** Nodos de cada elemento en orden local: [inicio, fin] o [inicio, centro, fin]. */
+  elementDofs: number[][];
+  orden: OrdenElemento;
   /** Región de cada elemento (0-based). */
   elementRegion: number[];
   /** Nodos agregados automáticamente (cambios de tramo o cargas puntuales). */
@@ -145,7 +158,10 @@ export interface ElementPost {
   id: number;
   xm: number;
   h: number;
-  du: number; // u' en el elemento (constante)
+  du: number; // u' en el centro del elemento (en lineales es constante)
+  /** u' en el inicio y en el fin del elemento (iguales a du en elementos lineales). */
+  duA: number;
+  duB: number;
   k: number; // k(x_m)
   kdu: number; // k(x_m)·u'
 }
