@@ -25,6 +25,7 @@ import {
   valorPorDefecto,
   type CampoDef,
   type ContextoFrontera,
+  type Ejemplo1D,
   type Estado1D,
   type KpiDef,
   type KpiValor,
@@ -87,6 +88,33 @@ export function aplicarEjemplo(t: Plantilla1D, base: Estado1D, ejemploId: string
   e.derecha = completarFrontera(ej.estado.derecha ?? base.derecha);
   e.plantilla = t.id;
   return e;
+}
+
+/**
+ * Ejemplo cuyos datos físicos (dominio, coeficientes, fronteras, cargas y unidades) coinciden
+ * con el estado actual, o undefined si el usuario ya los cambió. La malla, el tipo de elemento
+ * y el método numérico no cuentan: se pueden cambiar sin dejar de ser el mismo problema.
+ */
+export function ejemploCoincidente(t: Plantilla1D, e: Estado1D): Ejemplo1D | undefined {
+  const n = (v: string | undefined) => (v ?? '').trim();
+  const valores = (a: Record<string, string>, b: Record<string, string>) => {
+    const claves = new Set([...Object.keys(a), ...Object.keys(b)]);
+    return [...claves].every((k) => n(a[k]) === n(b[k]));
+  };
+  return t.ejemplos.find((ej) => {
+    const r = aplicarEjemplo(t, estadoPorDefecto(t), ej.id);
+    return (
+      r.sistema === e.sistema &&
+      n(r.x0) === n(e.x0) &&
+      n(r.xL) === n(e.xL) &&
+      r.tramos.length === e.tramos.length &&
+      r.tramos.every((tr, i) => (i === r.tramos.length - 1 || n(tr.fin) === n(e.tramos[i].fin)) && valores(tr.valores, e.tramos[i].valores)) &&
+      valores(r.globales, e.globales) &&
+      (['izquierda', 'derecha'] as const).every((l) => r[l].opcion === e[l].opcion && valores(r[l].valores, e[l].valores)) &&
+      r.cargas.length === e.cargas.length &&
+      r.cargas.every((c, i) => n(c.x) === n(e.cargas[i].x) && n(c.P) === n(e.cargas[i].P))
+    );
+  });
 }
 
 interface Compilado {

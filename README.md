@@ -73,6 +73,15 @@ y armaduras planas y sistemas de resortes por el método de rigidez directa.
 6. **Exportar**: al final de Resultados (o de Armadura 2D) están el reporte PDF, los CSV y los códigos MATLAB y Python.
 7. **Modo presentación**: botón ▶ arriba a la derecha. Las flechas ← → avanzan en el paso a paso y en las pestañas; 1–5 cambian de sección; Esc sale.
 
+### Cambiar la ecuación de un ejemplo
+
+Un ejemplo es solo un punto de partida. Para probar la app con otra ecuación:
+
+1. Abre el ejemplo y entra a **Configuración** (o pulsa *Cambiar datos* en Resultados).
+2. En la tarjeta **Tu ecuación** pulsa *Cambiar la ecuación*: te lleva a la sección 3, donde se escriben $k(x)$, $b(x)$, $c(x)$ y $f(x)$ de $-(k\,u')' + b\,u' + c\,u = f$. El dominio se cambia en la sección 2 y las fronteras en la sección de condiciones de frontera.
+3. La tarjeta muestra la ecuación con tus datos (por ejemplo $-u'' + 4u = 8$) y el selector de ejemplo pasa a *Personalizado*; Resultados y el reporte dejan de llevar el nombre del ejemplo.
+4. **Comparación con la solución exacta**: con coeficientes constantes la app la calcula sola; en otro caso puedes escribirla en *Solución analítica*. Si la fórmula escrita no cumple la ecuación o las fronteras actuales, la app lo avisa y no la usa.
+
 **En el celular** se puede instalar como una app: en Chrome, menú ⋮ → *Agregar a pantalla principal*; en Safari, *Compartir → Agregar a inicio*. El tema claro/oscuro se cambia con el botón ☀/☾.
 
 ---
@@ -209,7 +218,7 @@ Hay **31 ejemplos precargados**, entre ellos el ejemplo de clase, la barra de do
 
 ## Verificación
 
-El proyecto tiene **174 pruebas automáticas** (Vitest) que se ejecutan antes de cada publicación. Las que corren el código exportado necesitan GNU Octave y Python con NumPy; si no están instalados, se omiten. Entre ellas:
+El proyecto tiene **246 pruebas automáticas** (Vitest) que se ejecutan antes de cada publicación. Las que corren el código exportado necesitan GNU Octave y Python con NumPy; si no están instalados, se omiten. Entre ellas:
 
 | Prueba | Resultado esperado |
 |---|---|
@@ -221,6 +230,9 @@ El proyecto tiene **174 pruebas automáticas** (Vitest) que se ejecutan antes de
 | Armaduras de dos barras y triángulo isostático | fuerzas del método de los nudos y reacciones |
 | Fronteras Dirichlet, Neumann y Robin; tramos; cargas puntuales | soluciones exactas |
 | Eliminación vs penalización; Thomas vs Gauss | mismos resultados |
+| **Soluciones fabricadas** ($u = \sin 2x + x^2$ con $k = 1 + x^2$, $b = 2 - x$, $c = 3 + \cos x$ en $[0.3,\ 1.7]$) | las 9 combinaciones de fronteras convergen con el orden teórico: lineales $h^2$ (L²) y $h$ (H¹), cuadráticos $h^3$ y $h^2$; reacciones y derivadas convergen a los valores exactos |
+| Dos materiales con carga puntual interior | solución con quiebres reproducida; nodos extremos exactos |
+| Elementos cuadráticos | matrices 3×3 conocidas, solución cuadrática exacta con un elemento, todos los ejemplos contra una malla lineal fina |
 | **Código exportado** | El `.m` y el `.py` de **todos** los ejemplos se ejecutan en GNU Octave y en Python y reproducen los resultados de la app |
 
 Para comprobarlo en tu computador:

@@ -3,7 +3,7 @@
  * con el estilo del curso: Mnod, Melem, Kglob, Vglob, spy, linsolve y plot.
  */
 import { gaussRule, type BoundaryCondition } from '../core';
-import { APOYOS, unidad, type EstadoArmadura, type EstadoResortes, type Resultado1D, type ResultadoArmadura, type ResultadoResortes } from '../templates';
+import { APOYOS, ejemploCoincidente, unidad, type EstadoArmadura, type EstadoResortes, type Resultado1D, type ResultadoArmadura, type ResultadoResortes } from '../templates';
 import { coeficientesNombrados, type Definicion } from './coeficientes';
 import { exprA } from './expresiones';
 import { numMatlab as num } from './matlab-texto';
@@ -45,7 +45,7 @@ export function matlab1D(res: Resultado1D): string {
   const cuad = sol.mesh.orden === 2;
   const ne = sol.mesh.elements.length;
   const vertices = cuad ? nodos.filter((_, i) => i % 2 === 0) : nodos;
-  const ej = t.ejemplos.find((e) => JSON.stringify(e.estado.tramos) === JSON.stringify(res.estado.tramos));
+  const ej = ejemploCoincidente(t, res.estado);
   const L: string[] = [];
   const ui = unidad(t.incognita.unidad, res.estado.sistema);
 

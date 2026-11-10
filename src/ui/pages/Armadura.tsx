@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
-import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, type EstadoArmadura, type TipoApoyo } from '../../templates';
+import { APOYOS, ejemploArmaduraCoincidente, EJEMPLOS_ARMADURA, SISTEMAS, type EstadoArmadura, type TipoApoyo } from '../../templates';
 import { Aviso, Badge, Boton, Campo, Card, CardHeader, cx, Icon, Kpi, Segmentos, Seccion, Selector, Tabla } from '../components/base';
 import { PlanoArmadura, type Seleccion } from '../components/PlanoArmadura';
 import { PanelMatrices } from '../components/PanelMatrices';
@@ -34,7 +34,8 @@ export function Armadura() {
   const cargar = useApp((s) => s.cargar);
   const e = useApp((s) => s.armadura);
   const setA = useApp((s) => s.setArmadura);
-  const ejemplo = useApp((s) => s.ejemplo.armadura);
+  // El ejemplo solo se muestra como elegido si sus datos no se han cambiado
+  const ejemplo = ejemploArmaduraCoincidente(e)?.id ?? '';
   const restablecer = useApp((s) => s.restablecer);
 
   // Al abrir esta pestaña, la armadura pasa a ser el problema activo
@@ -293,7 +294,7 @@ export function Armadura() {
           </Boton>
         </Seccion>
       </div>
-      {r.ok && <PanelExportar archivos={archivosArmadura(r.res, ejemplo)} />}
+      {r.ok && <PanelExportar archivos={archivosArmadura(r.res)} />}
 
       <div className="flex flex-col gap-3">
         <Boton variante="secundario" icon="functions" onClick={() => ir('paso')}>
