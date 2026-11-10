@@ -1,9 +1,9 @@
 /** Catálogo de plantillas de FEM Lab. */
-import { plantillaArmadura } from './armadura';
+import { EJEMPLOS_ARMADURA, plantillaArmadura } from './armadura';
 import { electrostatica } from './electrica';
 import { darcy, tuberia } from './fluidos';
 import { general } from './general';
-import { plantillaResortes } from './resortes';
+import { EJEMPLOS_RESORTES, plantillaResortes } from './resortes';
 import { barra, cable } from './solidos1d';
 import { aleta, calor } from './termica';
 import type { Plantilla1D } from './types';
@@ -35,4 +35,16 @@ export const PLANTILLAS: PlantillaCualquiera[] = [
 
 export function plantilla1D(id: string): Plantilla1D | undefined {
   return PLANTILLAS_1D.find((p) => p.id === id);
+}
+
+/** Ejemplo de armadura cuyos datos coinciden con el estado actual (undefined si ya se modificó). */
+export function ejemploArmaduraCoincidente(e: unknown) {
+  const actual = JSON.stringify(e);
+  return EJEMPLOS_ARMADURA.find((x) => JSON.stringify(x.estado) === actual);
+}
+
+/** Ejemplo de resortes cuyos datos coinciden con el estado actual (undefined si ya se modificó). */
+export function ejemploResortesCoincidente(e: unknown) {
+  const actual = JSON.stringify(e);
+  return EJEMPLOS_RESORTES.find((x) => JSON.stringify(x.estado) === actual);
 }

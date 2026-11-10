@@ -63,7 +63,11 @@ export function irAlCampo(id: string) {
     if (el) {
       el.scrollIntoView({ block: 'center' });
       el.focus();
-    } else if (intentos++ < 20) setTimeout(buscar, 100);
+    } else if (intentos++ < 20) {
+      // El campo puede estar dentro de una sección plegada: se pide abrirlas y se reintenta
+      window.dispatchEvent(new Event('femlab:abrir-secciones'));
+      setTimeout(buscar, 100);
+    }
   };
   setTimeout(buscar, 50);
 }

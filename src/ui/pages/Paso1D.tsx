@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { compileExpr, type BoundaryCondition } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
 import { nombreElementos } from '../curvas';
+import { exprTex } from '../ecuacion';
 import { Aviso, Badge, Boton, Card, cx, Desplazable, Icon, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { ListaPasos } from '../components/ListaPasos';
@@ -27,15 +28,6 @@ type PasoId = (typeof PASOS)[number]['id'];
 
 const ACC = '#E06D32';
 const hl = (s: string) => `\\textcolor{${ACC}}{${s}}`;
-
-/** Convierte una expresión de math.js a LaTeX. */
-export function exprTex(src: string): string {
-  try {
-    return compileExpr(src).node.toTex({ parenthesis: 'auto', implicit: 'hide' });
-  } catch {
-    return `\\text{${src.replace(/[{}\\]/g, '')}}`;
-  }
-}
 
 const xTex = (x: number) => texNum(x, 6);
 

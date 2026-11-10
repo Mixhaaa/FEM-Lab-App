@@ -1,5 +1,5 @@
 import { compileExpr } from '../../core';
-import { EJEMPLOS_RESORTES, SISTEMAS, UNIDADES_RESORTES, type EstadoResortes } from '../../templates';
+import { ejemploResortesCoincidente, EJEMPLOS_RESORTES, SISTEMAS, UNIDADES_RESORTES, type EstadoResortes } from '../../templates';
 import { Aviso, Badge, Boton, Campo, Desplazable, Icon, Segmentos, Seccion, Selector } from '../components/base';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { Columnas, Pagina, TituloPagina } from '../components/Shell';
@@ -33,7 +33,7 @@ export function ConfigResortes() {
   const e = useApp((s) => s.resortes);
   const setR = useApp((s) => s.setResortes);
   const cargar = useApp((s) => s.cargar);
-  const ejemplo = useApp((s) => s.ejemplo.resortes);
+  const ejemplo = ejemploResortesCoincidente(e)?.id ?? '';
   const restablecer = useApp((s) => s.restablecer);
   const r = useResultadoResortes();
   const un = UNIDADES_RESORTES[e.sistema];

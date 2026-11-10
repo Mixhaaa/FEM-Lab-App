@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import { compileExpr } from '../../core';
-import { plantilla1D, unidad, type Resultado1D } from '../../templates';
+import { ejemploCoincidente, plantilla1D, unidad, type Resultado1D } from '../../templates';
 import { curvaMEF, curvaPorElemento } from '../curvas';
+import { ecuacionTex } from '../ecuacion';
 import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
 import { Pagina, TituloPagina } from '../components/Shell';
+import { Tex } from '../components/Tex';
 import { AvisoErrorCampo } from './Config';
 import { conPrefijo, fmtNum, snap, sub } from '../format';
 import { useResultado1D } from '../resultado';
@@ -54,7 +56,6 @@ const PESTANAS: Pestana[] = ['solucion', 'matrices', 'derivadas', 'convergencia'
 
 function Resultados1D() {
   const r = useResultado1D();
-  const ejemplo = useApp((s) => s.ejemplo['1d']);
   const [tab, setTab] = useState<Pestana>('solucion');
   useAvanzar((d) => setTab((t) => PESTANAS[Math.min(PESTANAS.length - 1, Math.max(0, PESTANAS.indexOf(t) + d))]));
   const e1d = useApp((s) => s.e1d);
@@ -103,36 +104,51 @@ function Resultados1D() {
         {tab === 'derivadas' && <PestanaDerivadas res={res} />}
         {tab === 'convergencia' && <PestanaConvergencia res={res} />}
       </PanelPestanas>
-      <PanelExportar archivos={archivos1D(res, ejemplo)} />
+      <PanelExportar archivos={archivos1D(res)} />
     </Pagina>
   );
 }
 
 function Banner({ res }: { res: Resultado1D }) {
   const t = res.plantilla;
-  const ej = t.ejemplos.find((x) => x.id === useApp.getState().ejemplo['1d']);
+  // Solo se muestra el nombre del ejemplo si los datos siguen siendo los suyos
+  const ej = ejemploCoincidente(t, res.estado);
+  const esGeneral = t.id === 'general';
   const tr = res.estado.tramos[0];
   const resumen = t.camposTramo
     .slice(0, 3)
     .map((c) => `${c.simbolo.replace(/\(x\)$/, '')} = ${tr.valores[c.id]}`)
     .join(' · ');
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-s2 px-4 py-3 shadow-card">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-s2 px-4 py-3 shadow-card">
+      <div className="flex min-w-0 flex-1 basis-64 items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent-bg text-accent-soft">
           <Icon name="verified" className="text-[20px]" />
         </div>
         <div className="min-w-0">
           <h1 className="line-clamp-2 font-heading text-seccion font-bold leading-tight text-ink">
             <span className="sr-only">Resultados: </span>
-            {ej?.nombre ?? t.nombre}
+            {ej?.nombre ?? (esGeneral ? 'Ecuación personalizada' : `${t.nombre} (datos propios)`)}
           </h1>
-          <p className="truncate font-mono text-mini text-ink-2">
-            {res.estado.tramos.length > 1 ? `${res.estado.tramos.length} tramos · ` : ''}
-            {resumen}
-          </p>
+          {esGeneral && res.estado.tramos.length === 1 ? (
+            <p className="text-detalle text-ink-2">
+              <Tex>{ecuacionTex({ k: tr.valores.k ?? '1', b: tr.valores.b ?? '0', c: tr.valores.c ?? '0', f: tr.valores.f ?? '0' })}</Tex>
+              <span className="font-mono text-mini">
+                {' '}
+                · x ∈ [{res.estado.x0}, {res.estado.xL}]
+              </span>
+            </p>
+          ) : (
+            <p className="truncate font-mono text-mini text-ink-2">
+              {res.estado.tramos.length > 1 ? `${res.estado.tramos.length} tramos · ` : ''}
+              {resumen}
+            </p>
+          )}
         </div>
       </div>
+      <Boton variante="secundario" icon="tune" onClick={() => ir('config')}>
+        Cambiar datos
+      </Boton>
       <span className="hidden shrink-0 sm:block">
         <Badge>
           <span className="h-1.5 w-1.5 rounded-full bg-accent-hover" /> {res.sol.mesh.elements.length} el. {res.sol.mesh.orden === 2 ? 'cuadráticos' : 'lineales'} C⁰

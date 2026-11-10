@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { compileExpr, MAX_ELEMENTOS, MAX_ELEMENTOS_CUADRATICOS } from '../../core';
 import { curvaMEF, nombreElementos } from '../curvas';
+import { ecuacionTex } from '../ecuacion';
 import {
   CATEGORIAS,
+  ejemploCoincidente,
   PLANTILLAS_1D,
   plantilla1D,
   SISTEMAS,
@@ -88,6 +90,9 @@ function Config1D() {
   const t = plantilla1D(e.plantilla)!;
   const r = useResultado1D();
   const escritorio = useEsEscritorio();
+  const esGeneral = t.id === 'general';
+  // Ejemplo cuyos datos coinciden con los actuales (undefined si ya se cambió la ecuación, el dominio o las fronteras)
+  const ejVigente = useMemo(() => ejemploCoincidente(t, e), [t, e]);
   // Último resultado válido: el esquema se mantiene mientras se corrige un dato
   const [ultimo, setUltimo] = useState<Resultado1D | null>(null);
   if (r.ok && r.res !== ultimo) setUltimo(r.res);
@@ -144,13 +149,43 @@ function Config1D() {
           )}
         </Desplazable>
         <div className="flex flex-col gap-1 rounded-lg border border-line bg-s3 p-3">
-          <div className="flex items-center justify-between">
-            <span className="whitespace-nowrap text-detalle font-semibold text-accent-soft">Formulación fuerte</span>
-            <span className="font-mono text-mini text-ink-2">{t.nombre}</span>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="whitespace-nowrap text-detalle font-semibold text-accent-soft">{esGeneral ? 'Tu ecuación' : 'Formulación fuerte'}</h2>
+            <span className="truncate font-mono text-mini text-ink-2">{ejVigente ? ejVigente.nombre : esGeneral ? 'Personalizada' : t.nombre}</span>
           </div>
-          <Desplazable etiqueta="Ecuación del problema" className="text-detalle text-ink">
-            <Tex display>{t.ecuacion}</Tex>
-          </Desplazable>
+          {esGeneral ? (
+            <>
+              {e.tramos.map((tr, i) => (
+                <div key={i}>
+                  {e.tramos.length > 1 && (
+                    <p className="text-mini text-ink-2">
+                      {tr.nombre ?? `Tramo ${i + 1}`}: x de {i === 0 ? e.x0 : e.tramos[i - 1].fin} a {i === e.tramos.length - 1 ? e.xL : tr.fin}
+                    </p>
+                  )}
+                  <Desplazable etiqueta={`Ecuación con tus datos${e.tramos.length > 1 ? `, tramo ${i + 1}` : ''}`} className="text-cuerpo text-ink">
+                    <Tex display>{ecuacionTex({ k: tr.valores.k ?? '1', b: tr.valores.b ?? '0', c: tr.valores.c ?? '0', f: tr.valores.f ?? '0' })}</Tex>
+                  </Desplazable>
+                </div>
+              ))}
+              <p className="text-detalle text-ink-2">
+                Forma general: <Tex>{String.raw`-(k\,u')' + b\,u' + c\,u = f`}</Tex>. Puedes escribir cualquier k(x), b(x), c(x) y f(x).
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Boton variante="secundario" icon="tune" onClick={() => irAlCampo(idCampo.tramo(0, 'k'))}>
+                  Cambiar la ecuación
+                </Boton>
+                {!ejVigente && t.ejemplos.some((x) => x.id === ejemploId) && (
+                  <Boton variante="fantasma" icon="restart_alt" onClick={restablecer}>
+                    Volver al ejemplo
+                  </Boton>
+                )}
+              </div>
+            </>
+          ) : (
+            <Desplazable etiqueta="Ecuación del problema" className="text-detalle text-ink">
+              <Tex display>{t.ecuacion}</Tex>
+            </Desplazable>
+          )}
           {vista && (
             <div className="flex flex-wrap gap-2 pt-1">
               {(['izquierda', 'derecha'] as const).map((lado) => {
@@ -164,6 +199,29 @@ function Config1D() {
                 );
               })}
             </div>
+          )}
+          {r.ok && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-detalle text-ink-2">
+              <span>
+                <strong className="font-semibold text-ink">Comparación: </strong>
+                {r.res.exacta?.origen === 'usuario'
+                  ? 'con la solución analítica que escribiste.'
+                  : r.res.exacta
+                    ? 'con la solución analítica que la app calcula sola (coeficientes constantes).'
+                    : 'sin solución analítica; el error se estima con una malla muy fina.'}
+              </span>
+              <button type="button" onClick={() => irAlCampo(idCampo.exacta)} className="min-h-11 rounded-lg px-1 font-semibold text-accent-soft underline underline-offset-2 hover:text-ink">
+                {r.res.exacta?.origen === 'usuario' ? 'Cambiarla' : 'Escribir la mía'}
+              </button>
+            </p>
+          )}
+          {r.ok && e.exacta.trim() !== '' && r.res.exacta?.origen !== 'usuario' && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-detalle text-ink-2">
+              <span>La solución analítica que quedó escrita es de otro problema y no se usa.</span>
+              <button type="button" onClick={() => upd((c) => void (c.exacta = ''))} className="min-h-11 rounded-lg px-1 font-semibold text-accent-soft underline underline-offset-2 hover:text-ink">
+                Borrarla
+              </button>
+            </p>
           )}
         </div>
       </div>
@@ -197,10 +255,15 @@ function Config1D() {
           />
           <Selector
             label="Ejemplo precargado"
-            value={t.ejemplos.some((x) => x.id === ejemploId) ? ejemploId : ''}
+            value={ejVigente?.id ?? ''}
             onChange={(id) => id && cargar(t.id, id)}
-            opciones={[{ valor: '', texto: '— Personalizado —' }, ...t.ejemplos.map((x) => ({ valor: x.id, texto: x.nombre }))]}
+            opciones={[{ valor: '', texto: '— Personalizado (datos propios) —' }, ...t.ejemplos.map((x) => ({ valor: x.id, texto: x.nombre }))]}
           />
+          <p className="-mt-1 text-detalle text-ink-2">
+            {ejVigente
+              ? 'Un ejemplo es solo un punto de partida: puedes cambiar la ecuación, el dominio y las fronteras en las secciones de abajo.'
+              : 'Estás resolviendo tu propio problema. Elige un ejemplo de la lista para volver a cargarlo.'}
+          </p>
           {t.sistemas.length > 1 && (
             <Segmentos
               label="Sistema de unidades"
@@ -311,7 +374,12 @@ function Config1D() {
         </Seccion>
 
         {/* 3. Propiedades por tramos */}
-        <Seccion icon="layers" titulo="3. Propiedades por tramos" subtitulo="Coeficientes físicos de cada región" resumen={`${e.tramos.length} tramo(s)`}>
+        <Seccion
+          icon="layers"
+          titulo={esGeneral ? '3. Ecuación: coeficientes k, b, c y f' : '3. Propiedades por tramos'}
+          subtitulo={esGeneral ? 'Aquí se cambia la ecuación; puede ser distinta en cada tramo' : 'Coeficientes físicos de cada región'}
+          resumen={`${e.tramos.length} tramo(s)`}
+        >
           <AyudaExpresiones />
           {t.camposGlobales.length > 0 && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

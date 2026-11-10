@@ -2,7 +2,7 @@
 import { csvBarrasArmadura, csvElementos1D, csvNodos1D, csvNodosArmadura, csvNodosResortes, csvResortes } from '../export/csv';
 import { matlab1D, matlabArmadura, matlabResortes } from '../export/matlab';
 import { python1D, pythonArmadura, pythonResortes } from '../export/python';
-import type { Resultado1D, ResultadoArmadura, ResultadoResortes } from '../templates';
+import { ejemploArmaduraCoincidente, ejemploCoincidente, ejemploResortesCoincidente, type Resultado1D, type ResultadoArmadura, type ResultadoResortes } from '../templates';
 import type { ArchivoExportable } from './components/PanelExportar';
 import { nombreBase } from './descargar';
 
@@ -17,8 +17,8 @@ function comunes(base: string, csv: [string, string, (f: Parameters<ArchivoExpor
   ];
 }
 
-export function archivos1D(res: Resultado1D, ejemplo: string): ArchivoExportable[] {
-  const ej = res.plantilla.ejemplos.some((e) => e.id === ejemplo) ? ejemplo : 'personalizado';
+export function archivos1D(res: Resultado1D): ArchivoExportable[] {
+  const ej = ejemploCoincidente(res.plantilla, res.estado)?.id ?? 'personalizado';
   const base = nombreBase('femlab', res.plantilla.id, ej);
   return comunes(
     base,
@@ -31,8 +31,8 @@ export function archivos1D(res: Resultado1D, ejemplo: string): ArchivoExportable
   );
 }
 
-export function archivosArmadura(res: ResultadoArmadura, ejemplo: string): ArchivoExportable[] {
-  const base = nombreBase('femlab', 'armadura', ejemplo || 'personalizada');
+export function archivosArmadura(res: ResultadoArmadura): ArchivoExportable[] {
+  const base = nombreBase('femlab', 'armadura', ejemploArmaduraCoincidente(res.estado)?.id ?? 'personalizada');
   return comunes(
     base,
     [
@@ -44,8 +44,8 @@ export function archivosArmadura(res: ResultadoArmadura, ejemplo: string): Archi
   );
 }
 
-export function archivosResortes(res: ResultadoResortes, ejemplo: string): ArchivoExportable[] {
-  const base = nombreBase('femlab', 'resortes', ejemplo || 'personalizado');
+export function archivosResortes(res: ResultadoResortes): ArchivoExportable[] {
+  const base = nombreBase('femlab', 'resortes', ejemploResortesCoincidente(res.estado)?.id ?? 'personalizado');
   return comunes(
     base,
     [

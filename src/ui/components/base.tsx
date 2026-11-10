@@ -340,6 +340,9 @@ export function Segmentos<T extends string>({
   );
 }
 
+/** Evento que abre todas las secciones plegables (lo emite «Ir al campo»). */
+const EVENTO_ABRIR_SECCIONES = 'femlab:abrir-secciones';
+
 /** Sección plegable numerada (acordeón de Configuración). */
 export function Seccion({
   icon,
@@ -360,6 +363,12 @@ export function Seccion({
 }) {
   const [open, setOpen] = useState(abierta);
   const id = useId();
+  // «Ir al campo» puede apuntar a un campo de una sección plegada: se abre al recibir el aviso
+  useEffect(() => {
+    const abrir = () => setOpen(true);
+    window.addEventListener(EVENTO_ABRIR_SECCIONES, abrir);
+    return () => window.removeEventListener(EVENTO_ABRIR_SECCIONES, abrir);
+  }, []);
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-s2 shadow-sm">
       <button

@@ -1,7 +1,7 @@
 /** Memoria de cálculo imprimible (Guardar como PDF desde el navegador). */
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { compileExpr } from '../../core';
-import { APOYOS, EJEMPLOS_ARMADURA, SISTEMAS, unidad, valorPorDefecto, type Resultado1D } from '../../templates';
+import { APOYOS, ejemploArmaduraCoincidente, ejemploCoincidente, SISTEMAS, unidad, valorPorDefecto, type Resultado1D } from '../../templates';
 import { Aviso, Boton, Desplazable, Tabla } from '../components/base';
 import { curvaMEF, curvaPorElemento, nombreElementos } from '../curvas';
 import { DiagramaResortes } from '../components/DiagramaResortes';
@@ -93,7 +93,6 @@ function Contenedor({ children }: { children: ReactNode }) {
 
 function Reporte1D() {
   const r = useResultado1D();
-  const ejemplo = useApp((s) => s.ejemplo['1d']);
   if (!r.ok) {
     return (
       <Contenedor>
@@ -108,7 +107,7 @@ function Reporte1D() {
   const t = res.plantilla;
   const s = res.estado.sistema;
   const sol = res.sol;
-  const ej = t.ejemplos.find((e) => e.id === ejemplo);
+  const ej = ejemploCoincidente(t, res.estado);
   const ul = unidad(t.unidadLongitud, s);
   const ui = unidad(t.incognita.unidad, s);
   const uMax = Math.max(...sol.u.map(Math.abs), 1e-300);
@@ -123,7 +122,7 @@ function Reporte1D() {
   return (
     <Contenedor>
       <Barra volver="resultados" />
-      <Hoja titulo={ej?.nombre ?? t.nombre} subtitulo={`${t.nombre} · método de elementos finitos con ${nombreElementos(sol.mesh.orden)}`}>
+      <Hoja titulo={ej?.nombre ?? (t.id === 'general' ? 'Ecuación personalizada' : `${t.nombre} (datos propios)`)} subtitulo={`${t.nombre} · método de elementos finitos con ${nombreElementos(sol.mesh.orden)}`}>
         <S n={1} titulo="Planteamiento">
           <p>Ecuación gobernante:</p>
           <Fx>{t.ecuacion}</Fx>
@@ -314,7 +313,6 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
 
 function ReporteArmadura() {
   const r = useResultadoArmadura();
-  const ejemplo = useApp((s) => s.ejemplo.armadura);
   const e = useApp((s) => s.armadura);
   const coords = useMemo(() => (r.ok ? r.res.sol.problem.nodes : []), [r]);
   if (!r.ok) {
@@ -333,7 +331,7 @@ function ReporteArmadura() {
   return (
     <Contenedor>
       <Barra volver="armadura" />
-      <Hoja titulo={EJEMPLOS_ARMADURA.find((x) => x.id === ejemplo)?.nombre ?? 'Armadura plana 2D'} subtitulo="Armadura plana con elementos barra · método de rigidez directa">
+      <Hoja titulo={ejemploArmaduraCoincidente(r.ok ? r.res.estado : null)?.nombre ?? 'Armadura plana 2D (datos propios)'} subtitulo="Armadura plana con elementos barra · método de rigidez directa">
         <S n={1} titulo="Modelo">
           <Fx>{String.raw`\mathbf{k}^e = \frac{EA}{L}\begin{bmatrix} c^2 & cs & -c^2 & -cs\\ cs & s^2 & -cs & -s^2\\ -c^2 & -cs & c^2 & cs\\ -cs & -s^2 & cs & s^2\end{bmatrix},\qquad N = \frac{EA}{L}\begin{bmatrix}-c & -s & c & s\end{bmatrix}\mathbf{u}^e`}</Fx>
           <div className="rounded-lg border border-line">
