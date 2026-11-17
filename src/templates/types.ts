@@ -192,8 +192,8 @@ export interface Estado1D {
   metodo: BCMethod;
   penalizacion: number;
   solver: SolverType;
-  /** Orden de los elementos: 1 = lineales, 2 = cuadráticos (si falta, 1). */
-  orden?: 1 | 2;
+  /** Orden de los elementos: 1 = lineales, 2 = cuadráticos, 3 = cúbicos (si falta, 1). */
+  orden?: 1 | 2 | 3;
   /** Solución analítica escrita por el usuario (vacía = automática si se puede). */
   exacta: string;
 }

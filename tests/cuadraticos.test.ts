@@ -177,12 +177,13 @@ describe('Plantillas con elementos cuadráticos', () => {
     expect(Math.abs(d(160).valor - exacta) / Math.abs(exacta)).toBeLessThan(1e-3);
   });
 
-  it('todos los ejemplos dan los mismos indicadores que una malla lineal muy fina', async () => {
+  for (const ordenAlto of [2, 3] as const) {
+  it(`todos los ejemplos con orden ${ordenAlto} dan los mismos indicadores que una malla lineal muy fina`, async () => {
     const { aplicarEjemplo, estadoPorDefecto, PLANTILLAS_1D, resolverPlantilla1D } = await import('../src/templates');
     for (const t of PLANTILLAS_1D) {
       for (const ej of t.ejemplos) {
         const e = aplicarEjemplo(t, estadoPorDefecto(t), ej.id);
-        const cua = resolverPlantilla1D(t, { ...e, orden: 2, malla: { ...e.malla, tipo: 'uniforme', ne: 40 } });
+        const cua = resolverPlantilla1D(t, { ...e, orden: ordenAlto, gauss: 4, malla: { ...e.malla, tipo: 'uniforme', ne: ordenAlto === 3 ? 30 : 40 } });
         const fina = resolverPlantilla1D(t, { ...e, orden: 1, malla: { ...e.malla, tipo: 'uniforme', ne: 2000 } });
         const nombre = `${t.id}/${ej.id}`;
         for (const k of cua.kpis) {
@@ -195,7 +196,9 @@ describe('Plantillas con elementos cuadráticos', () => {
           // En problemas simétricos el máximo en valor absoluto puede caer en cualquiera de los dos extremos
           const L = cua.problem.xL - cua.problem.x0;
           const otroLado = k.valor.x !== undefined && ref.valor.x !== undefined && Math.abs(k.valor.x - ref.valor.x) > 0.01 * L;
-          const dif = otroLado ? Math.abs(Math.abs(k.valor.valor) - Math.abs(ref.valor.valor)) : Math.abs(k.valor.valor - ref.valor.valor);
+          // ...o a cada lado de un quiebre (carga puntual): en los «máximos» en valor absoluto se comparan magnitudes
+          const esMaxAbs = /máxim/i.test(k.def.nombre) && Math.sign(k.valor.valor) !== Math.sign(ref.valor.valor);
+          const dif = otroLado || esMaxAbs ? Math.abs(Math.abs(k.valor.valor) - Math.abs(ref.valor.valor)) : Math.abs(k.valor.valor - ref.valor.valor);
           expect(dif / esc, `${nombre} · ${k.def.nombre}`).toBeLessThan(capaLimite ? 5e-2 : 1e-2);
         }
         cua.reacciones.forEach((rc, i) => {
@@ -203,8 +206,13 @@ describe('Plantillas con elementos cuadráticos', () => {
           const esc = Math.max(...fina.reacciones.map((x) => Math.abs(x.valor)), 1e-300);
           expect(Math.abs(rc.valor - ref) / esc, `${nombre} · reacción ${rc.lado} (${rc.valor} vs ${ref})`).toBeLessThan(2e-3);
         });
-        for (const el of cua.elementos) for (const [id, [a, b]] of Object.entries(el.extremos)) expect(Number.isFinite(a) && Number.isFinite(b), `${nombre} ${id}`).toBe(true);
+        for (const el of cua.elementos) {
+          for (const [id, [a, b]] of Object.entries(el.extremos)) expect(Number.isFinite(a) && Number.isFinite(b), `${nombre} ${id}`).toBe(true);
+          expect(el.perfil.x.length).toBe(ordenAlto === 3 ? 9 : 3);
+          for (const v of Object.values(el.perfil.valores)) expect(v.every(Number.isFinite)).toBe(true);
+        }
       }
     }
-   }, 60_000);
+   }, 90_000);
+  }
 });

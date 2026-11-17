@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { compileExpr } from '../../core';
 import { APOYOS, ejemploArmaduraCoincidente, ejemploCoincidente, SISTEMAS, unidad, valorPorDefecto, type Resultado1D } from '../../templates';
 import { Aviso, Boton, Desplazable, Tabla } from '../components/base';
-import { curvaMEF, curvaPorElemento, nombreElementos } from '../curvas';
+import { curvaMEF, curvaPorElemento, FORMA_DU, FORMA_U, nombreElementos } from '../curvas';
 import { DiagramaResortes } from '../components/DiagramaResortes';
 import { Grafica, type Colores } from '../components/Grafica';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
@@ -50,7 +50,7 @@ function Hoja({ titulo, subtitulo, children }: { titulo: string; subtitulo: stri
       </header>
       <div className="flex flex-col gap-6">{children}</div>
       <footer className="mt-8 border-t border-line pt-3 text-center font-mono text-mini text-ink-3">
-        Generado con FEM Lab · elementos finitos lineales y cuadráticos · {URL_APP}
+        Generado con FEM Lab · elementos finitos lineales, cuadráticos y cúbicos · {URL_APP}
       </footer>
     </article>
   );
@@ -133,7 +133,7 @@ function Reporte1D() {
                 {' '}con <Tex>{`k = ${t.traduccion.k},\\; b = ${t.traduccion.b},\\; c = ${t.traduccion.c},\\; f = ${t.traduccion.f}`}</Tex>
               </>
             )}
-            . La solución aproximada es {sol.mesh.orden === 2 ? 'una parábola (3 nodos: inicio, centro y fin)' : 'lineal'} en cada elemento: <Tex>{String.raw`u_h(x) = \sum_i u_i\,N_i(x)`}</Tex>.
+            . La solución aproximada es {FORMA_U[sol.mesh.orden]} en cada elemento ({sol.mesh.orden + 1} nodos por elemento): <Tex>{String.raw`u_h(x) = \sum_i u_i\,N_i(x)`}</Tex>.
           </p>
         </S>
 
@@ -304,7 +304,7 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
           <Grafica data={der} layout={lay2} alto={220} ancho={680} etiqueta={`${d.nombre} por elemento`} />
         </Desplazable>
         <figcaption className="text-center text-mini text-ink-2">
-          {d.nombre} ({res.sol.mesh.orden === 2 ? 'lineal' : 'constante'} en cada elemento).
+          {d.nombre} ({FORMA_DU[res.sol.mesh.orden]} en cada elemento).
         </figcaption>
       </figure>
     </>

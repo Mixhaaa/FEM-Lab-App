@@ -5,7 +5,7 @@
  */
 import { FemError } from './errors';
 import { fmt } from './expr';
-import type { MeshInfo, MeshSpec, PointLoad, Region } from './types';
+import type { MeshInfo, MeshSpec, OrdenElemento, PointLoad, Region } from './types';
 
 export const MAX_ELEMENTOS = 2000;
 
@@ -200,24 +200,42 @@ export function buildMesh(
 /** Máximo de elementos cuadráticos (mismo número de nodos que 2000 lineales). */
 export const MAX_ELEMENTOS_CUADRATICOS = 1000;
 
+/** Máximo de elementos según su orden (unos 2000 nodos en todos los casos). */
+export function maxElementos(orden: OrdenElemento = 1): number {
+  return orden === 3 ? 600 : orden === 2 ? MAX_ELEMENTOS_CUADRATICOS : MAX_ELEMENTOS;
+}
+
+const NOMBRE_ORDEN: Record<OrdenElemento, string> = { 1: 'lineales', 2: 'cuadráticos', 3: 'cúbicos' };
+
 /**
- * Convierte una malla lineal en cuadrática: agrega un nodo en el centro de cada elemento.
- * La numeración sigue el orden en x (inicio, centro, fin, centro, ...), así K queda en banda.
+ * Convierte una malla lineal en una de orden 2 o 3: agrega 1 o 2 nodos igualmente espaciados
+ * dentro de cada elemento. La numeración sigue el orden en x, así K queda en banda.
  */
-export function mallaCuadratica(m: MeshInfo): MeshInfo {
+export function mallaDeOrden(m: MeshInfo, orden: OrdenElemento): MeshInfo {
+  if (orden === 1) return m;
   const ne = m.elements.length;
-  if (ne > MAX_ELEMENTOS_CUADRATICOS) {
-    throw new FemError(`Con elementos cuadráticos el máximo es ${MAX_ELEMENTOS_CUADRATICOS} elementos (tienes ${ne}).`, 'Ne');
+  if (ne > maxElementos(orden)) {
+    throw new FemError(`Con elementos ${NOMBRE_ORDEN[orden]} el máximo es ${maxElementos(orden)} elementos (tienes ${ne}).`, 'Ne');
   }
   const nodes: number[] = [];
   const elements: [number, number][] = [];
   const elementDofs: number[][] = [];
   for (let e = 0; e < ne; e++) {
     const [a, b] = m.elements[e];
-    nodes.push(m.nodes[a], (m.nodes[a] + m.nodes[b]) / 2);
-    elements.push([2 * e, 2 * e + 2]);
-    elementDofs.push([2 * e, 2 * e + 1, 2 * e + 2]);
+    const xa = m.nodes[a];
+    const xb = m.nodes[b];
+    nodes.push(xa);
+    // Centro exacto en cuadráticos; tercios en cúbicos
+    if (orden === 2) nodes.push((xa + xb) / 2);
+    else nodes.push(xa + (xb - xa) / 3, xa + (2 * (xb - xa)) / 3);
+    elements.push([orden * e, orden * e + orden]);
+    elementDofs.push(Array.from({ length: orden + 1 }, (_, i) => orden * e + i));
   }
   nodes.push(m.nodes[m.nodes.length - 1]);
-  return { ...m, nodes, elements, elementDofs, orden: 2 };
+  return { ...m, nodes, elements, elementDofs, orden };
+}
+
+/** Malla cuadrática (se conserva por compatibilidad). */
+export function mallaCuadratica(m: MeshInfo): MeshInfo {
+  return mallaDeOrden(m, 2);
 }

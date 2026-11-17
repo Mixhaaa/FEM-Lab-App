@@ -79,16 +79,17 @@ export function DiagramaMalla({
   fuerzaX?: boolean;
   /** Símbolo de la incógnita (u, T, h, φ, ...). */
   simbolo?: string;
-  /** 2 = elementos cuadráticos: los nodos impares son el centro de cada elemento. */
-  orden?: 1 | 2;
+  /** 2 o 3 = elementos cuadráticos o cúbicos: solo uno de cada `orden` nodos es extremo de elemento. */
+  orden?: 1 | 2 | 3;
 }) {
   const { x0, xL } = problem;
   const X = (x: number) => X0 + ((x - x0) / (xL - x0)) * (X1 - X0);
   const n = nodos.length;
   const ne = (n - 1) / orden;
-  const vertices = orden === 2 ? nodos.filter((_, i) => i % 2 === 0) : nodos;
-  const conNumeros = n <= 25;
-  const esCentro = (i: number) => orden === 2 && i % 2 === 1;
+  const vertices = nodos.filter((_, i) => i % orden === 0);
+  const adjetivo = orden === 3 ? ' cúbicos' : orden === 2 ? ' cuadráticos' : '';
+  const conNumeros = n <= 31;
+  const esCentro = (i: number) => i % orden !== 0;
 
   // Perfil de la carga distribuida
   const muestras: { x: number; f: number }[] = [];
@@ -116,7 +117,7 @@ export function DiagramaMalla({
   const flechas = hayCarga ? muestras.filter((_, i) => i % 6 === 3) : [];
 
   return (
-    <svg viewBox="0 0 460 140" className="h-auto w-full min-w-[320px] select-none" role="img" aria-label={`Malla de ${ne} elementos${orden === 2 ? ' cuadráticos' : ''} y ${n} nodos entre x = ${x0} y x = ${xL}`}>
+    <svg viewBox="0 0 460 140" className="h-auto w-full min-w-[320px] select-none" role="img" aria-label={`Malla de ${ne} elementos${adjetivo} y ${n} nodos entre x = ${x0} y x = ${xL}`}>
       <defs>
         <pattern id="rayado" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="var(--line-strong)" strokeWidth="1.5" />
@@ -239,7 +240,7 @@ export function DiagramaMalla({
         x={fmtNum(xL)}
       </text>
       <text x={(X0 + X1) / 2} y={136} textAnchor="middle" fontSize={8} fill="var(--ink-3)" fontFamily="var(--font-mono)">
-        {ne} elementos{orden === 2 ? ' cuadráticos' : ''} · {n} nodos
+        {ne} elementos{adjetivo} · {n} nodos
       </text>
     </svg>
   );

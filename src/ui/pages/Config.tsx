@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { compileExpr, MAX_ELEMENTOS, MAX_ELEMENTOS_CUADRATICOS } from '../../core';
-import { curvaMEF, nombreElementos } from '../curvas';
+import { compileExpr, GAUSS_RECOMENDADO, maxElementos, type OrdenElemento } from '../../core';
+import { curvaMEF, FORMA_U, nombreElementos, ORDEN_ERROR } from '../curvas';
 import { ecuacionTex } from '../ecuacion';
 import {
   CATEGORIAS,
@@ -91,6 +91,7 @@ function Config1D() {
   const r = useResultado1D();
   const escritorio = useEsEscritorio();
   const esGeneral = t.id === 'general';
+  const orden: OrdenElemento = e.orden ?? 1;
   // Ejemplo cuyos datos coinciden con los actuales (undefined si ya se cambió la ecuación, el dominio o las fronteras)
   const ejVigente = useMemo(() => ejemploCoincidente(t, e), [t, e]);
   // Último resultado válido: el esquema se mantiene mientras se corrige un dato
@@ -302,33 +303,32 @@ function Config1D() {
           />
           <Segmentos
             label="Tipo de elemento"
-            value={String(e.orden ?? 1) as '1' | '2'}
+            value={String(orden) as '1' | '2' | '3'}
             onChange={(v) =>
               upd((c) => {
-                c.orden = v === '2' ? 2 : 1;
-                // Los cuadráticos necesitan al menos 3 puntos de Gauss y admiten hasta 1000 elementos
-                if (c.orden === 2) {
-                  c.gauss = Math.max(c.gauss, 3);
-                  c.malla.ne = Math.min(c.malla.ne, MAX_ELEMENTOS_CUADRATICOS);
-                }
+                const nuevo = Number(v) as OrdenElemento;
+                c.orden = nuevo;
+                // Los órdenes altos necesitan más puntos de Gauss (3 y 4) y admiten menos elementos (1000 y 600)
+                c.gauss = Math.max(c.gauss, GAUSS_RECOMENDADO[nuevo]);
+                c.malla.ne = Math.min(c.malla.ne, maxElementos(nuevo));
               })
             }
             opciones={[
-              { valor: '1', texto: 'Lineal · 2 nodos' },
-              { valor: '2', texto: 'Cuadrático · 3 nodos' },
+              { valor: '1', texto: 'Lineal' },
+              { valor: '2', texto: 'Cuadrático' },
+              { valor: '3', texto: 'Cúbico' },
             ]}
           />
           <p className="-mt-1 text-detalle text-ink-2">
-            {(e.orden ?? 1) === 2
-              ? 'Cada elemento tiene un nodo extra en su centro y u es una parábola dentro del elemento. Error ~ h³ (L²) y h² (H¹).'
-              : 'u es una recta dentro de cada elemento. Error ~ h² (L²) y h (H¹).'}
+            {orden + 1} nodos por elemento{orden === 2 ? ' (uno extra en el centro)' : orden === 3 ? ' (dos extra en los tercios)' : ''}: u es {FORMA_U[orden]} dentro de cada
+            elemento. Error ~ {ORDEN_ERROR[orden].L2} (L²) y {ORDEN_ERROR[orden].H1} (H¹).
           </p>
           {e.malla.tipo !== 'manual' ? (
             <NumeroElementos
               ne={e.malla.ne}
               L={L}
               unidadL={unidad(t.unidadLongitud, s)}
-              orden={e.orden ?? 1}
+              orden={orden}
               onChange={(ne) => upd((c) => void (c.malla.ne = ne))}
             />
           ) : (
@@ -369,7 +369,7 @@ function Config1D() {
           />
           <p className="-mt-1 text-detalle text-ink-2">
             Con n puntos se integran exactamente polinomios de grado 2n − 1 (3 puntos: grado 5).
-            {(e.orden ?? 1) === 2 && ' Con cuadráticos usa al menos 3.'}
+            {orden >= 2 && ` Con ${nombreElementos(orden)} usa al menos ${GAUSS_RECOMENDADO[orden]}.`}
           </p>
         </Seccion>
 
@@ -538,8 +538,8 @@ function etiquetaCarga(t: Plantilla1D) {
   return id ? `${id.simbolo} · ${id.nombre.toLowerCase()}` : 'f(x)';
 }
 
-function NumeroElementos({ ne, L, unidadL, orden, onChange }: { ne: number; L: number; unidadL: string; orden: 1 | 2; onChange: (n: number) => void }) {
-  const max = orden === 2 ? MAX_ELEMENTOS_CUADRATICOS : MAX_ELEMENTOS;
+function NumeroElementos({ ne, L, unidadL, orden, onChange }: { ne: number; L: number; unidadL: string; orden: OrdenElemento; onChange: (n: number) => void }) {
+  const max = maxElementos(orden);
   const [texto, setTexto] = useState(String(ne));
   const [prev, setPrev] = useState(ne);
   if (prev !== ne) {
@@ -547,7 +547,7 @@ function NumeroElementos({ ne, L, unidadL, orden, onChange }: { ne: number; L: n
     setTexto(String(ne));
   }
   const n = Number(texto);
-  const err = Number.isInteger(n) && n >= 1 && n <= max ? null : `Ne debe ser un entero entre 1 y ${max}${orden === 2 ? ' con elementos cuadráticos' : ''}.`;
+  const err = Number.isInteger(n) && n >= 1 && n <= max ? null : `Ne debe ser un entero entre 1 y ${max}${orden >= 2 ? ` con ${nombreElementos(orden)}` : ''}.`;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between rounded-lg border border-line bg-inset p-3">
@@ -758,9 +758,9 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
         const xs = Array.from({ length: 201 }, (_, i) => nodos[0] + ((nodos[nodos.length - 1] - nodos[0]) * i) / 200);
         tr.push({ x: xs, y: xs.map((x) => exacta(x)), type: 'scatter', mode: 'lines', name: 'Analítica', line: { color: c.exact, width: 2 }, hoverinfo: 'skip' });
       }
-      const cuadratico = res.sol.mesh.orden === 2;
+      const cuadratico = res.sol.mesh.orden >= 2;
       if (cuadratico) {
-        // Parábola dentro de cada elemento; los nodos van aparte como marcadores
+        // Curva dentro de cada elemento (parábola o cúbica); los nodos van aparte como marcadores
         const cv = curvaMEF(res.sol);
         tr.push({ x: cv.x, y: cv.y, type: 'scatter', mode: 'lines', name: 'MEF', line: { color: c.accentHover, width: 2, dash: exacta ? 'dash' : 'solid' }, hoverinfo: 'skip' });
       }

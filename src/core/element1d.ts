@@ -22,6 +22,43 @@ export function formaCuadratica(xi: number): { N: number[]; dNdxi: number[] } {
   };
 }
 
+/**
+ * Funciones de forma cúbicas en ξ ∈ [−1, 1], nodos locales en ξ = −1, −1/3, 1/3, 1:
+ *   N1 = −(9/16)(ξ + 1/3)(ξ − 1/3)(ξ − 1)     N2 =  (27/16)(ξ + 1)(ξ − 1/3)(ξ − 1)
+ *   N3 = −(27/16)(ξ + 1)(ξ + 1/3)(ξ − 1)      N4 =  (9/16)(ξ + 1)(ξ + 1/3)(ξ − 1/3)
+ */
+export function formaCubica(xi: number): { N: number[]; dNdxi: number[] } {
+  const a = xi + 1;
+  const b = xi + 1 / 3;
+  const c = xi - 1 / 3;
+  const d = xi - 1;
+  return {
+    N: [(-9 / 16) * b * c * d, (27 / 16) * a * c * d, (-27 / 16) * a * b * d, (9 / 16) * a * b * c],
+    dNdxi: [
+      (-9 / 16) * (c * d + b * d + b * c),
+      (27 / 16) * (c * d + a * d + a * c),
+      (-27 / 16) * (b * d + a * d + a * b),
+      (9 / 16) * (b * c + a * c + a * b),
+    ],
+  };
+}
+
+/** Funciones de forma de Lagrange del orden pedido y sus derivadas respecto a ξ. */
+export function formaLagrange(orden: OrdenElemento, xi: number): { N: number[]; dNdxi: number[] } {
+  if (orden === 3) return formaCubica(xi);
+  if (orden === 2) return formaCuadratica(xi);
+  return { N: [(1 - xi) / 2, (1 + xi) / 2], dNdxi: [-0.5, 0.5] };
+}
+
+/** Coordenada natural ξ de cada nodo local: −1, …, 1 igualmente espaciados. */
+export function xiNodos(orden: OrdenElemento): number[] {
+  if (orden === 3) return [-1, -1 / 3, 1 / 3, 1];
+  return orden === 2 ? [-1, 0, 1] : [-1, 1];
+}
+
+/** Puntos de Gauss que integran exactamente la matriz elemental con coeficientes constantes. */
+export const GAUSS_RECOMENDADO: Record<OrdenElemento, number> = { 1: 2, 2: 3, 3: 4 };
+
 export interface RegionCoeffs {
   k: CompiledExpr;
   b: CompiledExpr;
@@ -42,7 +79,7 @@ export function computeElement(
   orden: OrdenElemento = 1,
   dofs: number[] = nodes,
 ): ElementResult {
-  if (orden === 2) return elementoCuadratico(id, nodes, dofs, xa, xb, region, co, ng);
+  if (orden >= 2) return elementoLagrange(id, nodes, dofs, orden, xa, xb, region, co, ng);
   const h = xb - xa;
   const { xi, w } = gaussRule(ng);
   const dN = [-1 / h, 1 / h];
@@ -104,11 +141,12 @@ function coeficientesEn(co: RegionCoeffs, x: number) {
   return { k, b, c, f };
 }
 
-/** Elemento cuadrático de 3 nodos (inicio, centro, fin), integrado con Gauss. */
-function elementoCuadratico(
+/** Elemento de Lagrange de orden 2 (3 nodos) o 3 (4 nodos), integrado con Gauss. */
+function elementoLagrange(
   id: number,
   nodes: [number, number],
   dofs: number[],
+  orden: OrdenElemento,
   xa: number,
   xb: number,
   region: number,
@@ -118,21 +156,22 @@ function elementoCuadratico(
   const h = xb - xa;
   const J = h / 2;
   const { xi, w } = gaussRule(ng);
-  const z = () => [0, 0, 0].map(() => [0, 0, 0]);
+  const n = orden + 1;
+  const z = () => Array.from({ length: n }, () => new Array<number>(n).fill(0));
   const KeK = z();
   const KeB = z();
   const KeC = z();
-  const Fe = [0, 0, 0];
+  const Fe = new Array<number>(n).fill(0);
   const gauss: GaussPointData[] = [];
   for (let g = 0; g < xi.length; g++) {
     const x = (xa + xb) / 2 + J * xi[g];
-    const { N, dNdxi } = formaCuadratica(xi[g]);
+    const { N, dNdxi } = formaLagrange(orden, xi[g]);
     const dN = dNdxi.map((d) => d / J);
     const { k, b, c, f } = coeficientesEn(co, x);
     gauss.push({ xi: xi[g], w: w[g], x, N, k, b, c, f });
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < n; i++) {
       Fe[i] += w[g] * f * N[i] * J;
-      for (let j = 0; j < 3; j++) {
+      for (let j = 0; j < n; j++) {
         KeK[i][j] += w[g] * k * dN[i] * dN[j] * J;
         KeB[i][j] += w[g] * b * N[i] * dN[j] * J;
         KeC[i][j] += w[g] * c * N[i] * N[j] * J;
@@ -140,5 +179,5 @@ function elementoCuadratico(
     }
   }
   const Ke = KeK.map((fila, i) => fila.map((v, j) => v + KeB[i][j] + KeC[i][j]));
-  return { id, nodes, dofs, orden: 2, xa, xb, h, region, Ke, KeK, KeB, KeC, Fe, gauss };
+  return { id, nodes, dofs, orden, xa, xb, h, region, Ke, KeK, KeB, KeC, Fe, gauss };
 }

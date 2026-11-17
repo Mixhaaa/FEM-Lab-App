@@ -32,15 +32,16 @@ export function python1D(res: Resultado1D): string {
   const t = res.plantilla;
   const nodos = res.sol.mesh.nodes;
   const cuad = res.sol.mesh.orden === 2;
+  const cub = res.sol.mesh.orden === 3;
   const ne = res.sol.mesh.elements.length;
-  const vertices = cuad ? nodos.filter((_, i) => i % 2 === 0) : nodos;
+  const vertices = nodos.filter((_, i) => i % res.sol.mesh.orden === 0);
   const ui = unidad(t.incognita.unidad, res.estado.sistema);
   const L: string[] = [];
   L.push(
     encabezado(t.nombre, [
       `Problema modelo: -(k u')' + b u' + c u = f   en [${num(p.x0)}, ${num(p.xL)}]`,
       `Incógnita: ${t.incognita.nombre} ${t.incognita.simbolo}${ui && ui !== '—' ? ` [${ui}]` : ''}`,
-      `Elementos lineales de 2 nodos y cuadratura de Gauss de ${p.gaussPoints} punto(s).`,
+      `${cub ? 'Elementos cúbicos de 4 nodos' : cuad ? 'Elementos cuadráticos de 3 nodos' : 'Elementos lineales de 2 nodos'} y cuadratura de Gauss de ${p.gaussPoints} punto(s).`,
     ]),
   );
   L.push('# 1. Datos del problema');
@@ -74,7 +75,17 @@ export function python1D(res: Resultado1D): string {
   if (p.loads.length) L.push(`Pcarga = [${p.loads.map((l) => `(${num(l.x)}, ${num(l.P)})`).join(', ')}]  # (posición, valor)`);
   if (res.exacta) L.push(`uex = lambda x: ${exprA(res.exacta.expr, 'python')}  # solución analítica`);
   L.push('');
-  if (cuad) {
+  if (cub) {
+    L.push('# 2. Malla: Mnod = [nodo, x], Melem = [elemento, nodo1, nodo2, nodo3, nodo4] (numeración desde 1, como en MATLAB)');
+    L.push(`xv = np.array(${lista(vertices)})  # extremos de los elementos`);
+    L.push('n = 3 * Ne + 1');
+    L.push('xn = np.zeros(n)');
+    L.push('xn[0::3] = xv  # extremos');
+    L.push('xn[1::3] = xv[:-1] + np.diff(xv) / 3  # primer tercio de cada elemento');
+    L.push('xn[2::3] = xv[:-1] + 2 * np.diff(xv) / 3  # segundo tercio');
+    L.push('Mnod = np.column_stack([np.arange(1, n + 1), xn])');
+    L.push('Melem = np.column_stack([np.arange(1, Ne + 1), np.arange(1, n - 2, 3), np.arange(2, n - 1, 3), np.arange(3, n, 3), np.arange(4, n + 1, 3)])');
+  } else if (cuad) {
     L.push('# 2. Malla: Mnod = [nodo, x], Melem = [elemento, nodo1, nodo_centro, nodo3] (numeración desde 1, como en MATLAB)');
     L.push(`xv = np.array(${lista(vertices)})  # extremos de los elementos`);
     L.push('n = 2 * Ne + 1');
@@ -100,7 +111,19 @@ export function python1D(res: Resultado1D): string {
   L.push('Kglob = np.zeros((n, n))');
   L.push('Vglob = np.zeros(n)');
   L.push('for e in range(Ne):');
-  if (cuad) {
+  if (cub) {
+    L.push('    idx = Melem[e, 1:5] - 1  # los 4 nodos del elemento (desde 0)');
+    L.push('    x1, x4 = xn[idx[0]], xn[idx[3]]');
+    L.push('    h = x4 - x1');
+    L.push('    Ke = np.zeros((4, 4))');
+    L.push('    Fe = np.zeros(4)');
+    L.push('    for g in range(len(xi)):');
+    L.push('        s = xi[g]');
+    L.push('        xg = (x1 + x4) / 2 + h / 2 * s');
+    L.push('        # funciones de forma cúbicas (nodos en s = -1, -1/3, 1/3, 1)');
+    L.push('        N = np.array([-9 * (s + 1/3) * (s - 1/3) * (s - 1), 27 * (s + 1) * (s - 1/3) * (s - 1), -27 * (s + 1) * (s + 1/3) * (s - 1), 9 * (s + 1) * (s + 1/3) * (s - 1/3)]) / 16');
+    L.push('        dN = np.array([-27 * s**2 + 18 * s + 1, 9 * (9 * s**2 - 2 * s - 3), 9 * (-9 * s**2 - 2 * s + 3), 27 * s**2 + 18 * s - 1]) / 16 * 2 / h  # derivadas dN/dx');
+  } else if (cuad) {
     L.push('    idx = Melem[e, 1:4] - 1  # nodos del elemento (desde 0): inicio, centro, fin');
     L.push('    x1, x3 = xn[idx[0]], xn[idx[2]]');
     L.push('    h = x3 - x1');
@@ -124,7 +147,7 @@ export function python1D(res: Resultado1D): string {
   }
   L.push('        Ke += w[g] * (k(xg) * np.outer(dN, dN) + b(xg) * np.outer(N, dN) + c(xg) * np.outer(N, N)) * h / 2');
   L.push('        Fe += w[g] * f(xg) * N * h / 2');
-  if (!cuad) L.push('    idx = [n1, n2]');
+  if (!cuad && !cub) L.push('    idx = [n1, n2]');
   L.push('    Kglob[np.ix_(idx, idx)] += Ke');
   L.push('    Vglob[idx] += Fe');
   L.push('');
@@ -174,7 +197,12 @@ export function python1D(res: Resultado1D): string {
   }
   L.push('');
   L.push('# 7. Posproceso');
-  if (cuad) {
+  if (cub) {
+    L.push('i1, i2, i3, i4 = (Melem[:, j] - 1 for j in range(1, 5))');
+    L.push("# derivada en el centro de cada elemento: u'(0) = (u1 - 27 u2 + 27 u3 - u4) / (8 h)");
+    L.push('du = (u[i1] - 27 * u[i2] + 27 * u[i3] - u[i4]) / (8 * (xn[i4] - xn[i1]))');
+    L.push('xm = (xn[i1] + xn[i4]) / 2');
+  } else if (cuad) {
     L.push('i1, ic, i3 = Melem[:, 1] - 1, Melem[:, 2] - 1, Melem[:, 3] - 1');
     L.push('du = (u[i3] - u[i1]) / (xn[i3] - xn[i1])  # derivada en el centro de cada elemento');
     L.push('xm = xn[ic]');
@@ -193,7 +221,16 @@ export function python1D(res: Resultado1D): string {
   L.push('# 8. Gráficas');
   L.push('if plt is not None:');
   L.push('    plt.figure(); plt.spy(Kglob, markersize=6); plt.title("Estructura de Kglob")');
-  if (cuad) {
+  if (cub) {
+    L.push('    plt.figure()');
+    L.push('    s = np.linspace(-1, 1, 13)');
+    L.push('    Ns = np.array([-9 * (s + 1/3) * (s - 1/3) * (s - 1), 27 * (s + 1) * (s - 1/3) * (s - 1), -27 * (s + 1) * (s + 1/3) * (s - 1), 9 * (s + 1) * (s + 1/3) * (s - 1/3)]) / 16');
+    L.push('    for e in range(Ne):  # curva cúbica dentro de cada elemento');
+    L.push('        idx = Melem[e, 1:5] - 1');
+    L.push('        xs = (xn[idx[0]] + xn[idx[3]]) / 2 + (xn[idx[3]] - xn[idx[0]]) / 2 * s');
+    L.push("        plt.plot(xs, u[idx] @ Ns, 'C0-', label='MEF' if e == 0 else None)");
+    L.push("    plt.plot(xn, u, 'C0o', label='Nodos')");
+  } else if (cuad) {
     L.push('    plt.figure()');
     L.push('    s = np.linspace(-1, 1, 13)');
     L.push('    for e in range(Ne):  # parábola dentro de cada elemento');

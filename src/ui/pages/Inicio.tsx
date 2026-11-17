@@ -101,7 +101,7 @@ export function Inicio() {
         </div>
         <h1 className="font-heading text-titulo font-bold tracking-tight text-ink ">Laboratorio MEF 1D y 2D</h1>
         <p className="mt-2 text-cuerpo leading-relaxed text-ink-2">
-          Resuelve problemas lineales de ingeniería con elementos finitos lineales o cuadráticos: discretiza el dominio, ensambla la matriz global y resuelve{' '}
+          Resuelve problemas lineales de ingeniería con elementos finitos lineales, cuadráticos o cúbicos: discretiza el dominio, ensambla la matriz global y resuelve{' '}
           <span className="rounded border border-accent/30 bg-s2 px-1.5 py-0.5 font-mono text-mini font-semibold text-accent-soft">K·u = F</span> paso a paso.
         </p>
       </div>

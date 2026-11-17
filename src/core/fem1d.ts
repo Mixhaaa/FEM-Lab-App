@@ -2,10 +2,10 @@
  * Solución del problema 1D:  -(k u')' + b u' + c u = f  en [x0, xL]
  * con elementos lineales, ensamblaje global, fronteras y posproceso.
  */
-import { computeElement, formaCuadratica } from './element1d';
+import { computeElement, formaLagrange, GAUSS_RECOMENDADO, xiNodos } from './element1d';
 import { evalChecked, fmt } from './expr';
 import { FemError } from './errors';
-import { buildMesh, mallaCuadratica } from './mesh';
+import { buildMesh, mallaDeOrden } from './mesh';
 import { integrate } from './quadrature';
 import {
   copyMatrix,
@@ -38,10 +38,10 @@ export function solve1D(problem: Problem1D): Solution1D {
   const tol = 1e-9 * L;
   const loads = problem.loads ?? [];
 
-  // 1. Malla (con elementos cuadráticos se agrega un nodo en el centro de cada elemento)
+  // 1. Malla (con elementos cuadráticos o cúbicos se agregan nodos dentro de cada elemento)
   const orden = problem.orden ?? 1;
   const mallaBase = buildMesh(x0, xL, problem.mesh, problem.regions, loads);
-  const mesh = orden === 2 ? mallaCuadratica(mallaBase) : mallaBase;
+  const mesh = mallaDeOrden(mallaBase, orden);
   warnings.push(...mesh.warnings);
   const nodes = mesh.nodes;
   const n = nodes.length;
@@ -59,8 +59,10 @@ export function solve1D(problem: Problem1D): Solution1D {
     }
     return el;
   });
-  if (orden === 2 && problem.gaussPoints < 3) {
-    warnings.push(`Con elementos cuadráticos se recomiendan al menos 3 puntos de Gauss (usas ${problem.gaussPoints}): la matriz elemental puede quedar mal integrada.`);
+  if (orden >= 2 && problem.gaussPoints < GAUSS_RECOMENDADO[orden]) {
+    warnings.push(
+      `Con elementos ${orden === 3 ? 'cúbicos' : 'cuadráticos'} se recomiendan al menos ${GAUSS_RECOMENDADO[orden]} puntos de Gauss (usas ${problem.gaussPoints}): la matriz elemental puede quedar mal integrada.`,
+    );
   }
 
   // Avisos sobre los coeficientes
@@ -154,8 +156,10 @@ export function solve1D(problem: Problem1D): Solution1D {
   if (system.K.length > 0) {
     const tri = isTridiagonal(system.K);
     const dom = isDiagonallyDominant(system.K);
-    if (problem.solver === 'thomas' && !tri && orden === 2) {
-      warnings.push('Con elementos cuadráticos K no es tridiagonal (tiene 5 diagonales), así que se usó eliminación gaussiana en lugar de Thomas.');
+    if (problem.solver === 'thomas' && !tri && orden >= 2) {
+      warnings.push(
+        `Con elementos ${orden === 3 ? 'cúbicos' : 'cuadráticos'} K no es tridiagonal (tiene ${2 * orden + 1} diagonales), así que se usó eliminación gaussiana en lugar de Thomas.`,
+      );
       solverUsed = 'gauss';
     } else if (problem.solver === 'thomas') {
       if (!tri) throw new FemError('El algoritmo de Thomas requiere una matriz tridiagonal.', 'solver');
@@ -180,19 +184,20 @@ export function solve1D(problem: Problem1D): Solution1D {
   const residualNorm = Math.sqrt(residualVec.reduce((s, v) => s + v * v, 0));
 
   // 7. Posproceso
-  // En el centro del elemento u' = (u_fin − u_inicio)/h tanto en lineales como en cuadráticos
+  // u' de un elemento en la coordenada natural ξ, con sus funciones de forma
+  const derivadaEn = (el: ElementResult, xi: number) =>
+    formaLagrange(el.orden, xi).dNdxi.reduce((s, d, a) => s + d * u[el.dofs[a]], 0) / (el.h / 2);
+  // En el centro del elemento u' = (u_fin − u_inicio)/h en lineales y cuadráticos; en cúbicos se evalúa con N'
   const post: ElementPost[] = elements.map((el) => {
     const [i, j] = el.nodes;
-    const du = (u[j] - u[i]) / el.h;
+    const du = el.orden === 3 ? derivadaEn(el, 0) : (u[j] - u[i]) / el.h;
     const xm = (el.xa + el.xb) / 2;
     const k = evalChecked(coeffs[el.region].k, xm, 'k(x)');
     let duA = du;
     let duB = du;
-    if (el.orden === 2) {
-      const ue = el.dofs.map((d) => u[d]);
-      const dEn = (xi: number) => formaCuadratica(xi).dNdxi.reduce((s, d, a) => s + d * ue[a], 0) / (el.h / 2);
-      duA = dEn(-1);
-      duB = dEn(1);
+    if (el.orden >= 2) {
+      duA = derivadaEn(el, -1);
+      duB = derivadaEn(el, 1);
     }
     return { id: el.id, xm, h: el.h, du, duA, duB, k, kdu: k * du };
   });
@@ -202,18 +207,19 @@ export function solve1D(problem: Problem1D): Solution1D {
           const adj = post.filter((_, e) => mesh.elements[e][0] === i || mesh.elements[e][1] === i);
           return adj.reduce((s, p) => s + p.kdu, 0) / adj.length;
         })
-      : nodes.map((x, i) => {
-          // Nodos del centro: k·u' del propio elemento; extremos: promedio de los elementos vecinos
-          const vals: number[] = [];
-          elements.forEach((el, e) => {
-            const p = post[e];
-            const kEn = (xx: number) => evalChecked(coeffs[el.region].k, xx, 'k(x)');
-            if (el.dofs[1] === i) vals.push(p.kdu);
-            if (el.dofs[0] === i) vals.push(kEn(x) * p.duA);
-            if (el.dofs[2] === i) vals.push(kEn(x) * p.duB);
-          });
-          return vals.reduce((s, v) => s + v, 0) / vals.length;
-        });
+      : (() => {
+          // Nodos interiores: k·u' del propio elemento; extremos: promedio de los dos elementos vecinos
+          const suma = new Array<number>(n).fill(0);
+          const cuenta = new Array<number>(n).fill(0);
+          const xis = xiNodos(orden);
+          for (const el of elements) {
+            el.dofs.forEach((d, a) => {
+              suma[d] += evalChecked(coeffs[el.region].k, nodes[d], 'k(x)') * derivadaEn(el, xis[a]);
+              cuenta[d]++;
+            });
+          }
+          return suma.map((s, i) => s / cuenta[i]);
+        })();
 
   const Ku = matVec(K, u);
   const reactions: Reaction[] = dirichlet.map((d) => ({
@@ -228,7 +234,7 @@ export function solve1D(problem: Problem1D): Solution1D {
 
   let error: ErrorInfo | undefined;
   if (exact) {
-    error = computeError(problem.exact!, (x) => evalChecked(exact, x, 'La solución analítica'), nodes, u, orden === 2 ? mesh.elementDofs : undefined);
+    error = computeError(problem.exact!, (x) => evalChecked(exact, x, 'La solución analítica'), nodes, u, orden >= 2 ? mesh.elementDofs : undefined);
   }
 
   return {
@@ -327,7 +333,7 @@ export function computeError(
   exact: (x: number) => number,
   nodes: number[],
   u: number[],
-  /** Con elementos cuadráticos: nodos de cada elemento [inicio, centro, fin]. */
+  /** Con elementos cuadráticos o cúbicos: nodos de cada elemento, de inicio a fin. */
   elementDofs?: number[][],
 ): ErrorInfo {
   const dEx = (x: number, h: number) => {
@@ -351,21 +357,22 @@ export function computeErrorFns(
   const maxNodal = Math.max(...nodal.map(Math.abs));
   let L2 = 0;
   let H1 = 0;
-  if (elementDofs && elementDofs[0]?.length === 3) {
-    for (const [ia, im, ib] of elementDofs) {
-      const a = nodes[ia];
-      const b = nodes[ib];
+  if (elementDofs && (elementDofs[0]?.length ?? 2) >= 3) {
+    for (const dofs of elementDofs) {
+      const ordenEl = (dofs.length - 1) as 2 | 3;
+      const a = nodes[dofs[0]];
+      const b = nodes[dofs[dofs.length - 1]];
       const h = b - a;
       const J = h / 2;
-      const ue = [u[ia], u[im], u[ib]];
+      const ue = dofs.map((d) => u[d]);
       const xiDe = (x: number) => (x - (a + b) / 2) / J;
       L2 += integrate((x) => {
-        const { N } = formaCuadratica(xiDe(x));
-        return (N[0] * ue[0] + N[1] * ue[1] + N[2] * ue[2] - exact(x)) ** 2;
+        const { N } = formaLagrange(ordenEl, xiDe(x));
+        return (N.reduce((s, n, i) => s + n * ue[i], 0) - exact(x)) ** 2;
       }, a, b, 5);
       H1 += integrate((x) => {
-        const { dNdxi } = formaCuadratica(xiDe(x));
-        return ((dNdxi[0] * ue[0] + dNdxi[1] * ue[1] + dNdxi[2] * ue[2]) / J - dEx(x, h)) ** 2;
+        const { dNdxi } = formaLagrange(ordenEl, xiDe(x));
+        return (dNdxi.reduce((s, d, i) => s + d * ue[i], 0) / J - dEx(x, h)) ** 2;
       }, a, b, 5);
     }
     return { nodal, maxNodal, L2: Math.sqrt(L2), H1semi: Math.sqrt(H1), exactAtNodes };
