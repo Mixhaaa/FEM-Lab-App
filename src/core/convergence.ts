@@ -2,13 +2,13 @@
  * Estudio de convergencia: resuelve con Ne = 2, 4, 8, ... y ajusta la pendiente
  * de log(error) vs log(h) por mínimos cuadrados.
  * Esperado para elementos lineales: error nodal y L² ~ h², seminorma H¹ ~ h.
- * Para cuadráticos: L² ~ h³, seminorma H¹ ~ h², y en los nodos suele ser aún más rápido.
+ * Para cuadráticos: L² ~ h³, seminorma H¹ ~ h²; para cúbicos: h⁴ y h³. En los nodos suele ser aún más rápido.
  */
-import { formaCuadratica } from './element1d';
+import { formaLagrange } from './element1d';
 import { compileExpr, evalChecked } from './expr';
 import { computeError, computeErrorFns, solve1D } from './fem1d';
-import { MAX_ELEMENTOS, MAX_ELEMENTOS_CUADRATICOS } from './mesh';
-import type { MeshSpec, Problem1D } from './types';
+import { maxElementos } from './mesh';
+import type { MeshSpec, OrdenElemento, Problem1D } from './types';
 
 export interface ConvergenceRow {
   ne: number;
@@ -63,8 +63,9 @@ function meshFor(spec: MeshSpec, ne: number): MeshSpec {
   return { type: 'uniforme', ne };
 }
 
-/** Mallas del estudio por defecto: los cuadráticos convergen más rápido y llegan antes al redondeo. */
-export function mallasPorDefecto(orden: 1 | 2 = 1): number[] {
+/** Mallas del estudio por defecto: a mayor orden, el error llega antes al redondeo. */
+export function mallasPorDefecto(orden: OrdenElemento = 1): number[] {
+  if (orden === 3) return [2, 4, 8, 16, 32];
   return orden === 2 ? [2, 4, 8, 16, 32, 64] : [2, 4, 8, 16, 32, 64, 128, 256];
 }
 
@@ -77,10 +78,10 @@ export function convergenceStudy(problem: Problem1D, neList: number[] = mallasPo
 
   if (!hasExact) {
     // Solución de referencia con una malla mucho más fina
-    refNe = Math.min(ordenEl === 2 ? MAX_ELEMENTOS_CUADRATICOS : MAX_ELEMENTOS, 8 * Math.max(...neList));
+    refNe = Math.min(maxElementos(ordenEl), 8 * Math.max(...neList));
     const ref = solve1D({ ...problem, exact: undefined, mesh: meshFor(problem.mesh, refNe), bcMethod: 'eliminacion' });
-    // Con cuadráticos, la referencia se interpola con sus propias funciones de forma
-    const xs = ordenEl === 2 ? ref.mesh.elements.map(([a]) => ref.mesh.nodes[a]).concat(ref.mesh.nodes[ref.mesh.nodes.length - 1]) : ref.mesh.nodes;
+    // Con orden 2 o 3, la referencia se interpola con sus propias funciones de forma
+    const xs = ordenEl >= 2 ? ref.mesh.elements.map(([a]) => ref.mesh.nodes[a]).concat(ref.mesh.nodes[ref.mesh.nodes.length - 1]) : ref.mesh.nodes;
     const us = ref.u;
     const locate = (x: number) => {
       let lo = 0;
@@ -92,11 +93,11 @@ export function convergenceStudy(problem: Problem1D, neList: number[] = mallasPo
       }
       return lo;
     };
-    if (ordenEl === 2) {
+    if (ordenEl >= 2) {
       const enElemento = (x: number) => {
         const e = locate(x);
         const J = (xs[e + 1] - xs[e]) / 2;
-        const sh = formaCuadratica((x - (xs[e] + xs[e + 1]) / 2) / J);
+        const sh = formaLagrange(ordenEl, (x - (xs[e] + xs[e + 1]) / 2) / J);
         const ue = ref.mesh.elementDofs[e].map((d) => us[d]);
         return { sh, ue, J };
       };
@@ -130,7 +131,7 @@ export function convergenceStudy(problem: Problem1D, neList: number[] = mallasPo
     const nodes = sol.mesh.nodes;
     let hmax = 0;
     for (const el of sol.elements) hmax = Math.max(hmax, el.h);
-    const dofs = ordenEl === 2 ? sol.mesh.elementDofs : undefined;
+    const dofs = ordenEl >= 2 ? sol.mesh.elementDofs : undefined;
     const err = exactCE
       ? computeError(problem.exact!, (x) => evalChecked(exactCE, x, 'u(x)'), nodes, sol.u, dofs)
       : computeErrorFns(refFn!, refD!, nodes, sol.u, dofs);

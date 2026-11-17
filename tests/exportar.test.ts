@@ -48,6 +48,8 @@ for (const t of PLANTILLAS_1D) {
   for (const ej of t.ejemplos) {
     const r = resolverPlantilla1D(t, { ...aplicarEjemplo(t, estadoPorDefecto(t), ej.id), orden: 2 });
     casos.push({ nombre: `${t.id}/${ej.id} (cuadráticos)`, u: r.sol.u, m: matlab1D(r), py: python1D(r) });
+    const r3 = resolverPlantilla1D(t, { ...aplicarEjemplo(t, estadoPorDefecto(t), ej.id), orden: 3, gauss: 4 });
+    casos.push({ nombre: `${t.id}/${ej.id} (cúbicos)`, u: r3.sol.u, m: matlab1D(r3), py: python1D(r3) });
   }
 }
 // Variantes con penalización (como en el código de clase)
@@ -129,7 +131,7 @@ describe.skipIf(!hayPython)('El código Python exportado reproduce la app', () =
 });
 
 describe.skipIf(!hayOctave)('El código MATLAB exportado reproduce la app (GNU Octave)', () => {
-  it(`los ${casos.length} scripts`, { timeout: 240_000 }, () => {
+  it(`los ${casos.length} scripts`, { timeout: 400_000 }, () => {
     const dir = mkdtempSync(join(tmpdir(), 'femlab-m-'));
     // Octave sin interfaz gráfica: las funciones de gráficas no hacen nada
     const stubs = join(dir, 'stubs');

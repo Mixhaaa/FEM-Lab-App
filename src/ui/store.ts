@@ -17,11 +17,22 @@ import {
 export type Tema = 'sistema' | 'oscuro' | 'claro';
 export type TipoProblema = '1d' | 'armadura' | 'resortes';
 
+/** Ejes invertidos de las gráficas: solo cambia el dibujo. */
+export interface VistaGrafica {
+  /** Eje vertical con los valores positivos hacia abajo. */
+  invertirY: boolean;
+  /** Eje horizontal con x creciendo hacia la izquierda. */
+  invertirX: boolean;
+}
+
 export interface AppState {
   tema: Tema;
   /** Modo presentación (no se guarda). */
   presentacion: boolean;
   setPresentacion: (v: boolean) => void;
+  /** Cómo se dibujan las gráficas (no cambia los resultados ni se guarda). */
+  vista: VistaGrafica;
+  setVista: (v: Partial<VistaGrafica>) => void;
   tipo: TipoProblema;
   e1d: Estado1D;
   armadura: EstadoArmadura;
@@ -45,6 +56,8 @@ export const useApp = create<AppState>()(
       tema: 'sistema',
       presentacion: false,
       setPresentacion: (presentacion) => set({ presentacion }),
+      vista: { invertirY: false, invertirX: false },
+      setVista: (v) => set((s) => ({ vista: { ...s.vista, ...v } })),
       tipo: '1d',
       e1d: estadoPorDefecto(general),
       armadura: estadoArmaduraPorDefecto(),

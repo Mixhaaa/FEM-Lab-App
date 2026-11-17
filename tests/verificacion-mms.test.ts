@@ -33,7 +33,7 @@ function frontera(tipo: Tipo, x: number, n: -1 | 1): BoundaryCondition {
   return { type: 'robin', h, g: flujo + h * u(x) };
 }
 
-function caso(izq: Tipo, der: Tipo, ne: number, orden: 1 | 2, extra: Partial<Problem1D> = {}): Problem1D {
+function caso(izq: Tipo, der: Tipo, ne: number, orden: 1 | 2 | 3, extra: Partial<Problem1D> = {}): Problem1D {
   return problema({
     x0: X0,
     xL: XL,
@@ -61,8 +61,8 @@ describe('Soluciones fabricadas: coeficientes variables y todas las fronteras', 
 
   for (const izq of TIPOS) {
     for (const der of TIPOS) {
-      it(`${izq} – ${der}: lineales h² / h y cuadráticos h³ / h²`, () => {
-        for (const orden of [1, 2] as const) {
+      it(`${izq} – ${der}: lineales h² / h, cuadráticos h³ / h² y cúbicos h⁴ / h³`, () => {
+        for (const orden of [1, 2, 3] as const) {
           const a = solve1D(caso(izq, der, 16, orden)).error!;
           const b = solve1D(caso(izq, der, 32, orden)).error!;
           const nombre = `${izq}-${der} orden ${orden}`;
@@ -72,13 +72,15 @@ describe('Soluciones fabricadas: coeficientes variables y todas las fronteras', 
           expect(tasa(a.H1semi, b.H1semi), `${nombre} H¹`).toBeLessThan(orden + 0.25);
           // Y el error ya es pequeño frente a u (máx |u| ≈ 2.6)
           expect(b.maxNodal, `${nombre} nodal`).toBeLessThan(orden === 1 ? 2e-3 : 2e-6);
+          // Cada orden mejora al anterior con la misma malla
+          if (orden > 1) expect(b.L2, `${nombre} mejora`).toBeLessThan(solve1D(caso(izq, der, 32, (orden - 1) as 1 | 2)).error!.L2 / 5);
         }
       });
     }
   }
 
   it('las reacciones convergen al flujo exacto k ∂u/∂n en los apoyos', () => {
-    for (const orden of [1, 2] as const) {
+    for (const orden of [1, 2, 3] as const) {
       const s = solve1D(caso('dirichlet', 'dirichlet', 64, orden));
       const izq = s.reactions.find((r) => r.lado === 'izquierda')!.value;
       const der = s.reactions.find((r) => r.lado === 'derecha')!.value;
@@ -116,7 +118,7 @@ describe('Soluciones fabricadas: coeficientes variables y todas las fronteras', 
   });
 
   it('las normas L² y H¹ del error coinciden con una integración independiente', () => {
-    for (const orden of [1, 2] as const) {
+    for (const orden of [1, 2, 3] as const) {
       const s = solve1D(caso('neumann', 'dirichlet', 6, orden));
       // u_h y u_h' evaluadas directamente con interpolación de Lagrange en cada elemento
       let L2 = 0;
@@ -158,7 +160,7 @@ describe('Soluciones fabricadas: coeficientes variables y todas las fronteras', 
   });
 
   it('malla refinada, penalización y los dos solucionadores dan la misma solución', () => {
-    for (const orden of [1, 2] as const) {
+    for (const orden of [1, 2, 3] as const) {
       const base = solve1D(caso('dirichlet', 'robin', 24, orden));
       const pen = solve1D(caso('dirichlet', 'robin', 24, orden, { bcMethod: 'penalizacion', penaltyExp: 10 }));
       const gauss = solve1D(caso('dirichlet', 'robin', 24, orden, { solver: 'gauss' }));
@@ -180,7 +182,7 @@ describe('Solución fabricada con dos materiales y una carga puntual', () => {
   const s08 = Math.sin(0.8);
   const exacta = `x <= 0.5 ? sin(x) : (x <= 0.8 ? ${s05} + (sin(x) - ${s05})/5 : ${s05} + (${s08} - ${s05})/5 + (sin(x) - ${s08})/5 - ${P}*(x - 0.8)/5)`;
   const uEx = (x: number) => (x <= 0.5 ? Math.sin(x) : x <= 0.8 ? s05 + (Math.sin(x) - s05) / 5 : s05 + (s08 - s05) / 5 + (Math.sin(x) - s08) / 5 - (P * (x - 0.8)) / 5);
-  const prob = (ne: number, orden: 1 | 2): Problem1D =>
+  const prob = (ne: number, orden: 1 | 2 | 3): Problem1D =>
     problema({
       x0: 0,
       xL: 1.2,
@@ -193,12 +195,13 @@ describe('Solución fabricada con dos materiales y una carga puntual', () => {
       // k u'(1.2) = cos(1.2) − P
       bcRight: { type: 'neumann', q: Math.cos(1.2) - P },
       mesh: { type: 'uniforme', ne },
+      gaussPoints: 4,
       orden,
       exact: exacta,
     });
 
   it('converge con el orden teórico aunque u tenga quiebres (hay nodos en ellos)', () => {
-    for (const orden of [1, 2] as const) {
+    for (const orden of [1, 2, 3] as const) {
       const a = solve1D(prob(12, orden));
       const b = solve1D(prob(24, orden));
       // Hay nodo en 0.5 y en 0.8

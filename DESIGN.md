@@ -108,7 +108,7 @@ Excepción: el relleno interior de las insignias (`px-1.5 py-0.5`, 6 × 2 px), p
 
 Sin brillos ni animaciones decorativas: el movimiento se reserva para indicar que algo carga.
 
-Excepción documentada: las fórmulas de KaTeX que resaltan un valor usan el color literal `#E06D32` (KaTeX no lee variables CSS); se lee bien en ambos temas.
+Las fórmulas de KaTeX que resaltan un valor se escriben con el color literal `#E06D32` (KaTeX no lee variables CSS), y una regla en `src/index.css` lo sustituye por `--accent-soft`, que cumple 4.5:1 en ambos temas.
 
 ---
 

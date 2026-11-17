@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { nombreElementos } from '../curvas';
-import { convergenceStudy, ordenesLocales, type ConvergenceResult } from '../../core';
+import { adjetivoOrden, nombreElementos, ORDEN_ERROR } from '../curvas';
+import { convergenceStudy, GAUSS_RECOMENDADO, maxElementos, ordenesLocales, solve1D, type ConvergenceResult, type OrdenElemento } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Card, CardHeader, Icon, Kpi, Segmentos, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
@@ -8,13 +8,17 @@ import { fmtFijo, fmtNum, snap, sub } from '../format';
 
 type Estado = { tipo: 'calculando' } | { tipo: 'ok'; conv: ConvergenceResult; ms: number } | { tipo: 'error'; mensaje: string };
 
-/** Orden esperado y margen aceptado: lineales h², h², h; cuadráticos h⁴ (nodos, superconvergencia), h³, h². */
+/**
+ * Orden esperado y margen aceptado: lineales h², h², h; cuadráticos h⁴ (nodos, superconvergencia), h³, h²;
+ * cúbicos h⁴ (lo marcan los nodos interiores), h⁴, h³.
+ */
 const ESPERADO = {
   1: { nodal: 2, L2: 2, H1: 1, margenNodal: 0.25 },
   2: { nodal: 4, L2: 3, H1: 2, margenNodal: 0.6 },
+  3: { nodal: 4, L2: 4, H1: 3, margenNodal: 0.6 },
 } as const;
-type NeMax = '32' | '64' | '128' | '256' | '512';
-const MALLAS_MAX: Record<1 | 2, NeMax[]> = { 1: ['64', '128', '256', '512'], 2: ['32', '64', '128'] };
+type NeMax = '16' | '32' | '64' | '128' | '256' | '512';
+const MALLAS_MAX: Record<1 | 2 | 3, NeMax[]> = { 1: ['64', '128', '256', '512'], 2: ['32', '64', '128'], 3: ['16', '32', '64'] };
 
 function OrdenKpi({ titulo, valor, esperado, simbolo, margen = 0.25 }: { titulo: string; valor: number; esperado: number; simbolo: string; margen?: number }) {
   const ok = Number.isFinite(valor) && Math.abs(valor - esperado) <= margen;
@@ -66,7 +70,10 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
   return (
     <>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
-      <ErrorNodalActual res={res} />
+      <div className="flex min-w-0 flex-col gap-4">
+        <ErrorNodalActual res={res} />
+        <ComparacionElementos res={res} />
+      </div>
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="query_stats" title="Estudio de convergencia" subtitle="Se resuelve con Ne = 2, 4, 8, … y se mide el error en cada malla." />
         <Segmentos
@@ -75,7 +82,7 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
           onChange={setNeMax}
           opciones={opcionesNe.map((v) => ({ valor: v, texto: v }))}
         />
-        {ordenEl === 2 && <p className="text-detalle text-ink-2">Con cuadráticos el error baja tan rápido que con más de 128 elementos llega al redondeo.</p>}
+        {ordenEl >= 2 && <p className="text-detalle text-ink-2">Con {nombreElementos(ordenEl)} el error baja tan rápido que con mallas más finas llega al redondeo.</p>}
         {res.estado.malla.tipo === 'manual' && <p className="text-mini text-ink-3">Tu malla es manual: el estudio usa mallas uniformes.</p>}
         {res.estado.malla.tipo === 'geometrica' && <p className="text-mini text-ink-3">El estudio usa mallas refinadas con la misma razón y dirección que la tuya.</p>}
       </Card>
@@ -156,7 +163,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
     <>
       {conv.solucionExacta ? (
         <Aviso tipo="ok" titulo="El MEF es exacto en esta malla">
-          La solución es {res.sol.mesh.orden === 2 ? 'lineal o cuadrática' : 'lineal'} por tramos, así que los {nombreElementos(res.sol.mesh.orden)} la reproducen sin error (salvo redondeo) con cualquier malla que tenga nodos en los cambios de tramo y en las cargas. No tiene sentido hablar de orden.
+          La solución es {res.sol.mesh.orden === 3 ? 'un polinomio de grado 3 o menor' : res.sol.mesh.orden === 2 ? 'lineal o cuadrática' : 'lineal'} por tramos, así que los {nombreElementos(res.sol.mesh.orden)} la reproducen sin error (salvo redondeo) con cualquier malla que tenga nodos en los cambios de tramo y en las cargas. No tiene sentido hablar de orden.
         </Aviso>
       ) : (
         <div className="grid grid-cols-3 gap-2">
@@ -167,7 +174,7 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
       )}
       {conv.superconvergenciaNodal && (
         <Aviso tipo="info" titulo="Superconvergencia en los nodos">
-          El error en los nodos es del orden del redondeo: con k constante, b = c = 0 y f integrada con suficiente precisión, los {nombreElementos(res.sol.mesh.orden)} dan los valores exactos en los nodos. El error dentro de los elementos sí disminuye como {res.sol.mesh.orden === 2 ? 'h³ (L²) y h² (H¹)' : 'h² (L²) y h (H¹)'}.
+          El error en los nodos es del orden del redondeo: con k constante, b = c = 0 y f integrada con suficiente precisión, los {nombreElementos(res.sol.mesh.orden)} dan los valores exactos en los nodos. El error dentro de los elementos sí disminuye como {ORDEN_ERROR[res.sol.mesh.orden].L2} (L²) y {ORDEN_ERROR[res.sol.mesh.orden].H1} (H¹).
         </Aviso>
       )}
 
@@ -218,6 +225,58 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
       </Card>
       </div>
     </>
+  );
+}
+
+/** El mismo problema y la misma malla resueltos con los tres tipos de elemento. */
+function ComparacionElementos({ res }: { res: Resultado1D }) {
+  const ne = res.sol.elements.length;
+  const filas = useMemo(() => {
+    return ([1, 2, 3] as OrdenElemento[]).map((orden) => {
+      if (ne > maxElementos(orden)) return { orden, sol: null };
+      try {
+        // Cada orden con los puntos de Gauss que necesita (como mínimo los que eligió el usuario)
+        const sol = solve1D({ ...res.problem, orden, gaussPoints: Math.max(res.problem.gaussPoints, GAUSS_RECOMENDADO[orden]), exact: res.exacta?.expr });
+        return { orden, sol };
+      } catch {
+        return { orden, sol: null };
+      }
+    });
+  }, [res.problem, res.exacta, ne]);
+  const hayExacta = filas.some((f) => f.sol?.error);
+  const actual = res.sol.mesh.orden;
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-line bg-s1 p-4">
+        <CardHeader
+          icon="compare_arrows"
+          title="Comparación de tipos de elemento"
+          subtitle={`Tu problema con la misma malla de ${ne} elemento(s). ${hayExacta ? 'El error es frente a la solución analítica.' : 'Sin solución analítica solo se comparan los valores.'}`}
+        />
+      </div>
+      <Tabla
+        etiqueta="Comparación de elementos lineales, cuadráticos y cúbicos"
+        cabecera={['Elemento', 'Nodos', ...(hayExacta ? ['Error nodal máx.', 'Error L²', 'Error H¹'] : [`${res.plantilla.incognita.simbolo} máx.`, `${res.plantilla.incognita.simbolo} mín.`])]}
+        alinear={['left', 'right', 'right', 'right', 'right']}
+        resaltar={filas.findIndex((f) => f.orden === actual)}
+        filas={filas.map(({ orden, sol }) => {
+          const nombre = `${adjetivoOrden(orden).replace(/^./, (ch) => ch.toUpperCase())}${orden === actual ? ' (el tuyo)' : ''}`;
+          if (!sol) return [nombre, '—', `máximo ${maxElementos(orden)} elementos`, '', ''];
+          const escala = Math.max(...sol.u.map(Math.abs), 1e-300);
+          return [
+            nombre,
+            sol.u.length,
+            ...(hayExacta && sol.error
+              ? [fmtNum(snap(sol.error.maxNodal, escala), 3), fmtNum(snap(sol.error.L2, escala), 3), fmtNum(snap(sol.error.H1semi, escala), 3)]
+              : [fmtNum(Math.max(...sol.u), 6), fmtNum(Math.min(...sol.u), 6)]),
+          ];
+        })}
+      />
+      <p className="border-t border-line bg-s1 px-4 py-3 text-detalle text-ink-2">
+        Para cambiar el tipo de elemento ve a Configuración → «Tipo de elemento». Con más nodos por elemento el error baja más rápido al refinar: {ORDEN_ERROR[1].L2}, {ORDEN_ERROR[2].L2} y{' '}
+        {ORDEN_ERROR[3].L2} en L².
+      </p>
+    </Card>
   );
 }
 

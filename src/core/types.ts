@@ -47,8 +47,11 @@ export type MeshSpec =
   | { type: 'manual'; nodes: number[] };
 
 export type BCMethod = 'eliminacion' | 'penalizacion';
-/** Orden de los elementos: 1 = lineales (2 nodos), 2 = cuadráticos (3 nodos: extremo, centro, extremo). */
-export type OrdenElemento = 1 | 2;
+/**
+ * Orden de los elementos: 1 = lineales (2 nodos), 2 = cuadráticos (3 nodos) y 3 = cúbicos (4 nodos).
+ * Los nodos interiores van igualmente espaciados dentro del elemento.
+ */
+export type OrdenElemento = 1 | 2 | 3;
 export type SolverType = 'auto' | 'thomas' | 'gauss';
 
 export interface Problem1D {
@@ -76,7 +79,7 @@ export interface GaussPointData {
   xi: number;
   w: number;
   x: number;
-  /** Funciones de forma en el punto (2 lineales, 3 cuadráticas). */
+  /** Funciones de forma en el punto (2 lineales, 3 cuadráticas, 4 cúbicas). */
   N: number[];
   k: number;
   b: number;
@@ -88,7 +91,7 @@ export interface ElementResult {
   id: number; // 1-based
   /** Nodos extremos del elemento (índices 0-based). */
   nodes: [number, number];
-  /** Todos los nodos del elemento en orden local: [inicio, fin] o [inicio, centro, fin]. */
+  /** Todos los nodos del elemento en orden local, de inicio a fin (2, 3 o 4 según el orden). */
   dofs: number[];
   orden: OrdenElemento;
   xa: number;
@@ -105,11 +108,11 @@ export interface ElementResult {
 }
 
 export interface MeshInfo {
-  /** Todos los nodos (con elementos cuadráticos incluye los del centro de cada elemento). */
+  /** Todos los nodos (con elementos cuadráticos o cúbicos incluye los interiores de cada elemento). */
   nodes: number[];
   /** Conectividad 0-based: [nodo inicial, nodo final]. */
   elements: [number, number][];
-  /** Nodos de cada elemento en orden local: [inicio, fin] o [inicio, centro, fin]. */
+  /** Nodos de cada elemento en orden local, de inicio a fin. */
   elementDofs: number[][];
   orden: OrdenElemento;
   /** Región de cada elemento (0-based). */

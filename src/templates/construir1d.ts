@@ -9,7 +9,7 @@ import {
   evalChecked,
   FemError,
   fmt,
-  formaCuadratica,
+  formaLagrange,
   gaussRule,
   parseNumber,
   solve1D,
@@ -257,8 +257,13 @@ export interface FilaElemento {
   h: number;
   tramo: number;
   valores: Record<string, number>;
-  /** Valores al inicio y al fin del elemento (en cuadráticos varían dentro; en lineales son iguales a `valores`). */
+  /** Valores al inicio y al fin del elemento (en lineales son iguales a `valores`). */
   extremos: Record<string, [number, number]>;
+  /**
+   * Cada magnitud a lo largo del elemento, para dibujarla: 2 puntos en lineales (constante),
+   * 3 en cuadráticos (recta) y 9 en cúbicos (parábola).
+   */
+  perfil: { x: number[]; valores: Record<string, number[]> };
 }
 
 export interface ReaccionNombrada {
@@ -319,8 +324,8 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
     const [i, j] = el.nodes;
     const ctx = {
       x: p.xm,
-      // u en el centro: promedio en lineales; nodo del centro en cuadráticos
-      u: el.orden === 2 ? sol.u[el.dofs[1]] : (sol.u[i] + sol.u[j]) / 2,
+      // u en el centro: promedio en lineales; con las funciones de forma en cuadráticos y cúbicos
+      u: el.orden >= 2 ? formaLagrange(el.orden, 0).N.reduce((acc, n, a) => acc + n * sol.u[el.dofs[a]], 0) : (sol.u[i] + sol.u[j]) / 2,
       du: p.du,
       kdu: p.kdu,
       campo: (id: string) => campoEnTramo(el.region, id, p.xm),
@@ -332,23 +337,36 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
       porElemento[d.id].push(valores[d.id]);
     }
     const extremos: Record<string, [number, number]> = {};
-    if (el.orden === 2) {
+    const perfil: FilaElemento['perfil'] = { x: [el.xa, el.xb], valores: {} };
+    if (el.orden >= 2) {
       const kReg = kRegion[el.region];
-      const en = (x: number, du: number, u: number) => ({
-        x,
-        u,
-        du,
-        kdu: evalChecked(kReg, x, 'k(x)') * du,
-        campo: (id: string) => campoEnTramo(el.region, id, x),
-        global,
+      const xis = el.orden === 3 ? [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1] : [-1, 0, 1];
+      const ue = el.dofs.map((d) => sol.u[d]);
+      perfil.x = xis.map((xi) => (xi === -1 ? el.xa : xi === 1 ? el.xb : p.xm + (el.h / 2) * xi));
+      const contextos = xis.map((xi, q) => {
+        const { N, dNdxi } = formaLagrange(el.orden, xi);
+        const x = perfil.x[q];
+        const du = dNdxi.reduce((acc, d, a) => acc + d * ue[a], 0) / (el.h / 2);
+        return {
+          x,
+          u: N.reduce((acc, n, a) => acc + n * ue[a], 0),
+          du,
+          kdu: evalChecked(kReg, x, 'k(x)') * du,
+          campo: (id: string) => campoEnTramo(el.region, id, x),
+          global,
+        };
       });
-      const ca = en(el.xa, p.duA, sol.u[i]);
-      const cb = en(el.xb, p.duB, sol.u[j]);
-      for (const d of t.derivadas) extremos[d.id] = [d.calc(ca), d.calc(cb)];
+      for (const d of t.derivadas) {
+        perfil.valores[d.id] = contextos.map((c) => d.calc(c));
+        extremos[d.id] = [perfil.valores[d.id][0], perfil.valores[d.id][xis.length - 1]];
+      }
     } else {
-      for (const d of t.derivadas) extremos[d.id] = [valores[d.id], valores[d.id]];
+      for (const d of t.derivadas) {
+        extremos[d.id] = [valores[d.id], valores[d.id]];
+        perfil.valores[d.id] = [valores[d.id], valores[d.id]];
+      }
     }
-    return { id: el.id, xa: el.xa, xb: el.xb, xm: p.xm, h: el.h, tramo: el.region, valores, extremos };
+    return { id: el.id, xa: el.xa, xb: el.xb, xm: p.xm, h: el.h, tramo: el.region, valores, extremos, perfil };
   });
 
   const s = e.sistema;
@@ -377,8 +395,8 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
         const x = (el.xa + el.xb) / 2 + J * xi[q];
         const t2 = (x - el.xa) / el.h;
         const uh =
-          el.orden === 2
-            ? formaCuadratica(xi[q]).N.reduce((s, n, a) => s + n * sol.u[el.dofs[a]], 0)
+          el.orden >= 2
+            ? formaLagrange(el.orden, xi[q]).N.reduce((s, n, a) => s + n * sol.u[el.dofs[a]], 0)
             : sol.u[i] * (1 - t2) + sol.u[j] * t2;
         total += w[q] * J * g(x, uh, (id) => campoEnTramo(el.region, id, x));
       }
@@ -388,14 +406,12 @@ export function resolverPlantilla1D(t: Plantilla1D, e: Estado1D): Resultado1D {
   const kctx = {
     nodos: sol.mesh.nodes,
     u: sol.u,
-    // En cuadráticos las magnitudes varían dentro del elemento: se miran inicio, centro y fin
-    ...(problem.orden === 2
+    // En cuadráticos y cúbicos las magnitudes varían dentro del elemento: se miran los puntos de su perfil
+    ...((problem.orden ?? 1) >= 2
       ? {
-          porElemento: Object.fromEntries(
-            t.derivadas.map((d) => [d.id, elementos.flatMap((el) => [el.extremos[d.id][0], el.valores[d.id], el.extremos[d.id][1]])]),
-          ),
+          porElemento: Object.fromEntries(t.derivadas.map((d) => [d.id, elementos.flatMap((el) => el.perfil.valores[d.id])])),
           // Extremos apenas hacia adentro, para que un cambio de tramo en el borde lea las propiedades de su elemento
-          xm: elementos.flatMap((el) => [el.xa + 1e-9 * el.h, el.xm, el.xb - 1e-9 * el.h]),
+          xm: elementos.flatMap((el) => el.perfil.x.map((x, q) => (q === 0 ? x + 1e-9 * el.h : q === el.perfil.x.length - 1 ? x - 1e-9 * el.h : x))),
         }
       : { porElemento, xm: sol.post.map((p) => p.xm) }),
     reacciones: sol.reactions.map((r) => ({ lado: r.lado, x: r.x, valor: r.value })),

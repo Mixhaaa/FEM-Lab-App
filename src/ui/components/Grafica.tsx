@@ -174,3 +174,41 @@ export function Grafica({
     </div>
   );
 }
+
+/** Opciones de ejes de Plotly según la vista elegida (ejes invertidos). Se mezclan en el layout de cada gráfica. */
+export function ejesDeVista(v: { invertirX: boolean; invertirY: boolean }) {
+  return {
+    x: v.invertirX ? { autorange: 'reversed' as const } : {},
+    y: v.invertirY ? { autorange: 'reversed' as const } : {},
+  };
+}
+
+/** Botones para invertir los ejes de las gráficas. Solo cambian el dibujo, no los resultados. */
+export function ControlesVista() {
+  const vista = useApp((s) => s.vista);
+  const setVista = useApp((s) => s.setVista);
+  const boton = (activo: boolean, texto: string, alCambiar: () => void) => (
+    <button
+      type="button"
+      aria-pressed={activo}
+      onClick={alCambiar}
+      className={
+        'flex min-h-11 items-center gap-2 rounded-full border px-4 font-mono text-detalle transition ' +
+        (activo ? 'border-accent bg-accent-bg font-semibold text-accent-soft' : 'border-field text-ink-2 hover:text-ink')
+      }
+    >
+      {texto}
+    </button>
+  );
+  return (
+    <div role="group" aria-label="Invertir los ejes de la gráfica" className="flex flex-wrap items-center gap-2">
+      {boton(vista.invertirY, '↕ Invertir vertical', () => setVista({ invertirY: !vista.invertirY }))}
+      {boton(vista.invertirX, '↔ Invertir horizontal', () => setVista({ invertirX: !vista.invertirX }))}
+      {(vista.invertirY || vista.invertirX) && (
+        <span className="text-detalle text-ink-2">
+          Solo cambia el dibujo: {[vista.invertirY && 'los valores positivos quedan hacia abajo', vista.invertirX && 'x crece hacia la izquierda'].filter(Boolean).join(' y ')}.
+        </span>
+      )}
+    </div>
+  );
+}
