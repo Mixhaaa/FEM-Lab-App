@@ -5,7 +5,7 @@ import { APOYOS, ejemploArmaduraCoincidente, ejemploCoincidente, SISTEMAS, unida
 import { Aviso, Boton, Desplazable, Tabla } from '../components/base';
 import { curvaMEF, curvaPorElemento, FORMA_DU, FORMA_U, nombreElementos } from '../curvas';
 import { DiagramaResortes } from '../components/DiagramaResortes';
-import { Grafica, type Colores } from '../components/Grafica';
+import { ejesDeVista, Grafica, type Colores } from '../components/Grafica';
 import { MatrizTabla, VectorTabla } from '../components/Matriz';
 import { PlanoArmadura } from '../components/PlanoArmadura';
 import { Tex } from '../components/Tex';
@@ -269,14 +269,17 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
     },
     [nodos, u, exacta, res.sol],
   );
+  // El reporte respeta los ejes invertidos que se hayan elegido en Resultados
+  const vista = useApp((st) => st.vista);
+  const ejes = useMemo(() => ejesDeVista(vista), [vista]);
   const lay1 = useCallback(
     () => ({
       showlegend: !!exacta,
       legend: { orientation: 'h', x: 0, y: 1.12 },
-      xaxis: { title: { text: 'x' } },
-      yaxis: { title: { text: `${t.incognita.simbolo}${unidad(t.incognita.unidad, s) && unidad(t.incognita.unidad, s) !== '—' ? ` [${unidad(t.incognita.unidad, s)}]` : ''}` } },
+      xaxis: { title: { text: 'x' }, ...ejes.x },
+      yaxis: { title: { text: `${t.incognita.simbolo}${unidad(t.incognita.unidad, s) && unidad(t.incognita.unidad, s) !== '—' ? ` [${unidad(t.incognita.unidad, s)}]` : ''}` }, ...ejes.y },
     }),
-    [exacta, t, s],
+    [exacta, t, s, ejes],
   );
   const der = useCallback(
     (c: Colores) => {
@@ -286,8 +289,11 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
     [res.elementos, d.id],
   );
   const lay2 = useCallback(
-    () => ({ xaxis: { title: { text: 'x' } }, yaxis: { title: { text: `${d.simbolo}${unidad(d.unidad, s) && unidad(d.unidad, s) !== '—' ? ` [${unidad(d.unidad, s)}]` : ''}` } } }),
-    [d, s],
+    () => ({
+      xaxis: { title: { text: 'x' }, ...ejes.x },
+      yaxis: { title: { text: `${d.simbolo}${unidad(d.unidad, s) && unidad(d.unidad, s) !== '—' ? ` [${unidad(d.unidad, s)}]` : ''}` }, ...ejes.y },
+    }),
+    [d, s, ejes],
   );
   return (
     <>
@@ -297,6 +303,8 @@ function GraficasReporte({ res }: { res: Resultado1D }) {
         </Desplazable>
         <figcaption className="text-center text-mini text-ink-2">
           {t.incognita.nombre}: solución MEF{exacta ? ' y analítica' : ''}.
+          {vista.invertirY && ' Eje vertical invertido.'}
+          {vista.invertirX && ' Eje horizontal invertido.'}
         </figcaption>
       </figure>
       <figure>

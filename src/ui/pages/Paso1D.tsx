@@ -241,12 +241,12 @@ function PasoMalla({ res }: { res: Resultado1D }) {
           {w}
         </Aviso>
       ))}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
           <p className="mb-1 font-mono text-mini font-bold text-ink-2">Mnod: tabla de nodos</p>
           <Tabla cabecera={['Nodo', `x ${ul ? `[${ul}]` : ''}`]} alinear={['left', 'right']} filas={m.nodes.slice(0, lim).map((x, i) => [i + 1, fmtNum(x, 6)])} />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="mb-1 font-mono text-mini font-bold text-ink-2">Melem: conectividad</p>
           <Tabla
             cabecera={
@@ -327,7 +327,14 @@ function FormasSVG({ orden, xa, xb }: { orden: 2 | 3; xa: number; xb: number }) 
       ))}
       {Array.from({ length: n }, (_, a) => etiqueta(xNodo(a) + (a === 0 ? 12 : a === n - 1 ? -12 : 0), 16, `N${sub(a + 1)}`, colTexto[a]))}
       {Array.from({ length: n }, (_, a) =>
-        etiqueta(xNodo(a), 112, `x${sub(a + 1)}=${fmtNum(xa + ((xb - xa) * a) / orden, 4)}`, 'var(--ink-2)', a === 0 ? 'start' : a === n - 1 ? 'end' : 'middle'),
+        // En cúbicos no caben los cuatro valores: los nodos interiores llevan solo el nombre (sus x están en el texto)
+        etiqueta(
+          xNodo(a),
+          112,
+          orden === 3 && a > 0 && a < n - 1 ? `x${sub(a + 1)}` : `x${sub(a + 1)}=${fmtNum(xa + ((xb - xa) * a) / orden, 4)}`,
+          'var(--ink-2)',
+          a === 0 ? 'start' : a === n - 1 ? 'end' : 'middle',
+        ),
       )}
     </svg>
   );

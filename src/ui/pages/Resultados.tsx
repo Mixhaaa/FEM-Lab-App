@@ -4,7 +4,7 @@ import { ejemploCoincidente, plantilla1D, unidad, type Resultado1D } from '../..
 import { adjetivoOrden, curvaMEF, curvaPorElemento, FORMA_DU, FORMA_U, nombreElementos } from '../curvas';
 import { ecuacionTex } from '../ecuacion';
 import { Aviso, Badge, Boton, Card, CardHeader, Icon, Kpi, PanelPestanas, Pildoras, Selector, Tabla } from '../components/base';
-import { Grafica, type Colores } from '../components/Grafica';
+import { ControlesVista, ejesDeVista, Grafica, type Colores } from '../components/Grafica';
 import { Pagina, TituloPagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
 import { AvisoErrorCampo } from './Config';
@@ -168,6 +168,8 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
   const [sel, setSel] = useState(iMax);
   const nodoSel = Math.min(sel, nodos.length - 1);
   const un = unidad(t.incognita.unidad, s);
+  const vista = useApp((st) => st.vista);
+  const ejes = useMemo(() => ejesDeVista(vista), [vista]);
   const exactFn = useMemo(() => {
     if (!res.exacta) return null;
     try {
@@ -242,11 +244,11 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
   );
   const layout = useCallback(
     (c: Colores) => ({
-      xaxis: { title: { text: `x ${unidad(t.unidadLongitud, s) ? `[${unidad(t.unidadLongitud, s)}]` : ''}` } },
-      yaxis: { title: { text: `${t.incognita.simbolo}${un && un !== '—' ? ` [${un}]` : ''}` } },
+      xaxis: { title: { text: `x ${unidad(t.unidadLongitud, s) ? `[${unidad(t.unidadLongitud, s)}]` : ''}` }, ...ejes.x },
+      yaxis: { title: { text: `${t.incognita.simbolo}${un && un !== '—' ? ` [${un}]` : ''}` }, ...ejes.y },
       shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 0, y1: 0, line: { color: c.line, width: 1 } }],
     }),
-    [t, s, un],
+    [t, s, un, ejes],
   );
 
   const err = res.sol.error;
@@ -310,6 +312,7 @@ function PestanaSolucion({ res }: { res: Resultado1D }) {
             onPunto={(p) => p.curva === (exactFn ? 1 : 0) && setSel(p.indice)}
           />
         </div>
+        <ControlesVista />
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-s1 px-3 py-2">
           <div className="flex items-center gap-2">
             <Icon name="touch_app" className="text-[18px] text-accent-hover" />
@@ -404,6 +407,8 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
   const ud = unidad(d.unidad, s);
   const orden = res.sol.mesh.orden;
   const cuadratico = orden >= 2;
+  const vista = useApp((st) => st.vista);
+  const ejes = useMemo(() => ejesDeVista(vista), [vista]);
 
   const data = useCallback(
     (c: Colores) => {
@@ -426,10 +431,10 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
   );
   const layout = useCallback(
     () => ({
-      xaxis: { title: { text: `x ${unidad(t.unidadLongitud, s) ? `[${unidad(t.unidadLongitud, s)}]` : ''}` } },
-      yaxis: { title: { text: `${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}` } },
+      xaxis: { title: { text: `x ${unidad(t.unidadLongitud, s) ? `[${unidad(t.unidadLongitud, s)}]` : ''}` }, ...ejes.x },
+      yaxis: { title: { text: `${d.simbolo}${ud && ud !== '—' ? ` [${ud}]` : ''}` }, ...ejes.y },
     }),
-    [t, s, d.simbolo, ud],
+    [t, s, d.simbolo, ud, ejes],
   );
   const bal = res.sol.balance;
   const cierra = Math.abs(bal.residual) <= 1e-8 * bal.scale;
@@ -479,6 +484,7 @@ function PestanaDerivadas({ res }: { res: Resultado1D }) {
             }}
           />
         </div>
+        <ControlesVista />
       </Card>
 
       {res.reacciones.length > 0 && (

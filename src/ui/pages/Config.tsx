@@ -21,7 +21,7 @@ import { DiagramaMalla } from '../components/DiagramaMalla';
 import { Columnas, Pagina, TituloPagina } from '../components/Shell';
 import { Tex } from '../components/Tex';
 import { conPrefijo, fmtNum } from '../format';
-import { Grafica, useEsEscritorio, type Colores } from '../components/Grafica';
+import { ejesDeVista, Grafica, useEsEscritorio, type Colores } from '../components/Grafica';
 import { useResultado1D } from '../resultado';
 import { ir } from '../router';
 import { useApp } from '../store';
@@ -781,9 +781,11 @@ function VistaPrevia({ res }: { res: Resultado1D }) {
   );
   const ux = unidad(t.unidadLongitud, res.estado.sistema);
   const un = unidad(t.incognita.unidad, res.estado.sistema);
+  const vista = useApp((st) => st.vista);
+  const ejes = useMemo(() => ejesDeVista(vista), [vista]);
   const layout = useCallback(
-    () => ({ margin: { l: 52, r: 10, t: 6, b: 40 }, xaxis: { title: { text: conU('x', ux) } }, yaxis: { title: { text: conU(t.incognita.simbolo, un) } } }),
-    [ux, un, t.incognita.simbolo],
+    () => ({ margin: { l: 52, r: 10, t: 6, b: 40 }, xaxis: { title: { text: conU('x', ux) }, ...ejes.x }, yaxis: { title: { text: conU(t.incognita.simbolo, un) }, ...ejes.y } }),
+    [ux, un, t.incognita.simbolo, ejes],
   );
   const err = res.sol.error;
   const iMx = u.indexOf(Math.max(...u));

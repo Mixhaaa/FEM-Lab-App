@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { nombreElementos, ORDEN_ERROR } from '../curvas';
-import { convergenceStudy, ordenesLocales, type ConvergenceResult } from '../../core';
+import { adjetivoOrden, nombreElementos, ORDEN_ERROR } from '../curvas';
+import { convergenceStudy, GAUSS_RECOMENDADO, maxElementos, ordenesLocales, solve1D, type ConvergenceResult, type OrdenElemento } from '../../core';
 import { unidad, type Resultado1D } from '../../templates';
 import { Aviso, Badge, Card, CardHeader, Icon, Kpi, Segmentos, Tabla } from '../components/base';
 import { Grafica, type Colores } from '../components/Grafica';
@@ -70,7 +70,10 @@ export function PestanaConvergencia({ res }: { res: Resultado1D }) {
   return (
     <>
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
-      <ErrorNodalActual res={res} />
+      <div className="flex min-w-0 flex-col gap-4">
+        <ErrorNodalActual res={res} />
+        <ComparacionElementos res={res} />
+      </div>
       <Card className="flex flex-col gap-3 p-4">
         <CardHeader icon="query_stats" title="Estudio de convergencia" subtitle="Se resuelve con Ne = 2, 4, 8, … y se mide el error en cada malla." />
         <Segmentos
@@ -222,6 +225,58 @@ function ResultadoConvergencia({ conv, ms, res }: { conv: ConvergenceResult; ms:
       </Card>
       </div>
     </>
+  );
+}
+
+/** El mismo problema y la misma malla resueltos con los tres tipos de elemento. */
+function ComparacionElementos({ res }: { res: Resultado1D }) {
+  const ne = res.sol.elements.length;
+  const filas = useMemo(() => {
+    return ([1, 2, 3] as OrdenElemento[]).map((orden) => {
+      if (ne > maxElementos(orden)) return { orden, sol: null };
+      try {
+        // Cada orden con los puntos de Gauss que necesita (como mínimo los que eligió el usuario)
+        const sol = solve1D({ ...res.problem, orden, gaussPoints: Math.max(res.problem.gaussPoints, GAUSS_RECOMENDADO[orden]), exact: res.exacta?.expr });
+        return { orden, sol };
+      } catch {
+        return { orden, sol: null };
+      }
+    });
+  }, [res.problem, res.exacta, ne]);
+  const hayExacta = filas.some((f) => f.sol?.error);
+  const actual = res.sol.mesh.orden;
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-line bg-s1 p-4">
+        <CardHeader
+          icon="compare_arrows"
+          title="Comparación de tipos de elemento"
+          subtitle={`Tu problema con la misma malla de ${ne} elemento(s). ${hayExacta ? 'El error es frente a la solución analítica.' : 'Sin solución analítica solo se comparan los valores.'}`}
+        />
+      </div>
+      <Tabla
+        etiqueta="Comparación de elementos lineales, cuadráticos y cúbicos"
+        cabecera={['Elemento', 'Nodos', ...(hayExacta ? ['Error nodal máx.', 'Error L²', 'Error H¹'] : [`${res.plantilla.incognita.simbolo} máx.`, `${res.plantilla.incognita.simbolo} mín.`])]}
+        alinear={['left', 'right', 'right', 'right', 'right']}
+        resaltar={filas.findIndex((f) => f.orden === actual)}
+        filas={filas.map(({ orden, sol }) => {
+          const nombre = `${adjetivoOrden(orden).replace(/^./, (ch) => ch.toUpperCase())}${orden === actual ? ' (el tuyo)' : ''}`;
+          if (!sol) return [nombre, '—', `máximo ${maxElementos(orden)} elementos`, '', ''];
+          const escala = Math.max(...sol.u.map(Math.abs), 1e-300);
+          return [
+            nombre,
+            sol.u.length,
+            ...(hayExacta && sol.error
+              ? [fmtNum(snap(sol.error.maxNodal, escala), 3), fmtNum(snap(sol.error.L2, escala), 3), fmtNum(snap(sol.error.H1semi, escala), 3)]
+              : [fmtNum(Math.max(...sol.u), 6), fmtNum(Math.min(...sol.u), 6)]),
+          ];
+        })}
+      />
+      <p className="border-t border-line bg-s1 px-4 py-3 text-detalle text-ink-2">
+        Para cambiar el tipo de elemento ve a Configuración → «Tipo de elemento». Con más nodos por elemento el error baja más rápido al refinar: {ORDEN_ERROR[1].L2}, {ORDEN_ERROR[2].L2} y{' '}
+        {ORDEN_ERROR[3].L2} en L².
+      </p>
+    </Card>
   );
 }
 

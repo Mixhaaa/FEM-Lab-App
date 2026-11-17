@@ -1,6 +1,6 @@
 # FEM Lab
 
-**Aplicación web para resolver problemas de ingeniería lineales con el Método de Elementos Finitos (MEF) usando elementos lineales o cuadráticos.**
+**Aplicación web para resolver problemas de ingeniería lineales con el Método de Elementos Finitos (MEF) usando elementos lineales, cuadráticos o cúbicos.**
 
 Proyecto de la materia *Diseño por Elementos Finitos* — Universidad Distrital Francisco José de Caldas, 2026-1.
 
@@ -67,7 +67,7 @@ y armaduras planas y sistemas de resortes por el método de rigidez directa.
 
 1. **Inicio**: elige una plantilla (barra, calor, aleta, …) y uno de sus ejemplos, o abre el **ejemplo de clase** −u″ + 100u = 10x³.
 2. **Configuración**: cambia los datos físicos, los tramos, las cargas, las condiciones de frontera, la malla y el método. Cada campo se valida mientras escribes; en el computador, la solución se actualiza en vivo al lado.
-3. **Resultados**: gráfica MEF vs analítica (toca un nodo para ver su valor), indicadores principales, tablas, matrices, derivadas, reacciones y convergencia.
+3. **Resultados**: gráfica MEF vs analítica (toca un nodo para ver su valor; los botones *Invertir vertical* e *Invertir horizontal* voltean los ejes sin cambiar los resultados), indicadores principales, tablas, matrices, derivadas, reacciones y convergencia.
 4. **Paso a paso**: el procedimiento completo del método con los números de tu problema.
 5. **Armadura 2D**: plano interactivo; toca un nodo o una barra para ver sus datos. Las barras se colorean según tracción o compresión y se dibuja la deformada.
 6. **Exportar**: al final de Resultados (o de Armadura 2D) están el reporte PDF, los CSV y los códigos MATLAB y Python.
@@ -138,6 +138,25 @@ $$
 
 Los nodos se numeran en orden de $x$ (inicio, centro, fin, centro, …), así que $K$ queda con 5 diagonales y se resuelve con eliminación gaussiana en banda (Thomas solo sirve para 3 diagonales). Se recomiendan al menos 3 puntos de Gauss y el máximo es 1000 elementos.
 
+### 3c. Elemento cúbico (opcional)
+
+Con **Cúbico** cada elemento tiene 4 nodos: los extremos y dos interiores en los tercios ($\xi = -1, -\tfrac13, \tfrac13, 1$). La solución es un polinomio de grado 3 dentro del elemento:
+
+$$
+N_1 = -\tfrac{9}{16}\left(\xi+\tfrac13\right)\left(\xi-\tfrac13\right)(\xi-1), \quad
+N_2 = \tfrac{27}{16}(\xi+1)\left(\xi-\tfrac13\right)(\xi-1), \quad
+N_3 = -\tfrac{27}{16}(\xi+1)\left(\xi+\tfrac13\right)(\xi-1), \quad
+N_4 = \tfrac{9}{16}(\xi+1)\left(\xi+\tfrac13\right)\left(\xi-\tfrac13\right)
+$$
+
+Con coeficientes constantes:
+
+$$
+\mathbf{K}^e = \frac{k}{40h}\begin{bmatrix}148&-189&54&-13\\-189&432&-297&54\\54&-297&432&-189\\-13&54&-189&148\end{bmatrix} + \frac{b}{80}\begin{bmatrix}-40&57&-24&7\\-57&0&81&-24\\24&-81&0&57\\-7&24&-57&40\end{bmatrix} + \frac{c\,h}{1680}\begin{bmatrix}128&99&-36&19\\99&648&-81&-36\\-36&-81&648&99\\19&-36&99&128\end{bmatrix}, \qquad \mathbf{F}^e = \frac{f\,h}{8}\begin{bmatrix}1\\3\\3\\1\end{bmatrix}
+$$
+
+$K$ queda con 7 diagonales. Se recomiendan al menos 4 puntos de Gauss y el máximo es 600 elementos. La pestaña *Error y convergencia* incluye una tabla que compara los tres tipos de elemento con la misma malla.
+
 ### 4. Matriz y vector elementales (cuadratura de Gauss)
 
 $$
@@ -181,7 +200,7 @@ $$
 \max_i|u_i - u(x_i)|, \qquad \|u-u_h\|_{L^2} = \left(\int (u-u_h)^2dx\right)^{1/2}, \qquad |u-u_h|_{H^1} = \left(\int (u'-u_h')^2dx\right)^{1/2}
 $$
 
-Para elementos lineales se espera $\|e\|_{L^2} \sim h^2$ y $|e|_{H^1} \sim h$; para cuadráticos $\|e\|_{L^2} \sim h^3$, $|e|_{H^1} \sim h^2$ y en los nodos aproximadamente $h^4$. El estudio de convergencia resuelve con $N_e = 2, 4, 8, \dots$ y ajusta la pendiente de $\log e$ contra $\log h$. La app avisa los casos especiales: **superconvergencia** nodal (con $k$ constante y $b = c = 0$ los nodos son exactos) y **solución exacta en la malla** (solución lineal por tramos).
+Para elementos lineales se espera $\|e\|_{L^2} \sim h^2$ y $|e|_{H^1} \sim h$; para cuadráticos $\|e\|_{L^2} \sim h^3$, $|e|_{H^1} \sim h^2$ y en los nodos aproximadamente $h^4$; para cúbicos $\|e\|_{L^2} \sim h^4$ y $|e|_{H^1} \sim h^3$. El estudio de convergencia resuelve con $N_e = 2, 4, 8, \dots$ y ajusta la pendiente de $\log e$ contra $\log h$. La app avisa los casos especiales: **superconvergencia** nodal (con $k$ constante y $b = c = 0$ los nodos son exactos) y **solución exacta en la malla** (solución lineal por tramos).
 
 ### 8. Armadura plana y resortes
 
@@ -218,7 +237,7 @@ Hay **31 ejemplos precargados**, entre ellos el ejemplo de clase, la barra de do
 
 ## Verificación
 
-El proyecto tiene **246 pruebas automáticas** (Vitest) que se ejecutan antes de cada publicación. Las que corren el código exportado necesitan GNU Octave y Python con NumPy; si no están instalados, se omiten. Entre ellas:
+El proyecto tiene **283 pruebas automáticas** (Vitest) que se ejecutan antes de cada publicación. Las que corren el código exportado necesitan GNU Octave y Python con NumPy; si no están instalados, se omiten. Entre ellas:
 
 | Prueba | Resultado esperado |
 |---|---|
@@ -230,9 +249,9 @@ El proyecto tiene **246 pruebas automáticas** (Vitest) que se ejecutan antes de
 | Armaduras de dos barras y triángulo isostático | fuerzas del método de los nudos y reacciones |
 | Fronteras Dirichlet, Neumann y Robin; tramos; cargas puntuales | soluciones exactas |
 | Eliminación vs penalización; Thomas vs Gauss | mismos resultados |
-| **Soluciones fabricadas** ($u = \sin 2x + x^2$ con $k = 1 + x^2$, $b = 2 - x$, $c = 3 + \cos x$ en $[0.3,\ 1.7]$) | las 9 combinaciones de fronteras convergen con el orden teórico: lineales $h^2$ (L²) y $h$ (H¹), cuadráticos $h^3$ y $h^2$; reacciones y derivadas convergen a los valores exactos |
+| **Soluciones fabricadas** ($u = \sin 2x + x^2$ con $k = 1 + x^2$, $b = 2 - x$, $c = 3 + \cos x$ en $[0.3,\ 1.7]$) | las 9 combinaciones de fronteras convergen con el orden teórico: lineales $h^2$ (L²) y $h$ (H¹), cuadráticos $h^3$ y $h^2$, cúbicos $h^4$ y $h^3$; reacciones y derivadas convergen a los valores exactos |
 | Dos materiales con carga puntual interior | solución con quiebres reproducida; nodos extremos exactos |
-| Elementos cuadráticos | matrices 3×3 conocidas, solución cuadrática exacta con un elemento, todos los ejemplos contra una malla lineal fina |
+| Elementos cuadráticos y cúbicos | matrices 3×3 y 4×4 conocidas, solución cuadrática (o cúbica) exacta con un solo elemento, todos los ejemplos contra una malla lineal fina |
 | **Código exportado** | El `.m` y el `.py` de **todos** los ejemplos se ejecutan en GNU Octave y en Python y reproducen los resultados de la app |
 
 Para comprobarlo en tu computador:
@@ -263,7 +282,7 @@ npm run iconos       # actualiza la fuente de íconos si se agregan íconos nuev
 
 ```
 src/core/        Núcleo de cálculo (TypeScript puro, independiente de la interfaz):
-                 expresiones, malla, Gauss, elementos lineal y cuadrático, ensamblaje, fronteras,
+                 expresiones, malla, Gauss, elementos lineal, cuadrático y cúbico, ensamblaje, fronteras,
                  solucionadores, posproceso, convergencia, solución analítica,
                  armadura 2D y resortes
 src/templates/   Plantillas: variables físicas → k, b, c, f, y resultados con nombre y unidad

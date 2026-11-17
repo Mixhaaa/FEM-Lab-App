@@ -212,6 +212,11 @@
     overflow-y: hidden;
     padding: 0.2em 0;
   }
+  /* Valores resaltados en las fórmulas: KaTeX escribe el color fijo #E06D32; aquí se cambia por el
+     acento de texto del tema, que sí cumple el contraste 4.5:1 en claro y en oscuro. */
+  .katex span[style*='e06d32' i] {
+    color: var(--accent-soft) !important;
+  }
   /* Dentro de un contenedor desplazable, el que se desplaza (y recibe el foco) es el contenedor */
   .scroll-x .katex-display {
     overflow: visible;
